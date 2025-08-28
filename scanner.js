@@ -11,11 +11,11 @@ function onScanSuccess(decodedText, decodedResult) {
 
         resultContainer.innerHTML = `Scanned: ${employeeId} - ${firstName} ${lastName}`;
 
-        // Optionally: send to backend
+        // Send to backend (attendance.php)
         fetch('attendance.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `employee_id=${employeeId}&scan_type=IN&photo=` // you can handle photo separately
+            body: `employee_id=${employeeId}&scan_type=IN&photo=`
         })
         .then(response => response.json())
         .then(data => {
@@ -24,9 +24,19 @@ function onScanSuccess(decodedText, decodedResult) {
         })
         .catch(err => console.error(err));
 
+        // Clear display after 5 seconds to accept next QR code
+        setTimeout(() => {
+            resultContainer.innerHTML = "Scan a QR code to log attendance";
+        }, 5000);
+
     } catch (e) {
         console.error("Invalid QR code", e);
         resultContainer.innerHTML = "Invalid QR code";
+
+        // Clear error message after 5 seconds
+        setTimeout(() => {
+            resultContainer.innerHTML = "Scan a QR code to log attendance";
+        }, 5000);
     }
 }
 
@@ -37,7 +47,7 @@ html5QrcodeScanner.start(
     { facingMode: "environment" }, // back camera
     {
         fps: 10,    // frames per second
-        qrbox: 250  // square size
+        qrbox: 250  // scanning square
     },
     onScanSuccess
 ).catch(err => {
