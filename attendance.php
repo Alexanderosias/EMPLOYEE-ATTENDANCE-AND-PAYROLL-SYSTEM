@@ -1,32 +1,60 @@
 <?php
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $employee_id = $_POST['employee_id'] ?? '';
-    $scan_type = $_POST['scan_type'] ?? 'IN';
-    $photo = $_POST['photo'] ?? '';
-
-    if ($employee_id && $photo) {
-        // Decode Base64 image
-        $photo = str_replace('data:image/png;base64,', '', $photo);
-        $photo = str_replace(' ', '+', $photo);
-        $photoData = base64_decode($photo);
-
-        // Create filename with employee ID + timestamp
-        $filename = "photos/" . $employee_id . "_" . time() . ".png";
-
-        // Ensure photos directory exists
-        if (!file_exists("photos")) {
-            mkdir("photos", 0777, true);
-        }
-
-        // Save file
-        file_put_contents($filename, $photoData);
-
-        // TODO: Insert attendance record into DB here
-        // Example: INSERT INTO attendance (employee_id, scan_type, photo_path, date_time) VALUES (...)
-
-        echo json_encode(["status" => "success", "message" => "Attendance logged with photo"]);
-    } else {
-        echo json_encode(["status" => "error", "message" => "Invalid data"]);
-    }
+// Database connection
+$conn = new mysqli("localhost", "root", "", "eaaps_db");
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
+
+// Read JSON input
+$data = json_decode(file_get_contents("php://input"), true);
+
+if (!$data) {
+    die("No data received.");
+}
+
+$employee_id = $conn->real_escape_string($data['employee_id']);
+$check_type = $conn->real_escape_string($data['check_type']);
+$timestamp = $conn->real_escape_string($data['timestamp']);
+$photo = $data['photo']; // Base64 string (data:image/png;base64,...)
+
+// ✅ Make sure uploads folder exists
+$uploadDir = __DIR__ . "/uploads/";
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0777, true);
+}
+
+// ✅ Generate safe filename (EMP001_1756396134.png)
+$employeeSafe = preg_replace("/[^A-Za-z0-9]/", "", $employee_id); // remove bad chars
+$photoFilename = $employeeSafe . "_" . time() . ".png";
+$photoPath = $uploadDir . $photoFilename;
+
+// ✅ Remove "data:image/png;base64," part if present
+if (strpos($photo, "base64,") !== false) {
+    $photo = explode("base64,", $photo)[1];
+}
+
+// ✅ Decode base64
+$photoData = base64_decode($photo);
+
+// ✅ Save to file
+if (file_put_contents($photoPath, $photoData)) {
+    // Save relative path (for browser access)
+    $photoDbPath = "uploads/" . $photoFilename;
+
+    // ✅ Insert into attendance_logs table
+    $sql = "INSERT INTO attendance_logs (employee_id, check_type, timestamp, photo_path, synced)
+            VALUES ('$employee_id', '$check_type', '$timestamp', '$photoDbPath', 0)";
+
+    if ($conn->query($sql) === TRUE) {
+        echo "Attendance saved with photo: " . $photoFilename;
+    } else {
+        echo "DB Error: " . $conn->error;
+    }
+} else {
+    echo "Failed to save image.";
+}
+
+$conn->close();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 ?>

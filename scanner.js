@@ -1,55 +1,53 @@
-const resultContainer = document.getElementById('result');
-
+// Initialize QR Scanner
 function onScanSuccess(decodedText, decodedResult) {
-    // decodedText = QR code content (JSON string)
-    try {
-        const data = JSON.parse(decodedText);
+  // Show scanned result
+  document.getElementById("result").innerText =
+    `QR Scanned: ${decodedText}`;
 
-        const employeeId = data.employee_id;
-        const firstName = data.first_name;
-        const lastName = data.last_name;
+  // Access the video element used by html5-qrcode
+  const video = document.querySelector("video");
 
-        resultContainer.innerHTML = `Scanned: ${employeeId} - ${firstName} ${lastName}`;
+  // Delay 1 second before taking snapshot
+  setTimeout(() => {
+    const snapshotData = takeSnapshot(video);
 
-        // Send to backend (attendance.php)
-        fetch('attendance.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `employee_id=${employeeId}&scan_type=IN&photo=`
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-            resultContainer.innerHTML += `<br>${data.message}`;
-        })
-        .catch(err => console.error(err));
+    // Preview snapshot on page
+    const img = document.createElement("img");
+    img.src = snapshotData;
+    img.style.width = "200px";
+    document.getElementById("result").appendChild(img);
 
-        // Clear display after 5 seconds to accept next QR code
-        setTimeout(() => {
-            resultContainer.innerHTML = "Scan a QR code to log attendance";
-        }, 5000);
+    // Send data to backend (example via fetch)
+    fetch("attendance.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        employee_id: decodedText,   // QR contains employee_id
+        check_type: "in",           // or "out"
+        timestamp: new Date().toISOString(),
+        photo: snapshotData         // Base64 image
+      })
+    }).then(res => res.text()).then(data => {
+      console.log("Server Response:", data);
+    });
 
-    } catch (e) {
-        console.error("Invalid QR code", e);
-        resultContainer.innerHTML = "Invalid QR code";
-
-        // Clear error message after 5 seconds
-        setTimeout(() => {
-            resultContainer.innerHTML = "Scan a QR code to log attendance";
-        }, 5000);
-    }
+  }, 1000); // wait 1 second
 }
 
-// Webcam configuration
-const html5QrcodeScanner = new Html5Qrcode("reader");
+function takeSnapshot(videoElement) {
+  const canvas = document.createElement("canvas");
+  canvas.width = videoElement.videoWidth;
+  canvas.height = videoElement.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/png"); // Base64 string
+}
 
-html5QrcodeScanner.start(
-    { facingMode: "environment" }, // back camera
-    {
-        fps: 10,    // frames per second
-        qrbox: 250  // scanning square
-    },
-    onScanSuccess
-).catch(err => {
-    console.error("Unable to start scanner", err);
+// Start scanner
+const html5QrcodeScanner = new Html5QrcodeScanner("reader", {
+  fps: 10,
+  qrbox: 250
 });
+html5QrcodeScanner.render(onScanSuccess);
