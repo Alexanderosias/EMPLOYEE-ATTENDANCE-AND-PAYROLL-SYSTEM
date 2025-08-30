@@ -10,16 +10,9 @@
 <body>
   <?php
   require "phpqrcode/qrlib.php";
-  $host = "localhost";
-  $user = "root";
-  $pass = "";
-  $dbname = "eaaps_db";
 
-  $conn = new mysqli($host, $user, $pass, $dbname);
-
-  if ($conn->connect_error) {
-    die("DB connection failed: " . $conn->connect_error);
-  }
+  // Include the database connection file
+  include 'conn.php';
 
   // Generate QR for each employee
   $sql = "SELECT employee_id, first_name, last_name FROM employees";

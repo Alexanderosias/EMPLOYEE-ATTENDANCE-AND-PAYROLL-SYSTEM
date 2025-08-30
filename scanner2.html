@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADFC Employee Attendance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/scanner.css">
+</head>
+<body>
+
+  <div class="header-logo" title="ADFC Logo">
+    <img alt="ADFC logo inside circle" src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png" />
+  </div>
+  <header>ADFC EMPLOYEE ATTENDANCE</header>
+
+  <main class="container" role="main">
+    <!-- Left Guide Boxes -->
+    <section class="left-panel" aria-label="Guide and advice instructions">
+      <article class="box guide-box" tabindex="0" aria-labelledby="guide-title" role="region">
+        <h2 id="guide-title" class="font-bold text-lg mb-2 text-white">Guide</h2>
+        <ul>
+          <li>Hold your QR code steady in front of the scanner/camera.</li>
+          <li>When the light turns green, your attendance has been successfully logged.</li>
+          <li>Look for your name on the screen to confirm.</li>
+        </ul>
+      </article>
+      <article class="box advice-box" tabindex="0" role="region" aria-label="Important advice">
+        <div>Please be advised</div>
+        <p class="advice-text">
+          Don&#39;t hide your face upon scanning. A snapshot is captured during the QR scanning process to verify identity. This is to ensure accountability and prevent buddy punching.
+        </p>
+      </article>
+    </section>
+
+    <!-- Center QR Scanner -->
+    <section class="center-panel" aria-label="QR code scanner">
+      <div class="center-header">QR Scanner</div>
+      <div class="qr-scanner-area">
+        <div class="qr-placeholder" aria-live="polite" aria-label="QR Code scanner placeholder">
+          <img src="" alt="QR code scanner placeholder to be replaced" />
+          <div class="frame-corners" aria-hidden="true"></div>
+        </div>
+        <button class="btn-scan" id="btn-scan" type="button" aria-pressed="false" aria-label="Stop QR Scanning">Stop Scanning</button>
+        <div class="scan-label">Scan your QR code to log Attendance</div>
+      </div>
+    </section>
+
+    <!-- Right side Recent and Mistaken Scanned -->
+    <section class="right-panel" aria-label="Recent attendance and contact if scanned by mistake">
+      <article class="recent-box" role="region" aria-labelledby="recent-title" tabindex="0">
+        <h2 id="recent-title" class="recent-header">Recent</h2>
+        <table class="recent-table" aria-describedby="recent-desc" role="table" summary="Recent attendance log">
+          <thead>
+            <tr>
+              <th scope="col">Rivas</th>
+              <th scope="col">Instructor</th>
+              <th scope="col">Status</th>
+              <th scope="col">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Rivas</td>
+              <td>Instructor</td>
+              <td>In</td>
+              <td>7:00 am</td>
+            </tr>
+            <tr>
+              <td>Rivas</td>
+              <td>Instructor</td>
+              <td>Out</td>
+              <td>7:00 pm</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="mistake-box" role="region" tabindex="0" aria-label="If scanned by mistake contact HR or Admin">
+        <div>
+          Scanned by mistake? &nbsp;
+          <a href="mailto:hr.admin@adfc.org" aria-label="Contact HR or Admin">Contact HR/Admin</a>
+        </div>
+        <button class="return-btn" aria-label="Return to previous page" type="button" onclick="handleReturn()">
+          <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          Return
+        </button>
+      </article>
+    </section>
+  </main>
+
+  <footer role="contentinfo">©ADFC 2025 All rights reserved.</footer>
+
+  <script>
+    // Placeholder script for the stop scanning button and return button.
+    const btnScan = document.getElementById('btn-scan');
+
+    btnScan.addEventListener('click', () => {
+      if (btnScan.textContent.trim() === 'Stop Scanning') {
+        btnScan.textContent = 'Start Scanning';
+        btnScan.setAttribute('aria-pressed', 'true');
+      } else {
+        btnScan.textContent = 'Stop Scanning';
+        btnScan.setAttribute('aria-pressed', 'false');
+      }
+    });
+
+    function handleReturn() {
+      // For demonstration, simply alert
+      alert('Return button clicked. Implement navigation as needed.');
+    }
+  </script>
+</body>
+</html>
