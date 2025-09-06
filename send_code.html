@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Code</title>
+    <title>Forgot Password</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts for 'Inter' -->
@@ -23,9 +23,11 @@
             0% {
                 background-position: 0% 50%;
             }
+
             50% {
                 background-position: 100% 50%;
             }
+
             100% {
                 background-position: 0% 50%;
             }
@@ -37,32 +39,6 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Styles for the 6-digit code inputs */
-        .code-input-container {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .code-input {
-            width: 3rem;
-            height: 3rem;
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #fff;
-            background-color: transparent;
-            border: 2px solid transparent;
-            border-bottom: 2px solid #374151;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .code-input:focus {
-            outline: none;
-            border-bottom: 2px solid #87CEEB;
         }
         
         /* Spinner animation for the button loading state */
@@ -79,42 +55,77 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Custom styles for the floating label effect */
+        .form-input:placeholder-shown+.form-label {
+            transform: translate(1rem, -50%);
+            color: #d1d5db;
+        }
+
+        .form-input:focus+.form-label,
+        .form-input:not(:placeholder-shown)+.form-label {
+            transform: translate(1rem, -2.5rem) scale(0.75);
+            color: #87CEEB;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-bottom: 2px solid #87CEEB;
+        }
+
+        .form-input {
+            border-bottom: 2px solid #374151;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Styles for the animated message box */
+        #animatedMessageBox {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100%);
+            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+            opacity: 0;
+            z-index: 50; /* Ensure it's on top of other content */
+        }
+        
+        #animatedMessageBox.visible {
+            transform: translateX(-50%) translateY(1rem);
+            opacity: 1;
+        }
     </style>
 </head>
 
-<body class="min-h-screen flex items-center justify-center p-4 text-gray-100">
+<body class="min-h-screen flex items-center justify-center p-4 text-gray-100 relative">
+
+    <!-- Animated Message Box -->
+    <div id="animatedMessageBox" class="hidden px-6 py-3 rounded-lg text-center font-semibold text-white shadow-lg max-w-sm w-full">
+        <p id="messageText"></p>
+    </div>
 
     <div class="w-full max-w-md p-8 rounded-2xl glass-card text-center">
-        <!-- Verification Form Header -->
-        <h2 class="text-4xl font-extrabold text-white mb-2">Verify Code</h2>
-        <p class="text-gray-300 mb-6">A 6-digit code has been sent to</p>
-        <p class="text-white text-lg font-semibold mb-6">admin@example.com</p>
+        <!-- Forgot Password Form Header -->
+        <h2 class="text-4xl font-extrabold text-white mb-2">Forgot Password?</h2>
+        <p class="text-gray-300 mb-6">Enter your email and we'll send a verification code.</p>
 
-        <!-- Verification Code Form -->
-        <form id="verifyCodeForm" class="space-y-6">
-            <!-- Code Field Container -->
-            <div class="code-input-container">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-1" autocomplete="off">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-2" autocomplete="off">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-3" autocomplete="off">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-4" autocomplete="off">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-5" autocomplete="off">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-6" autocomplete="off">
+        <!-- Email Input Form -->
+        <form id="forgotPasswordForm" class="space-y-6">
+            <!-- Email Field Container -->
+            <div class="relative mb-6">
+                <input id="userEmail" type="email" name="email" placeholder=" " class="form-input peer w-full bg-transparent text-white py-3 transition-all duration-300 px-4">
+                <label for="userEmail" class="form-label absolute left-0 cursor-text text-lg text-gray-400 transition-all duration-300 transform -translate-y-1/2 top-1/2">
+                    Email
+                </label>
             </div>
 
-            <p id="codeError" class="text-rose-400 text-sm mt-1 text-center hidden">Please enter a valid 6-digit code.</p>
-
-            <!-- Verify Button -->
+            <!-- Send Code Button -->
             <div class="mt-8">
-                <button type="submit" id="verifyButton"
+                <button type="submit" id="sendButton"
                     class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-rose-400 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-opacity-50 flex items-center justify-center">
-                    Verify Code
+                    Send Code
                 </button>
             </div>
 
-            <p class="text-center text-sm text-gray-400 mt-4">
-                Didn't receive a code? <a href="#" class="text-sky-400 hover:underline">Resend Code</a>
-            </p>
             <p class="text-center text-sm text-gray-400 mt-2">
                 <a href="login.html" class="text-sky-400 hover:underline">Return to Login</a>
             </p>
@@ -124,76 +135,65 @@
     <!-- JavaScript for button states and interactions -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const verifyCodeForm = document.getElementById('verifyCodeForm');
-            const codeInputs = document.querySelectorAll('.code-input');
-            const verifyButton = document.getElementById('verifyButton');
-            const codeError = document.getElementById('codeError');
+            const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+            const userEmailInput = document.getElementById('userEmail');
+            const sendButton = document.getElementById('sendButton');
+            const animatedMessageBox = document.getElementById('animatedMessageBox');
+            const messageText = document.getElementById('messageText');
 
-            // Automatically move focus to the next input as digits are typed
-            codeInputs.forEach((input, index) => {
-                input.addEventListener('input', (e) => {
-                    const value = e.target.value;
-                    // Move to the next input if a digit is entered and it's not the last one
-                    if (value.length === 1 && index < codeInputs.length - 1) {
-                        codeInputs[index + 1].focus();
-                    }
-                });
+            // Function to display and hide the animated message box
+            const displayMessage = (message, isError = true) => {
+                messageText.textContent = message;
+                animatedMessageBox.classList.remove('hidden', 'bg-red-500', 'bg-green-500');
+                
+                if (isError) {
+                    animatedMessageBox.classList.add('bg-red-500');
+                } else {
+                    animatedMessageBox.classList.add('bg-green-500');
+                }
 
-                // Handle backspace to move to the previous input
-                input.addEventListener('keydown', (e) => {
-                    // Check if the key is 'Backspace' and the current input is empty
-                    if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
-                        codeInputs[index - 1].focus();
-                    }
-                });
-            });
+                // Show the message box with a transition
+                setTimeout(() => {
+                    animatedMessageBox.classList.add('visible');
+                }, 10);
+
+                // Hide the message box after 5 seconds
+                setTimeout(() => {
+                    animatedMessageBox.classList.remove('visible');
+                    // Add the 'hidden' class after the transition is complete
+                    setTimeout(() => {
+                        animatedMessageBox.classList.add('hidden');
+                    }, 500); // Matches the CSS transition duration
+                }, 5000); // 5 seconds
+            };
 
             // --- Form Submission and Validation ---
-            verifyCodeForm.addEventListener('submit', (e) => {
+            forgotPasswordForm.addEventListener('submit', (e) => {
                 e.preventDefault();
 
-                // Clear previous errors
-                codeError.classList.add('hidden');
-
-                let fullCode = '';
-                let isValid = true;
+                const userEmail = userEmailInput.value.trim();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 
-                // Concatenate the values from all inputs and validate
-                codeInputs.forEach(input => {
-                    const value = input.value.trim();
-                    if (value.length !== 1 || !/^\d$/.test(value)) {
-                        isValid = false;
-                    }
-                    fullCode += value;
-                });
-
-                if (isValid && fullCode.length === 6) {
+                if (emailRegex.test(userEmail)) {
                     // Simulate a loading state
-                    verifyButton.disabled = true;
-                    verifyButton.innerHTML = `<div class="spinner"></div><span class="ml-2">Verifying...</span>`;
+                    sendButton.disabled = true;
+                    sendButton.innerHTML = `<div class="spinner"></div><span class="ml-2">Sending...</span>`;
 
-                    // Simulate an async operation (e.g., API call)
+                    // Simulate a successful async operation (e.g., API call)
                     setTimeout(() => {
-                        // Reset the button and form after a successful "login"
-                        verifyButton.disabled = false;
-                        verifyButton.innerHTML = `Verify Code`;
-                        
-                        // In a real app, this would redirect to the password reset page
-                        // For now, we'll just show a success message
-                        const message = document.createElement('p');
-                        message.textContent = 'Code verified! You can now reset your password.';
-                        message.classList.add('text-green-400', 'text-sm', 'mt-4');
-                        verifyCodeForm.parentNode.insertBefore(message, verifyCodeForm.nextSibling);
-                        
-                        // Hide the form on success
-                        verifyCodeForm.classList.add('hidden');
+                        // Display a success message
+                        displayMessage('Verification code sent successfully.', false);
+
+                        // Redirect to the enter code page after a short delay
+                        setTimeout(() => {
+                            window.location.href = `enter_code.html?email=${encodeURIComponent(userEmail)}`;
+                        }, 2000);
                     }, 2000);
                 } else {
-                    codeError.classList.remove('hidden');
+                    displayMessage('Please enter a valid email address.');
                 }
             });
         });
     </script>
 </body>
-
 </html>

@@ -6,7 +6,7 @@ function onScanSuccess(decodedText, decodedResult) {
   try {
     scannedData = JSON.parse(decodedText); // try to parse JSON
   } catch (e) {
-    alert("❌ Invalid QR Code!");
+    alert("Invalid QR Code!");
     return; // stop here
   }
 
@@ -14,7 +14,7 @@ function onScanSuccess(decodedText, decodedResult) {
   const validEmp = employees.find(emp => emp.employee_id == scannedData.employee_id);
 
   if (!validEmp) {
-    alert("❌ QR Code not registered for any employee!");
+    alert("QR Code not registered for any employee!");
     return;
   }
 
@@ -35,7 +35,7 @@ function onScanSuccess(decodedText, decodedResult) {
     document.getElementById("result").appendChild(img);
 
     // Send data to backend
-    fetch("attendance.php", {
+    fetch("views/attendance.php", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

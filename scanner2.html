@@ -1,116 +1,948 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ADFC Employee Attendance</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/scanner.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADFC Employee Attendance</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Inter, sans-serif;
+            background-color: #0631b5e0;
+            min-height: 100vh;
+            color: white;
+        }
+        
+        /* Layout components */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+            padding: 16px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-top: 24px;
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+        
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            background-color: #d9d9d9;
+            border-radius: 24px;
+            box-shadow: 3px 5px 10px #0000003f;
+        }
+        
+        .logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+        }
+        
+        .main-title {
+            font-size: 24px;
+            font-family: Inter;
+            font-weight: 700;
+            line-height: 29px;
+            text-align: left;
+            color: #ffffff;
+            text-shadow: 5px 8px 4px #0000003f;
+            margin-right: 187px;
+        }
+        
+        .content-row {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+            margin-right: 20px;
+            margin-bottom: 22px;
+            margin-left: 14px;
+        }
+        
+        .guide-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            align-self: flex-start;
+            width: 100%;
+            margin-top: 17px;
+        }
+        
+        .guide-header {
+            width: 100%;
+            font-size: 14px;
+            font-family: Inter;
+            font-weight: 700;
+            line-height: 18px;
+            text-align: left;
+            color: #ffffff;
+            border-top: 1px solid #808080;
+            border-left: 1px solid #808080;
+            border-right: 1px solid #808080;
+            border-radius: 10px 10px 0px 0px;
+            padding: 6px 20px;
+            background-color: #d79a38;
+        }
+        
+        .guide-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            border-left: 1px solid #ffffff;
+            border-bottom: 1px solid #ffffff;
+            border-right: 1px solid #ffffff;
+            border-radius: 0px 0px 10px 10px;
+            background-color: #00000038;
+            padding: 12px;
+        }
+        
+        .guide-text {
+            font-size: 12px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 14px;
+            text-align: left;
+            color: #ffffff;
+            width: 94%;
+            margin-bottom: 4px;
+        }
+        
+        .advisory-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+            margin-top: 12px;
+        }
+        
+        .advisory-header {
+            width: 100%;
+            font-size: 14px;
+            font-family: Inter;
+            font-weight: 700;
+            line-height: 18px;
+            text-align: left;
+            color: #ffffff;
+            border-radius: 10px 10px 0px 0px;
+            padding: 6px 20px;
+            background-color: #d11717;
+        }
+        
+        .advisory-content {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-end;
+            width: 100%;
+            box-shadow: 5px 10px 10px #0000003f;
+            border-left: 1px solid #ffffff;
+            border-bottom: 1px solid #ffffff;
+            border-right: 1px solid #ffffff;
+            border-radius: 0px 0px 10px 10px;
+            padding: 13px;
+            margin-top: -1px;
+            background-color: #00000038;
+        }
+        
+        .advisory-text {
+            font-size: 12px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 14px;
+            text-align: left;
+            color: #ffffff;
+            width: 100%;
+            margin-top: 7px;
+        }
+        
+        .scanner-section {
+            display: flex;
+            flex-direction: column;
+            gap: 34px;
+            justify-content: flex-start;
+            align-items: flex-end;
+            width: 100%;
+        }
+        
+        .scanner-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .scanner-header {
+            width: 100%;
+            font-size: 14px;
+            font-family: Inter;
+            font-weight: 700;
+            line-height: 18px;
+            text-align: left;
+            color: #ffffff;
+            box-shadow: 5px 10px 10px #0000003f;
+            border-radius: 14px 14px 0px 0px;
+            padding: 10px 20px;
+            background-color: #1742ec;
+        }
+        
+        .scanner-display {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            height: 407px;
+        }
+        
+        .scanner-background {
+            width: 100%;
+            border-radius: 0px 0px 14px 14px;
+            height: 407px;
+            object-fit: cover;
+        }
+        
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 29px;
+            justify-content: flex-start;
+            align-items: center;
+            border-radius: 0px 0px 14px 14px;
+            padding: 28px 23px;
+            background-color: #d9d9d9d8;
+        }
+        
+        .qr-scanner-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+            background-image: url('../assets/images/img_scanner.svg');
+            background-size: cover;
+            background-position: center;
+            padding: 12px;
+            margin-right: 12px;
+            margin-left: 12px;
+        }
+        
+        .qr-code-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            justify-content: flex-start;
+            align-items: center;
+            width: auto;
+            margin-top: 19px;
+        }
+        
+        .qr-code {
+            width: 150px;
+            height: 150px;
+        }
+        
+        .stop-button {
+            font-size: 12px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 15px;
+            text-align: left;
+            color: #000000;
+            padding: 2px 11px;
+            background-color: #d9d9d9;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .scan-instruction {
+            font-size: 14px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 18px;
+            text-align: left;
+            color: #000000;
+            width: auto;
+            margin-bottom: 44px;
+        }
+        
+        .copyright {
+            font-size: 9px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 11px;
+            text-align: left;
+            color: #ffffff;
+            width: auto;
+            margin-right: 24px;
+        }
+        
+        .recent-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-end;
+            width: 100%;
+        }
+        
+        .recent-header {
+            width: 100%;
+            font-size: 14px;
+            font-family: Inter;
+            font-weight: 700;
+            line-height: 18px;
+            text-align: left;
+            color: #ffffff;
+            border-left: 1px solid #ffffff;
+            border-bottom: 1px solid #ffffff;
+            border-right: 1px solid #ffffff;
+            border-radius: 10px 10px 0px 0px;
+            padding: 6px 20px;
+            background-color: #00c507;
+        }
+        
+        .recent-content {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            width: 100%;
+            box-shadow: 5px 10px 10px #0000003f;
+            border-left: 1px solid #ffffff;
+            border-bottom: 1px solid #ffffff;
+            border-right: 1px solid #ffffff;
+            border-radius: 0px 0px 10px 10px;
+            padding: 11px 8px;
+            background-color: #0000004c;
+        }
+        
+        .attendance-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 192px;
+        }
+        
+        .attendance-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-right: 6px;
+            margin-left: 10px;
+        }
+        
+        .attendance-name {
+            font-size: 12px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 15px;
+            text-align: left;
+            color: #ffffff;
+            width: auto;
+        }
+        
+        .attendance-role {
+            font-size: 12px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 15px;
+            text-align: left;
+            color: #ffffff;
+            width: auto;
+            margin-left: 47px;
+        }
+        
+        .attendance-status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .attendance-status {
+            font-size: 12px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 15px;
+            text-align: left;
+            color: #ffffff;
+            width: auto;
+            margin-left: 40px;
+        }
+        
+        .attendance-time {
+            font-size: 12px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 15px;
+            text-align: left;
+            color: #ffffff;
+            width: auto;
+        }
+        
+        .attendance-row-2 {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-right: 5px;
+            margin-left: 8px;
+        }
+        
+        .attendance-role-2 {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .attendance-status-row-2 {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            width: auto;
+        }
+        
+        .attendance-time-2 {
+            font-size: 12px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 15px;
+            text-align: left;
+            color: #ffffff;
+            width: auto;
+            margin-left: 29px;
+        }
+        
+        .separator-line {
+            width: 100%;
+            height: 1px;
+            background-color: #ffffff;
+        }
+        
+        .mistake-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            border-radius: 10px 10px 0px 0px;
+            padding: 5px;
+            margin-top: 23px;
+            background-color: #db15ce;
+        }
+        
+        .mistake-text {
+            font-size: 14px;
+            font-family: Inter;
+            font-weight: 700;
+            line-height: 18px;
+            text-align: left;
+            color: #ffffff;
+            align-self: flex-end;
+            width: auto;
+        }
+        
+        .contact-section {
+            font-size: 12px;
+            font-family: Inter;
+            font-weight: 400;
+            line-height: 15px;
+            text-align: left;
+            color: #ffffff;
+            width: auto;
+            box-shadow: 5px 10px 10px #0000003f;
+            border-left: 1px solid #ffffff;
+            border-bottom: 1px solid #ffffff;
+            border-right: 1px solid #ffffff;
+            border-radius: 0px 0px 10px 10px;
+            padding: 5px 20px 13px 16px;
+            background-color: #00000038;
+        }
+        
+        .return-button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 36%;
+            border: 2px solid #ffffff;
+            border-radius: 10px;
+            padding: 8px 6px;
+            margin-top: 24px;
+            background-color: #008080;
+            cursor: pointer;
+        }
+        
+        .return-icon {
+            width: 29px;
+            height: 11px;
+        }
+        
+        .return-text {
+            font-size: 14px;
+            font-family: Inter;
+            font-weight: 700;
+            line-height: 18px;
+            text-align: left;
+            color: #ffffff;
+            width: auto;
+            margin-left: 6px;
+        }
+        
+        /* Interactive states */
+        .stop-button:hover {
+            background-color: #c0c0c0;
+            transform: scale(1.05);
+        }
+        
+        .return-button:hover {
+            background-color: #006666;
+            transform: scale(1.05);
+        }
+        
+        .stop-button:active {
+            transform: scale(0.95);
+        }
+        
+        .return-button:active {
+            transform: scale(0.95);
+        }
+        
+        .stop-button, .return-button {
+            transition: all 0.3s ease-in-out;
+        }
+        
+        /* Responsive media queries */
+        @media (min-width: 640px) {
+            .main-container {
+                gap: 30px;
+                padding: 20px;
+            }
+            
+            .logo-container {
+                width: 56px;
+                height: 56px;
+                border-radius: 28px;
+            }
+            
+            .logo {
+                width: 56px;
+                height: 56px;
+                border-radius: 28px;
+            }
+            
+            .main-title {
+                font-size: 32px;
+                line-height: 39px;
+                margin-right: 200px;
+            }
+            
+            .content-row {
+                gap: 28px;
+            }
+            
+            .guide-header, .advisory-header, .scanner-header, .recent-header {
+                font-size: 16px;
+                line-height: 20px;
+                padding: 8px 24px;
+            }
+            
+            .guide-text, .advisory-text {
+                font-size: 14px;
+                line-height: 17px;
+            }
+            
+            .scanner-display {
+                height: 450px;
+            }
+            
+            .scanner-background {
+                height: 450px;
+            }
+            
+            .qr-code {
+                width: 180px;
+                height: 180px;
+            }
+            
+            .stop-button {
+                font-size: 14px;
+                line-height: 17px;
+                padding: 3px 13px;
+            }
+            
+            .scan-instruction {
+                font-size: 16px;
+                line-height: 20px;
+            }
+            
+            .attendance-name, .attendance-role, .attendance-status, .attendance-time, .attendance-time-2 {
+                font-size: 14px;
+                line-height: 17px;
+            }
+            
+            .mistake-text {
+                font-size: 16px;
+                line-height: 20px;
+            }
+            
+            .contact-section {
+                font-size: 14px;
+                line-height: 17px;
+            }
+            
+            .return-text {
+                font-size: 16px;
+                line-height: 20px;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .content-row {
+                flex-direction: row;
+                gap: 32px;
+            }
+            
+            .guide-section {
+                width: 22%;
+            }
+            
+            .scanner-section {
+                width: 100%;
+            }
+            
+            .recent-section {
+                width: 100%;
+            }
+            
+            .main-title {
+                font-size: 38px;
+                line-height: 46px;
+            }
+            
+            .logo-container {
+                width: 64px;
+                height: 64px;
+                border-radius: 32px;
+            }
+            
+            .logo {
+                width: 64px;
+                height: 64px;
+                border-radius: 32px;
+            }
+            
+            .scanner-display {
+                height: 500px;
+            }
+            
+            .scanner-background {
+                height: 500px;
+            }
+            
+            .qr-code {
+                width: 200px;
+                height: 200px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .main-container {
+                gap: 42px;
+                padding: 24px;
+            }
+            
+            .header {
+                margin-top: 40px;
+                margin-left: 34px;
+                margin-right: 34px;
+            }
+            
+            .content-row {
+                gap: 40px;
+                margin-right: 34px;
+                margin-bottom: 36px;
+                margin-left: 24px;
+            }
+            
+            .logo-container {
+                width: 80px;
+                height: 80px;
+                border-radius: 40px;
+            }
+            
+            .logo {
+                width: 80px;
+                height: 80px;
+                border-radius: 40px;
+            }
+            
+            .main-title {
+                font-size: 48px;
+                line-height: 58px;
+                margin-right: 312px;
+            }
+            
+            .guide-section {
+                margin-top: 28px;
+            }
+            
+            .advisory-section {
+                margin-top: 20px;
+            }
+            
+            .scanner-section {
+                gap: 56px;
+            }
+            
+            .guide-header, .advisory-header, .recent-header {
+                font-size: 24px;
+                line-height: 30px;
+                padding: 10px 34px;
+            }
+            
+            .scanner-header {
+                font-size: 24px;
+                line-height: 30px;
+                padding: 16px 34px;
+            }
+            
+            .guide-text, .advisory-text {
+                font-size: 20px;
+                line-height: 24px;
+            }
+            
+            .scanner-display {
+                height: 678px;
+            }
+            
+            .scanner-background {
+                height: 678px;
+            }
+            
+            .scanner-overlay {
+                gap: 48px;
+                padding: 46px 38px;
+            }
+            
+            .qr-scanner-area {
+                padding: 20px;
+                margin-right: 20px;
+                margin-left: 20px;
+            }
+            
+            .qr-code-container {
+                gap: 66px;
+                margin-top: 32px;
+            }
+            
+            .qr-code {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .stop-button {
+                font-size: 20px;
+                line-height: 25px;
+                padding: 4px 18px;
+            }
+            
+            .scan-instruction {
+                font-size: 24px;
+                line-height: 30px;
+                margin-bottom: 74px;
+            }
+            
+            .copyright {
+                font-size: 15px;
+                line-height: 19px;
+                margin-right: 40px;
+            }
+            
+            .recent-content {
+                padding: 18px 14px;
+            }
+            
+            .attendance-list {
+                gap: 10px;
+                margin-bottom: 320px;
+            }
+            
+            .attendance-row {
+                margin-right: 10px;
+                margin-left: 16px;
+            }
+            
+            .attendance-name, .attendance-role, .attendance-status, .attendance-time, .attendance-time-2 {
+                font-size: 20px;
+                line-height: 25px;
+            }
+            
+            .attendance-role {
+                margin-left: 78px;
+            }
+            
+            .attendance-status {
+                margin-left: 66px;
+            }
+            
+            .attendance-row-2 {
+                margin-right: 8px;
+                margin-left: 14px;
+            }
+            
+            .attendance-time-2 {
+                margin-left: 48px;
+            }
+            
+            .mistake-section {
+                padding: 8px;
+                margin-top: 38px;
+            }
+            
+            .mistake-text {
+                font-size: 24px;
+                line-height: 30px;
+            }
+            
+            .contact-section {
+                font-size: 20px;
+                line-height: 25px;
+                padding: 8px 34px 22px 26px;
+            }
+            
+            .return-button {
+                padding: 14px 10px;
+                margin-top: 40px;
+            }
+            
+            .return-icon {
+                width: 48px;
+                height: 18px;
+            }
+            
+            .return-text {
+                font-size: 24px;
+                line-height: 30px;
+                margin-left: 10px;
+            }
+        }
+    </style>
+<script type="module" src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2Falexander7935back.builtwithrocket.new&_be=https%3A%2F%2Fapplication.rocket.new&_v=0.1.8"></script>
 </head>
 <body>
-
-  <div class="header-logo" title="ADFC Logo">
-    <img alt="ADFC logo inside circle" src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png" />
-  </div>
-  <header>ADFC EMPLOYEE ATTENDANCE</header>
-
-  <main class="container" role="main">
-    <!-- Left Guide Boxes -->
-    <section class="left-panel" aria-label="Guide and advice instructions">
-      <article class="box guide-box" tabindex="0" aria-labelledby="guide-title" role="region">
-        <h2 id="guide-title" class="font-bold text-lg mb-2 text-white">Guide</h2>
-        <ul>
-          <li>Hold your QR code steady in front of the scanner/camera.</li>
-          <li>When the light turns green, your attendance has been successfully logged.</li>
-          <li>Look for your name on the screen to confirm.</li>
-        </ul>
-      </article>
-      <article class="box advice-box" tabindex="0" role="region" aria-label="Important advice">
-        <div>Please be advised</div>
-        <p class="advice-text">
-          Don&#39;t hide your face upon scanning. A snapshot is captured during the QR scanning process to verify identity. This is to ensure accountability and prevent buddy punching.
-        </p>
-      </article>
-    </section>
-
-    <!-- Center QR Scanner -->
-    <section class="center-panel" aria-label="QR code scanner">
-      <div class="center-header">QR Scanner</div>
-      <div class="qr-scanner-area">
-        <div class="qr-placeholder" aria-live="polite" aria-label="QR Code scanner placeholder">
-          <img src="" alt="QR code scanner placeholder to be replaced" />
-          <div class="frame-corners" aria-hidden="true"></div>
+    <div class="main-container">
+        <header class="header">
+            <div class="logo-container">
+                <img src="../assets/images/img_rectangle_16.png" alt="ADFC Logo" class="logo" />
+            </div>
+            <h1 class="main-title">ADFC EMPLOYEE ATTENDANCE</h1>
+        </header>
+        
+        <div class="content-row">
+            <div class="guide-section">
+                <button class="guide-header">Guide</button>
+                <div class="guide-content">
+                    <p class="guide-text">Hold your QR code steady in front of the scanner/camera.<br /><br />When the light turns green, your attendance has been successfully logged.<br /><br />Look for your name on the screen to confirm.</p>
+                </div>
+                
+                <div class="advisory-section">
+                    <div class="advisory-header">Please be advised</div>
+                    <div class="advisory-content">
+                        <p class="advisory-text">Don't hide your face upon scanning. A snapshot is captured during the QR scanning process to verify identity. This is to ensure accountability and prevent buddy punching.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="scanner-section">
+                <div class="scanner-container">
+                    <button class="scanner-header">QR Scanner</button>
+                    <div class="scanner-display">
+                        <img src="../assets/images/img_image_students.png" alt="Scanner Background" class="scanner-background" />
+                        <div class="scanner-overlay">
+                            <div class="qr-scanner-area">
+                                <div class="qr-code-container">
+                                    <img src="../assets/images/img_image_1.png" alt="QR Code" class="qr-code" />
+                                    <button class="stop-button">Stop Scanning</button>
+                                </div>
+                            </div>
+                            <p class="scan-instruction">Scan your QR code to log Attendance</p>
+                        </div>
+                    </div>
+                </div>
+                <p class="copyright">©ADFC 2025 All rights reserved.</p>
+            </div>
+            
+            <div class="recent-section">
+                <button class="recent-header">Recent</button>
+                <div class="recent-content">
+                    <div class="attendance-list">
+                        <div class="attendance-row">
+                            <span class="attendance-name">Rivas</span>
+                            <span class="attendance-role">Instructor</span>
+                            <div class="attendance-status-row">
+                                <span class="attendance-status">In</span>
+                                <span class="attendance-time">7:00 am</span>
+                            </div>
+                        </div>
+                        
+                        <div class="separator-line"></div>
+                        
+                        <div class="attendance-row-2">
+                            <span class="attendance-name">Rivas</span>
+                            <div class="attendance-role-2">
+                                <span class="attendance-role">Instructor</span>
+                                <div class="attendance-status-row-2">
+                                    <span class="attendance-status">Out</span>
+                                    <span class="attendance-time-2">7:00 pm</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="separator-line"></div>
+                    </div>
+                </div>
+                
+                <div class="mistake-section">
+                    <span class="mistake-text">Scanned by mistake?</span>
+                </div>
+                <div class="contact-section">Contact HR/Admin</div>
+                
+                <div class="return-button">
+                    <img src="../assets/images/img_image_2.png" alt="Return Icon" class="return-icon" />
+                    <span class="return-text">Return</span>
+                </div>
+            </div>
         </div>
-        <button class="btn-scan" id="btn-scan" type="button" aria-pressed="false" aria-label="Stop QR Scanning">Stop Scanning</button>
-        <div class="scan-label">Scan your QR code to log Attendance</div>
-      </div>
-    </section>
-
-    <!-- Right side Recent and Mistaken Scanned -->
-    <section class="right-panel" aria-label="Recent attendance and contact if scanned by mistake">
-      <article class="recent-box" role="region" aria-labelledby="recent-title" tabindex="0">
-        <h2 id="recent-title" class="recent-header">Recent</h2>
-        <table class="recent-table" aria-describedby="recent-desc" role="table" summary="Recent attendance log">
-          <thead>
-            <tr>
-              <th scope="col">Rivas</th>
-              <th scope="col">Instructor</th>
-              <th scope="col">Status</th>
-              <th scope="col">Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Rivas</td>
-              <td>Instructor</td>
-              <td>In</td>
-              <td>7:00 am</td>
-            </tr>
-            <tr>
-              <td>Rivas</td>
-              <td>Instructor</td>
-              <td>Out</td>
-              <td>7:00 pm</td>
-            </tr>
-          </tbody>
-        </table>
-      </article>
-
-      <article class="mistake-box" role="region" tabindex="0" aria-label="If scanned by mistake contact HR or Admin">
-        <div>
-          Scanned by mistake? &nbsp;
-          <a href="mailto:hr.admin@adfc.org" aria-label="Contact HR or Admin">Contact HR/Admin</a>
-        </div>
-        <button class="return-btn" aria-label="Return to previous page" type="button" onclick="handleReturn()">
-          <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-          Return
-        </button>
-      </article>
-    </section>
-  </main>
-
-  <footer role="contentinfo">©ADFC 2025 All rights reserved.</footer>
-
-  <script>
-    // Placeholder script for the stop scanning button and return button.
-    const btnScan = document.getElementById('btn-scan');
-
-    btnScan.addEventListener('click', () => {
-      if (btnScan.textContent.trim() === 'Stop Scanning') {
-        btnScan.textContent = 'Start Scanning';
-        btnScan.setAttribute('aria-pressed', 'true');
-      } else {
-        btnScan.textContent = 'Stop Scanning';
-        btnScan.setAttribute('aria-pressed', 'false');
-      }
-    });
-
-    function handleReturn() {
-      // For demonstration, simply alert
-      alert('Return button clicked. Implement navigation as needed.');
-    }
-  </script>
+    </div>
 </body>
 </html>

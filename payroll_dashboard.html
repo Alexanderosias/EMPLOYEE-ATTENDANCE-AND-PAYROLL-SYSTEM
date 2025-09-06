@@ -84,9 +84,30 @@
     .green { background: linear-gradient(135deg, #2e7d32, #66bb6a); }
     .yellow { background: linear-gradient(135deg, #f9a825, #fbc02d); }
     .purple { background: linear-gradient(135deg, #6a1b9a, #ab47bc); }
+
+    #successMessageBox {
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(-150%);
+      transition: transform 0.5s ease-in-out;
+      z-index: 1000;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      background-color: #4CAF50; /* Green color for success */
+      color: white;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    #successMessageBox.visible {
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 <body>
+  <div id="successMessageBox" style="display: none;">
+    Login successful!
+  </div>
   <!-- Sidebar -->
   <div class="sidebar">
     <div>
@@ -100,7 +121,7 @@
         <a href="#">⚙️ Settings</a>
       </nav>
     </div>
-    <a href="#" class="logout">🚪 Logout</a>
+    <a href="login.html" class="logout">🚪 Logout</a>
   </div>
 
   <!-- Main -->
@@ -125,5 +146,39 @@
       </div>
     </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const messageBox = document.getElementById('successMessageBox');
+
+      // Check for the flag in session storage
+      const loginStatus = sessionStorage.getItem('loginStatus');
+
+      if (loginStatus === 'success') {
+        // Remove the flag immediately to prevent it from showing on refresh
+        sessionStorage.removeItem('loginStatus');
+
+        // Show the message box
+        messageBox.style.display = 'block';
+
+        // Wait a moment for display to register before starting transition
+        setTimeout(() => {
+          messageBox.classList.add('visible');
+        }, 10);
+
+        // Hide the message after 5 seconds
+        setTimeout(() => {
+          messageBox.classList.remove('visible');
+        }, 5000); 
+
+        // Hide element completely after transition is done
+        messageBox.addEventListener('transitionend', () => {
+          if (!messageBox.classList.contains('visible')) {
+            messageBox.style.display = 'none';
+          }
+        }, { once: true });
+      }
+    });
+  </script>
 </body>
 </html>

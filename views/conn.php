@@ -1,7 +1,6 @@
 <?php
 
 // Define database connection constants
-// IMPORTANT: Replace these with your actual database credentials
 define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', '');

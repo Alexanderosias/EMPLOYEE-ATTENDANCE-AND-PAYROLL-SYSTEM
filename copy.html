@@ -72,6 +72,7 @@
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
+
     #animatedMessageBox.visible {
       transform: translateX(-50%) translateY(0);
     }
@@ -106,8 +107,7 @@
 
       <div class="mt-8">
         <button type="submit" id="loginButton" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-rose-400 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-opacity-50 flex items-center justify-center">
-          <span id="buttonText">Sign In</span>
-          <span id="buttonSpinner" class="hidden spinner ml-2"></span>
+          Sign In
         </button>
       </div>
 
@@ -126,14 +126,19 @@
       const passwordToggle = document.getElementById('passwordToggle');
       const animatedMessageBox = document.getElementById('animatedMessageBox');
       const messageText = document.getElementById('messageText');
-      const buttonText = document.getElementById('buttonText');
-      const buttonSpinner = document.getElementById('buttonSpinner');
 
-      const showMessage = (message, isError = true) => {
+      passwordToggle.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        const eyeOpen = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.575 3.01 9.963 7.173a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
+        const eyeClosed = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.988 5.623a.9 4 4 010 .769 9.877 9.877 0 000 6.046c.381 2.385 1.503 4.266 3.048 5.485C9.37 19.262 10.9 19.5 12.067 19.5c1.167 0 2.697-.238 4.23-.782l.968-.34c.73-.243 1.408-.544 2.046-.902a1.012 1.012 0 00-.063-.035c-.158-.09-.313-.19-.462-.296l-1.07-1.1c-.26-.26-.54-.488-.83-.687a1.012 1.012 0 010-.639C16.64 10.51 16.64 12.49 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
+        passwordToggle.innerHTML = type === 'password' ? eyeOpen : eyeClosed;
+      });
+
+      const displayMessage = (message) => {
         messageText.textContent = message;
         animatedMessageBox.classList.remove('hidden');
-        animatedMessageBox.classList.toggle('bg-red-500', isError);
-        animatedMessageBox.classList.toggle('bg-green-500', !isError);
+        animatedMessageBox.classList.add('bg-red-500');
 
         setTimeout(() => {
           animatedMessageBox.classList.add('visible');
@@ -149,64 +154,27 @@
         }, 5000);
       };
 
-      const showLoading = (isLoading) => {
-        loginButton.disabled = isLoading;
-        buttonText.textContent = isLoading ? 'Signing In...' : 'Sign In';
-        buttonSpinner.classList.toggle('hidden', !isLoading);
-      };
-      
-      passwordToggle.addEventListener('click', () => {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        
-        // Corrected SVG for the eye icon toggle
-        const eyeOpen = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.575 3.01 9.963 7.173a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
-        const eyeClosed = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.988 5.623a1.012 1.012 0 01-.063-.035C2.56 5.861 1.5 7.575 1.5 9.75c0 1.25.46 2.455 1.284 3.407a11.166 11.166 0 0017.432 0C22.04 12.205 22.5 11 22.5 9.75c0-2.175-1.06-3.889-2.425-4.502a1.012 1.012 0 01-.063-.035M12 4.5v15" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
-        passwordToggle.innerHTML = type === 'password' ? eyeOpen : eyeClosed;
-      });
-
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        loginButton.disabled = true;
 
-        const email = emailInput.value.trim();
-        const password = passwordInput.value.trim();
-
-        if (!email || !password) {
-          showMessage('Please enter both email and password.');
-          return;
-        }
-
-        showLoading(true);
+        const formData = new FormData(loginForm);
 
         try {
           const url = `views/login_handler.php`;
-          const formData = new FormData(loginForm);
-
-          const response = await fetch(url, {
-            method: 'POST',
-            body: formData
-          });
-
-          if (!response.ok) {
-            // Throw an error with the HTTP status text for better debugging
-            throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
-          }
-
+          const response = await fetch(url, { method: 'POST', body: formData });
           const result = await response.json();
 
-          if (result.status === 'success') {
-            sessionStorage.setItem('loginStatus', 'success');
-            window.location.href = result.redirect;
+          if (result.status !== 'success') {
+            displayMessage(result.message);
           } else {
-            showMessage(result.message);
+            window.location.href = 'payroll_dashboard.html?status=success';
           }
-          
         } catch (error) {
-          // Display the specific error message to the user
-          showMessage(`Login failed: ${error.message}`);
+          displayMessage('An error occurred. Please try again.');
           console.error('Fetch error:', error);
         } finally {
-          showLoading(false);
+          loginButton.disabled = false;
         }
       });
     });

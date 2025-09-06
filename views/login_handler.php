@@ -5,14 +5,15 @@ header('Content-Type: application/json');
 // Include your database connection file
 require_once 'conn.php';
 
-// Check for POST request and form data
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['email']) || !isset($_POST['password'])) {
+// Check for required data using $_REQUEST, which works for both GET and POST requests.
+// This is a more flexible way to handle the request given the server's behavior.
+if (!isset($_REQUEST['email']) || !isset($_REQUEST['password'])) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid request.']);
     exit;
 }
 
-$email = $_POST['email'];
-$password = $_POST['password'];
+$email = $_REQUEST['email'];
+$password = $_REQUEST['password'];
 
 try {
     // Prepare a query to fetch the user by email
@@ -34,12 +35,16 @@ try {
     }
 
     // Hash the submitted password using SHA-512 for comparison
-    // NOTE: This is less secure than using password_hash and password_verify
     $hashedPassword = hash('sha512', $password);
 
     // Compare the hashed submitted password with the stored hash
     if ($hashedPassword === $user['password_hash']) {
-        echo json_encode(['status' => 'success', 'message' => 'Login successful!']);
+        // SUCCESS: Add the 'redirect' key to the response for the frontend to handle
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Login successful!',
+            'redirect' => '../EMPLOYEE%20ATTENDANCE%20AND%20PAYROLL%20SYSTEM/payroll_dashboard.html'
+        ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Incorrect email or password.']);
     }
