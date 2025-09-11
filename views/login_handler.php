@@ -43,7 +43,7 @@ try {
         echo json_encode([
             'status' => 'success',
             'message' => 'Login successful!',
-            'redirect' => '../EMPLOYEE%20ATTENDANCE%20AND%20PAYROLL%20SYSTEM/payroll_dashboard.html'
+            'redirect' => '../EMPLOYEE%20ATTENDANCE%20AND%20PAYROLL%20SYSTEM/dashboard.html'
         ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Incorrect email or password.']);
