@@ -2,17 +2,37 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EAAPS Admin Dashboard</title>
-    <link rel="stylesheet" href="css/dashboard.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payroll Page</title>
+    <link rel="stylesheet" href="css/dashboard.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- Include Inter font and Tailwind CSS for payroll dashboard -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        main {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .collapse-panel-header {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tax-link {
+            font-size: 0.75rem;
+            color: #4b5563;
+            text-decoration: underline;
+            margin-left: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+        }
+    </style>
 </head>
 
 <body>
-    <div id="successMessageBox" style="display: none;">
-        Login successful!
-    </div>
     <div class="dashboard-container">
         <aside class="sidebar">
             <a class="sidebar-header" href="#">
@@ -37,6 +57,12 @@
                         <a href="schedule_page.html">
                             <img src="icons/calendar-deadline-date.png" alt="Schedules" class="icon">
                             Schedules
+                        </a>
+                    </li>
+                    <li>
+                        <a href="department_position.html">
+                            <img src="icons/networking.png" alt="Schedules" class="icon">
+                            Departments and Positions
                         </a>
                     </li>
                     <li>
@@ -75,13 +101,197 @@
         <main class="main-content">
             <header class="dashboard-header">
                 <h2>PAYROLL</h2>
-                <hr>
-                <p id="current-datetime"></p>
+                <hr />
+                <p style="padding-top: 10px;" id="current-datetime"></p>
             </header>
+
+            <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-blue-100 p-6 rounded-lg shadow-sm">
+                        <p class="text-sm font-medium text-gray-600">Total Gross Pay</p>
+                        <p class="text-3xl font-bold text-blue-800 mt-1" id="total-gross-pay">₱0.00</p>
+                    </div>
+                    <div class="bg-red-100 p-6 rounded-lg shadow-sm">
+                        <p class="text-sm font-medium text-gray-600">Total Taxes & Deductions</p>
+                        <p class="text-3xl font-bold text-red-800 mt-1" id="total-deductions">₱0.00</p>
+                    </div>
+                    <div class="bg-green-100 p-6 rounded-lg shadow-sm">
+                        <p class="text-sm font-medium text-gray-600">Total Net Pay</p>
+                        <p class="text-3xl font-bold text-green-800 mt-1" id="total-net-pay">₱0.00</p>
+                    </div>
+                </div>
+                
+            <!-- Inserted Payroll Dashboard Content Starts Here -->
+            <!-- Main Container -->
+            <div class="max-w-6xl mx-auto bg-white p-6 rounded-xl shadow-lg">
+
+                <!-- Header and Pay Period Selector -->
+                <div class="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-gray-200 mb-6">
+                    <div class="mb-4 sm:mb-0">
+                        <h1 class="text-3xl font-bold text-gray-800">Payroll Dashboard</h1>
+                        <!-- Recent Payroll Info -->
+                        <div id="recent-payroll-info"
+                            class="mb-2 p-2 bg-yellow-100 border border-yellow-300 rounded-md text-yellow-800 text-sm font-medium hidden">
+                            Last payroll processed on: <span id="last-payroll-date">--</span>
+                        </div>
+                        <p class="text-gray-500 mt-1" id="pay-period-display"></p>
+                    </div>
+                    
+                </div>
+
+                <!-- Tax Rate Settings Panel -->
+                <div class="mb-8">
+                    <div id="tax-settings-header"
+                        class="collapse-panel-header flex items-center justify-between bg-gray-200 px-6 py-3 rounded-t-xl hover:bg-gray-300 transition-colors duration-200">
+                        <h2 class="text-xl font-bold text-gray-800">Tax Rate Settings</h2>
+                        <span id="toggle-icon" class="text-gray-600 transform transition-transform duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </span>
+                    </div>
+                    <div id="tax-settings-content" class="bg-gray-50 p-6 rounded-b-xl border border-t-0 border-gray-200"
+                        style="display: none;">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="font-semibold text-gray-700 mb-2 flex items-center">
+                                    PhilHealth
+                                    <a href="https://www.philhealth.gov.ph/" target="_blank" class="tax-link">
+                                        Official Site
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                </h3>
+                                <div class="flex flex-col space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">Rate</label>
+                                    <input type="number" step="0.001" id="philhealth-rate"
+                                        class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm" />
+                                    <label class="block text-sm font-medium text-gray-700">Salary Floor</label>
+                                    <input type="number" id="philhealth-floor"
+                                        class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm" />
+                                    <label class="block text-sm font-medium text-gray-700">Salary Ceiling</label>
+                                    <input type="number" id="philhealth-ceiling"
+                                        class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm" />
+                                    <label class="block text-sm font-medium text-gray-700">Fixed Amount (Floor)</label>
+                                    <input type="number" id="philhealth-fixed-floor"
+                                        class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm" />
+                                    <label class="block text-sm font-medium text-gray-700">Fixed Amount
+                                        (Ceiling)</label>
+                                    <input type="number" id="philhealth-fixed-ceiling"
+                                        class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm" />
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-700 mb-2 flex items-center">
+                                    Pag-IBIG
+                                    <a href="https://www.pagibigfund.gov.ph/" target="_blank" class="tax-link">
+                                        Official Site
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                </h3>
+                                <div class="flex flex-col space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">Employee Rate</label>
+                                    <input type="number" step="0.001" id="pagibig-rate"
+                                        class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm" />
+                                    <label class="block text-sm font-medium text-gray-700">Low-Income Rate</label>
+                                    <input type="number" step="0.001" id="pagibig-low-rate"
+                                        class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm" />
+                                    <label class="block text-sm font-medium text-gray-700">Low-Income Threshold</label>
+                                    <input type="number" id="pagibig-threshold"
+                                        class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <h3 class="font-semibold text-gray-700 mb-2 flex items-center">
+                                SSS Contribution Table (JSON)
+                                <a href="https://www.sss.gov.ph/" target="_blank" class="tax-link">
+                                    Official Site
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
+                            </h3>
+                            <textarea id="sss-table"
+                                class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm font-mono h-80"></textarea>
+                        </div>
+                        <button id="save-tax-rates-btn"
+                            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200 w-full">
+                            Save Tax Rates
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Payroll Table -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-sm overflow-x-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">Employee Payroll Breakdown</h2>
+                        <button id="mark-as-paid-btn"
+                            class="px-4 py-2 bg-green-600 text-white rounded-md shadow-md hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled>
+                            Mark as Paid
+                        </button>
+                    </div>
+                    <div id="status-message" class="text-center py-2 text-sm font-medium text-red-600 hidden"></div>
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">
+                                    Employee Name</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Gross Pay</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    PhilHealth</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    SSS</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Pag-IBIG</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Other Deductions</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Total Deductions</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Net Pay</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">
+                                    Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="payroll-table-body">
+                            <!-- Data will be inserted here dynamically -->
+                        </tbody>
+                    </table>
+                    <div id="no-records-message" class="text-center text-gray-500 py-6 hidden">
+                        No payroll records found for this period.
+                    </div>
+                </div>
+            </div>
+            <!-- Inserted Payroll Dashboard Content Ends Here -->
+
         </main>
     </div>
     <script src="js/dashboard.js"></script>
     <script src="js/current_time.js"></script>
+    <script src="js/payroll.js"></script>
 </body>
 
 </html>

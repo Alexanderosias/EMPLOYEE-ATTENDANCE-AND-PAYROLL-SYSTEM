@@ -13,12 +13,18 @@ const modalShiftEndInput = document.getElementById('modal-shift-end');
 const modalShiftDetailsInput = document.getElementById('modal-shift-details');
 const saveShiftBtn = document.getElementById('save-shift-btn');
 const deleteShiftBtn = document.getElementById('delete-shift-btn');
-const currentDatetimeEl = document.getElementById('current-datetime');
+
+const searchInput = document.getElementById('employee-search-input');
+const searchBtn = document.getElementById('employee-search-btn');
+const filterJobPosition = document.getElementById('filter-job-position');
+const filterDepartment = document.getElementById('filter-department');
 
 // --- Mock Data ---
 let employees = [
-  { id: 'emp_01', name: 'Francis Rivas (Instructor)' },
-  { id: 'emp_02', name: 'Adela Onlao (Instructor)' }
+  { id: 'emp_01', name: 'Francis Rivas (Instructor)', jobPosition: 'Instructor', department: 'Math' },
+  { id: 'emp_02', name: 'Adela Onlao (Instructor)', jobPosition: 'Instructor', department: 'Physics' },
+  { id: 'emp_03', name: 'John Smith', jobPosition: 'Developer', department: 'IT' },
+  { id: 'emp_04', name: 'Jane Doe', jobPosition: 'Designer', department: 'Marketing' }
 ];
 
 let weeklySchedule = {
@@ -28,12 +34,18 @@ let weeklySchedule = {
   },
   'emp_02': {
     1: [{ id: 'shift_03', employeeId: 'emp_02', dayOfWeek: 1, start: '10:00', end: '14:00', details: 'Register Duty' }],
+  },
+  'emp_03': {
+    2: [{ id: 'shift_04', employeeId: 'emp_03', dayOfWeek: 2, start: '09:00', end: '17:00', details: 'Development' }],
+  },
+  'emp_04': {
+    5: [{ id: 'shift_05', employeeId: 'emp_04', dayOfWeek: 5, start: '11:00', end: '16:00', details: 'Design Work' }],
   }
 };
 
 let selectedDayOfWeek = null;
 let selectedShiftId = null;
-let nextShiftId = 4;
+let nextShiftId = 6;
 
 const COLORS = [
   'bg-blue-500', 'bg-green-500', 'bg-purple-500',
@@ -48,15 +60,68 @@ function getEmployeeColor(employeeId) {
   return COLORS[index % COLORS.length];
 }
 
-// --- Rendering ---
+// --- Populate Filters ---
+function populateFilters() {
+  const jobPositions = [...new Set(employees.map(e => e.jobPosition))].sort();
+  const departments = [...new Set(employees.map(e => e.department))].sort();
+
+  filterJobPosition.innerHTML = '<option value="">All Job Positions</option>';
+  filterDepartment.innerHTML = '<option value="">All Departments</option>';
+
+  jobPositions.forEach(pos => {
+    const option = document.createElement('option');
+    option.value = pos;
+    option.textContent = pos;
+    filterJobPosition.appendChild(option);
+  });
+
+  departments.forEach(dep => {
+    const option = document.createElement('option');
+    option.value = dep;
+    option.textContent = dep;
+    filterDepartment.appendChild(option);
+  });
+}
+
+// --- Render Employee Options ---
 function renderEmployeeOptions() {
-  employeeSelect.innerHTML = employees.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('');
+  const searchTerm = searchInput.value.trim().toLowerCase();
+  const selectedJob = filterJobPosition.value;
+  const selectedDept = filterDepartment.value;
+
+  employeeSelect.innerHTML = '';
+
+  const filteredEmployees = employees.filter(emp => {
+    const matchesSearch = emp.name.toLowerCase().includes(searchTerm);
+    const matchesJob = selectedJob === '' || emp.jobPosition === selectedJob;
+    const matchesDept = selectedDept === '' || emp.department === selectedDept;
+    return matchesSearch && matchesJob && matchesDept;
+  });
+
+  if (filteredEmployees.length === 0) {
+    const option = document.createElement('option');
+    option.textContent = 'No employees found';
+    option.disabled = true;
+    employeeSelect.appendChild(option);
+  } else {
+    filteredEmployees.forEach(emp => {
+      const option = document.createElement('option');
+      option.value = emp.id;
+      option.textContent = emp.name;
+      employeeSelect.appendChild(option);
+    });
+  }
+
+  // After changing options, re-render schedule for selected employee
   renderWeeklySchedule();
 }
 
+// --- Render Weekly Schedule ---
 function renderWeeklySchedule() {
   weeklyScheduleContainer.innerHTML = '';
   const selectedEmployeeId = employeeSelect.value;
+  if (!selectedEmployeeId) return;
+
   const employeeSchedule = weeklySchedule[selectedEmployeeId] || {};
 
   for (let day = 0; day < 7; day++) {
@@ -140,7 +205,7 @@ function openModal(shift) {
   selectedDayOfWeek = shift.dayOfWeek;
   selectedShiftId = shift.id || null;
 
-  modalEmployeeNameInput.value = employeeSelect.options[employeeSelect.selectedIndex].text;
+  modalEmployeeNameInput.value = employeeSelect.options[employeeSelect.selectedIndex]?.text || '';
   modalDayOfWeekInput.value = DAY_NAMES[selectedDayOfWeek];
 
   if (shift.id) {
@@ -168,9 +233,8 @@ function closeModal() {
 
 // --- Event Listeners ---
 document.addEventListener('DOMContentLoaded', () => {
+  populateFilters();
   renderEmployeeOptions();
-  updateTime();
-  setInterval(updateTime, 1000);
 });
 
 employeeSelect.addEventListener('change', renderWeeklySchedule);
@@ -186,6 +250,8 @@ saveShiftBtn.addEventListener('click', () => {
   };
   if (templateData.start && templateData.end) {
     saveWeeklyTemplate(templateData);
+  } else {
+    alert('Please enter start and end times.');
   }
 });
 
@@ -196,3 +262,10 @@ deleteShiftBtn.addEventListener('click', () => {
   }
 });
 
+searchInput.addEventListener('input', renderEmployeeOptions);
+filterJobPosition.addEventListener('change', renderEmployeeOptions);
+filterDepartment.addEventListener('change', renderEmployeeOptions);
+searchBtn.addEventListener('click', () => {
+  renderEmployeeOptions();
+  searchInput.focus();
+});

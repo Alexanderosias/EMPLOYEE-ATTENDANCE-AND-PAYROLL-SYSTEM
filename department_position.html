@@ -4,12 +4,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Attendance Logs Page</title>
+  <title>Settings Page</title>
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
+  <div id="successMessageBox" style="display: none;">
+    Login successful!
+  </div>
   <div class="dashboard-container">
     <aside class="sidebar">
       <a class="sidebar-header" href="#">
@@ -36,14 +39,14 @@
               Schedules
             </a>
           </li>
-          <li>
-            <a href="department_position.html">
+          <li class="active">
+            <a href="#">
               <img src="icons/networking.png" alt="Schedules" class="icon">
               Departments and Positions
             </a>
           </li>
-          <li class="active">
-            <a href="#">
+          <li>
+            <a href="attendance_logs_page.html">
               <img src="icons/clock.png" alt="Attendance Logs" class="icon">
               Attendance Logs
             </a>
@@ -78,7 +81,7 @@
 
     <main class="main-content">
       <header class="dashboard-header">
-        <h2>ATTENDANCE LOGS</h2>
+        <h2>DEPARTMENTS & JOB POSITION</h2>
         <hr>
         <p id="current-datetime"></p>
       </header>

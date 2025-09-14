@@ -2,64 +2,68 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EAAPS Admin Dashboard</title>
-  <link rel="stylesheet" href="css/dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Employees Page</title>
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/employees.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 </head>
 
 <body>
-  <div id="successMessageBox" style="display: none;">
-    Login successful!
-  </div>
   <div class="dashboard-container">
     <aside class="sidebar">
       <a class="sidebar-header" href="#">
-        <img src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="Logo" class="logo">
+        <img src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="Logo" class="logo" />
         <span class="app-name">EAAPS Admin</span>
       </a>
       <nav class="sidebar-nav">
         <ul>
           <li>
             <a href="dashboard.html">
-              <img src="icons/home.png" alt="Dashboard" class="icon">
+              <img src="icons/home.png" alt="Dashboard" class="icon" />
               Dashboard
             </a>
           </li>
           <li class="active">
             <a href="#">
-              <img src="icons/group.png" alt="Employees" class="icon">
+              <img src="icons/group.png" alt="Employees" class="icon" />
               Employees
             </a>
           </li>
           <li>
             <a href="schedule_page.html">
-              <img src="icons/calendar-deadline-date.png" alt="Schedules" class="icon">
+              <img src="icons/calendar-deadline-date.png" alt="Schedules" class="icon" />
               Schedules
             </a>
           </li>
           <li>
+            <a href="department_position.html">
+              <img src="icons/networking.png" alt="Schedules" class="icon">
+              Departments and Positions
+            </a>
+          </li>
+          <li>
             <a href="attendance_logs_page.html">
-              <img src="icons/clock.png" alt="Attendance Logs" class="icon">
+              <img src="icons/clock.png" alt="Attendance Logs" class="icon" />
               Attendance Logs
             </a>
           </li>
           <li>
             <a href="payroll_page.html">
-              <img src="icons/cash.png" alt="Payroll" class="icon">
+              <img src="icons/cash.png" alt="Payroll" class="icon" />
               Payroll
             </a>
           </li>
           <li>
             <a href="reports_page.html">
-              <img src="icons/clipboard.png" alt="Reports" class="icon">
+              <img src="icons/clipboard.png" alt="Reports" class="icon" />
               Reports
             </a>
           </li>
           <li>
             <a href="settings_page.html">
-              <img src="icons/coghweel.png" alt="Settings" class="icon">
+              <img src="icons/coghweel.png" alt="Settings" class="icon" />
               Settings
             </a>
           </li>
@@ -67,22 +71,293 @@
       </nav>
 
       <a class="logout-btn" href="login.html">
-        <img src="icons/sign-out-option.png" alt="Logout" class="logout-icon">
+        <img src="icons/sign-out-option.png" alt="Logout" class="logout-icon" />
         Logout
       </a>
-
     </aside>
 
     <main class="main-content">
       <header class="dashboard-header">
         <h2>MANAGE EMPLOYEES</h2>
-        <hr>
+        <hr />
         <p id="current-datetime"></p>
       </header>
+
+      <div class="search-add-bar">
+        <div class="search-input-group">
+          <input type="text" id="search-input" class="search-input" placeholder="Search employee" />
+          <button id="search-btn" class="search-btn" aria-label="Search">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+        <button id="add-employee-btn" class="add-employee-btn">
+          Add Employee <i class="fas fa-user-plus"></i>
+        </button>
+      </div>
+
+      <div class="employee-list" id="employee-list-container">
+        <!-- Employee Card 1 -->
+        <div class="employee-card minimized">
+          <div class="card-index">1</div>
+          <div class="image-container">
+            <img src="https://placehold.co/100x100/55a6d9/ffffff?text=F" alt="Employee Photo" class="employee-photo" />
+          </div>
+          <div class="employee-details">
+            <p class="detail-item"><strong>Name:</strong> Francis Rivas</p>
+            <p class="detail-item"><strong>Job Position:</strong> Instructor</p>
+            <p class="detail-item"><strong>Department:</strong> Computer Engineering</p>
+            <p class="detail-item"><strong>Address:</strong> Tacloban City</p>
+            <div class="expanded-details" aria-hidden="true">
+              <p class="expanded-item"><strong>Gender:</strong> Male</p>
+              <p class="expanded-item"><strong>Status:</strong> Single</p>
+              <p class="expanded-item"><strong>Email Address:</strong> francis.rivas@example.com</p>
+              <p class="expanded-item"><strong>Rate per Hour:</strong> ₱100.00</p>
+              <p class="expanded-item"><strong>Contact Number:</strong> 09876543210</p>
+              <p class="expanded-item"><strong>Emergency Contact:</strong> 09123456789</p>
+              <p class="expanded-item"><strong>Schedules:</strong> Mon-Fri, 9:00 AM - 5:00 PM</p>
+              <p class="expanded-item"><strong>Date Joined:</strong> 2020-01-15</p>
+            </div>
+          </div>
+          <div class="employee-actions">
+            <button class="action-btn action-btn-update" title="Update info" aria-label="Update info">
+              <i class="fas fa-pen"></i>
+            </button>
+            <button class="action-btn action-btn-delete" title="Delete" aria-label="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+            <button class="action-btn action-btn-show-more" title="Expand/Collapse details"
+              aria-label="Expand or collapse details">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Employee Modal -->
+      <div id="add-employee-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="modal-title"
+        aria-modal="true">
+        <div class="modal-content">
+          <header class="modal-header">
+            <h3 id="modal-title">Add Employees</h3>
+            <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
+          </header>
+          <form id="add-employee-form" novalidate>
+            <div class="modal-body">
+              <div class="avatar-upload" style="text-align:center;">
+                <label for="avatar-input" style="display:block; margin-bottom:0.5rem; font-weight:600;">Upload
+                  Avatar</label>
+                <div class="avatar-preview" aria-live="polite" aria-atomic="true"
+                  style="margin: 0 auto 0.5rem; width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 2px solid #ccc; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+                  <img src="https://placehold.co/100x100/cccccc/ffffff?text=Avatar" alt="Avatar preview"
+                    id="avatar-preview-img" style="width: 100%; height: 100%; object-fit: cover;" />
+                </div>
+                <input type="file" id="avatar-input" name="avatar" accept="image/*" style="display:none;" />
+                <button type="button" id="upload-image-btn" class="btn btn-primary"
+                  style="background-color: royalblue; border:none; padding: 0.5rem 1.25rem; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 1rem; margin: 0 auto; display: block; width: max-content;">
+                  Upload Image
+                </button>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="employee-name">Full Name</label>
+                  <input type="text" id="employee-name" name="name" required placeholder="Enter full name" />
+                </div>
+
+                <div class="form-group">
+                  <label for="job-position">Job Position</label>
+                  <select id="job-position" name="jobPosition" required>
+                    <option value="" disabled selected>Select job position</option>
+                    <option value="Instructor">Instructor</option>
+                    <option value="Developer">Developer</option>
+                    <option value="Designer">Designer</option>
+                    <option value="Manager">Manager</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="department">Department</label>
+                  <select id="department" name="department" required>
+                    <option value="" disabled selected>Select department</option>
+                    <option value="Math">Math</option>
+                    <option value="Physics">Physics</option>
+                    <option value="IT">IT</option>
+                    <option value="Marketing">Marketing</option>
+                  </select>
+                </div>
+
+
+                <div class="form-group">
+                  <label for="address">Address</label>
+                  <input type="text" id="address" name="address" required placeholder="Enter address" />
+                </div>
+
+                <div class="form-group">
+                  <label for="gender">Gender</label>
+                  <select id="gender" name="gender" required>
+                    <option value="" disabled selected>Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="status">Status</label>
+                  <select id="status" name="status" required>
+                    <option value="" disabled selected>Select status</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="email">Email Address</label>
+                  <input type="email" id="email" name="email" required placeholder="Enter email address" />
+                </div>
+
+                <div class="form-group">
+                  <label for="rate-per-hour">Rate per Hour</label>
+                  <input type="number" id="rate-per-hour" name="ratePerHour" min="0" step="10" required
+                    placeholder="Enter rate per hour" />
+                </div>
+
+                <div class="form-group">
+                  <label for="contact-number">Contact Number</label>
+                  <input type="tel" id="contact-number" name="contactNumber" required
+                    placeholder="Enter contact number" />
+                </div>
+
+                <div class="form-group">
+                  <label for="emergency-contact">Emergency Contact</label>
+                  <input type="tel" id="emergency-contact" name="emergencyContact" required
+                    placeholder="Enter emergency contact" />
+                </div>
+              </div>
+            </div>
+
+            <footer class="modal-footer">
+              <button type="submit" class="btn btn-primary">Add Employee</button>
+              <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+            </footer>
+          </form>
+        </div>
+      </div>
+
+      <!-- Update Employee Modal -->
+      <div id="update-employee-modal" class="modal" aria-hidden="true" role="dialog"
+        aria-labelledby="update-modal-title" aria-modal="true">
+        <div class="modal-content">
+          <header class="modal-header">
+            <h3 id="update-modal-title">Update Employee</h3>
+            <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
+          </header>
+          <form id="update-employee-form" novalidate>
+            <div class="modal-body">
+              <div class="avatar-upload">
+                <label for="update-avatar-input">Upload Avatar</label>
+                <div class="avatar-preview" aria-live="polite" aria-atomic="true">
+                  <img src="https://placehold.co/100x100/cccccc/ffffff?text=Avatar" alt="Avatar preview"
+                    id="update-avatar-preview-img" />
+                </div>
+                <input type="file" id="update-avatar-input" name="avatar" accept="image/*" style="display:none;" />
+                <button type="button" id="update-upload-image-btn" class="btn btn-primary">Upload Image</button>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="update-employee-name">Full Name</label>
+                  <input type="text" id="update-employee-name" name="name" required placeholder="Enter full name" />
+                </div>
+
+                <div class="form-group">
+                  <label for="update-job-position">Job Position</label>
+                  <select id="update-job-position" name="jobPosition" required>
+                    <option value="" disabled selected>Select job position</option>
+                    <option value="Instructor">Instructor</option>
+                    <option value="Developer">Developer</option>
+                    <option value="Designer">Designer</option>
+                    <option value="Manager">Manager</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="update-department">Department</label>
+                  <select id="update-department" name="department" required>
+                    <option value="" disabled selected>Select department</option>
+                    <option value="Math">Math</option>
+                    <option value="Physics">Physics</option>
+                    <option value="IT">IT</option>
+                    <option value="Marketing">Marketing</option>
+                  </select>
+                </div>
+
+
+                <div class="form-group">
+                  <label for="update-address">Address</label>
+                  <input type="text" id="update-address" name="address" required placeholder="Enter address" />
+                </div>
+
+                <div class="form-group">
+                  <label for="update-gender">Gender</label>
+                  <select id="update-gender" name="gender" required>
+                    <option value="" disabled selected>Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="update-status">Status</label>
+                  <select id="update-status" name="status" required>
+                    <option value="" disabled selected>Select status</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="update-email">Email Address</label>
+                  <input type="email" id="update-email" name="email" required placeholder="Enter email address" />
+                </div>
+
+                <div class="form-group">
+                  <label for="update-rate-per-hour">Rate per Hour</label>
+                  <input type="number" id="update-rate-per-hour" name="ratePerHour" min="0" step="0.01" required
+                    placeholder="Enter rate per hour" />
+                </div>
+
+                <div class="form-group">
+                  <label for="update-contact-number">Contact Number</label>
+                  <input type="tel" id="update-contact-number" name="contactNumber" required
+                    placeholder="Enter contact number" />
+                </div>
+
+                <div class="form-group">
+                  <label for="update-emergency-contact">Emergency Contact</label>
+                  <input type="tel" id="update-emergency-contact" name="emergencyContact" required
+                    placeholder="Enter emergency contact" />
+                </div>
+              </div>
+            </div>
+
+            <footer class="modal-footer">
+              <button type="submit" class="btn btn-primary">Update Employee</button>
+              <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+            </footer>
+          </form>
+        </div>
+      </div>
+
     </main>
   </div>
+
   <script src="js/dashboard.js"></script>
   <script src="js/current_time.js"></script>
+  <script src="js/employees.js"></script>
 </body>
 
 </html>

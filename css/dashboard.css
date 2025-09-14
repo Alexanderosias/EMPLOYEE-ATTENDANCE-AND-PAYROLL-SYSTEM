@@ -76,22 +76,23 @@ body {
 }
 
 .sidebar-nav li {
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 
-.sidebar-nav a {
+.sidebar-nav a, .logout-btn {
   display: flex !important;
   align-items: center !important;
   padding: 15px 20px !important;
   border-radius: 15px !important;
   color: #fff !important;
   text-decoration: none !important;
-  font-size: 1em !important;
+  font-size: 0.9em !important;
   line-height: 1.2 !important;
+  transition: background-color 0.3s ease;
 }
 
 .sidebar-nav a:hover {
-  background-color: #2141E4;
+  background-color: #3345a1;
 }
 
 .sidebar-nav li.active a {
@@ -111,7 +112,7 @@ body {
   align-items: center;
   justify-content: center;
   margin: 20px;
-  padding: 15px;
+  padding: 10px;
   background-color: #f44336;
   color: #fff;
   border-radius: 8px;
@@ -153,7 +154,7 @@ body {
 .dashboard-header h2 {
   padding: 0;
   font-family: "Bowlby One";
-  font-size: 1.8em;
+  font-size: 1.5em;
   color: #333;
   margin-bottom: 5px;
 }
@@ -166,7 +167,7 @@ body {
 /* Metrics cards styling */
 .metrics-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
 }
 
@@ -212,11 +213,6 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-}
-
-.card-purple h3 {
-  font-size: 2em;
 }
 
 /* Success message styling */
@@ -239,39 +235,107 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Sidebar toggle button styling */
-.sidebar-toggle-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.5rem;
-  color: #1a237e;
-  z-index: 1001;
-  transition: left 0.5s ease !important;
-}
+        /* Minimal styling for the attendance section to blend with existing styles */
+        .info-banner {
+            background-color: #dbeafe;
+            /* Tailwind blue-100 */
+            border: 1px solid #93c5fd;
+            /* Tailwind blue-300 */
+            color: #1e40af;
+            padding: 1rem 1.5rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-/* When sidebar is hidden, move button to left edge */
-.sidebar.hidden ~ .sidebar-toggle-btn {
-  left: 10px !important;
-}
+        .info-banner span {
+            font-weight: 700;
+        }
 
-/* Add media queries for responsive design */
-@media (max-width: 768px) {
-  .sidebar {
-    position: absolute;
-    height: 100%;
-    z-index: 99;
-  }
+        .dashboard-section {
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
 
-  .sidebar.hidden {
-    transform: translateX(-100%);
-  }
+        .salary-distribution {
+            padding-top: 40px;
+        }
 
-  .sidebar-toggle-btn {
-    left: 10px;
-  }
+        #attendance-chart,
+        #salary-distribution-chart {
+            width: 100%;
+            height: 320px;
+            background-color: #f9fafb;
+            /* Tailwind gray-50 */
+            border: 1px solid #d1d5db;
+            /* Tailwind gray-300 */
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            /* Tailwind gray-400 */
+            font-style: italic;
+            user-select: none;
+            flex-grow: 1;
+        }
 
-  .main-content {
-    margin-left: 0;
-  }
-}
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #374151;
+            /* Tailwind gray-700 */
+        }
+
+        .filter-group select,
+        .filter-group input[type="number"] {
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            width: 6rem;
+        }
+
+        /* Container to place attendance and salary side by side */
+        .charts-container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            align-items: stretch;
+            /* Make children stretch to equal height */
+        }
+
+        /* Each chart section takes about half width on desktop, full width on small screens */
+        .chart-section {
+            flex: 1 1 48%;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .charts-container {
+                flex-direction: column;
+            }
+
+            .chart-section {
+                flex-basis: 100%;
+            }
+
+            .salary-distribution {
+                padding-top: 10px;
+            }
+        }
+
