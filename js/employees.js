@@ -16,6 +16,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const employeeListContainer = document.getElementById('employee-list-container');
 
+  // Elements for filtering
+  const searchInput = document.getElementById('search-input');
+  const searchBtn = document.getElementById('search-btn');
+  const filterDepartment = document.getElementById('filter-department');
+  const filterJobPosition = document.getElementById('filter-job-position');
+
+  // Helper function to get detail item text by label
+  function getDetailItemText(card, label) {
+    const items = card.querySelectorAll('.detail-item');
+    for (const item of items) {
+      if (item.textContent.trim().startsWith(label)) {
+        return item.textContent;
+      }
+    }
+    return '';
+  }
+
+  // Filtering function
+  function filterEmployees() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const departmentFilter = filterDepartment.value;
+    const jobPositionFilter = filterJobPosition.value;
+
+    const employeeCards = employeeListContainer.querySelectorAll('.employee-card');
+
+    employeeCards.forEach(card => {
+      const nameText = getDetailItemText(card, 'Name:').toLowerCase();
+      const departmentText = getDetailItemText(card, 'Department:');
+      const jobPositionText = getDetailItemText(card, 'Job Position:');
+
+      const name = nameText.split(':')[1]?.trim() || '';
+      const department = departmentText.split(':')[1]?.trim() || '';
+      const jobPosition = jobPositionText.split(':')[1]?.trim() || '';
+
+      const matchesSearch = name.includes(searchTerm);
+      const matchesDepartment = !departmentFilter || department === departmentFilter;
+      const matchesJobPosition = !jobPositionFilter || jobPosition === jobPositionFilter;
+
+      if (matchesSearch && matchesDepartment && matchesJobPosition) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  // Attach event listeners for filtering
+  searchBtn.addEventListener('click', filterEmployees);
+  searchInput.addEventListener('input', filterEmployees);
+  filterDepartment.addEventListener('change', filterEmployees);
+  filterJobPosition.addEventListener('change', filterEmployees);
+
+  // Existing employee card show more toggle
   employeeListContainer.addEventListener('click', (event) => {
     const showMoreBtn = event.target.closest('.action-btn-show-more');
     if (showMoreBtn) {
@@ -68,15 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log("Delete clicked for:", employeeCard);
       // Add your delete logic here
     }
-  });
-
-  // Search button click example
-  const searchBtn = document.getElementById('search-btn');
-  const searchInput = document.getElementById('search-input');
-  searchBtn.addEventListener('click', () => {
-    const searchTerm = searchInput.value.trim();
-    console.log("Search for:", searchTerm);
-    // Add your search logic here
   });
 
   // Add Employee Modal Logic
