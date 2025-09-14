@@ -1,0 +1,569 @@
+:root {
+  --bg-color: #e6e6e6;
+  --card-bg-color: #f0f0f0;
+  --main-font-color: #333;
+  --gray-text: #666;
+  --search-btn-color: #dc3545;
+  --search-btn-hover: #c82333;
+  --add-btn-color: #007bff;
+  --add-btn-hover: #0056b3;
+  --update-btn-color: #28a745;
+  --update-btn-hover: #218838;
+  --delete-btn-color: #dc3545;
+  --delete-btn-hover: #c82333;
+  --show-more-btn-color: #007bff;
+  --show-more-btn-hover: #0056b3;
+}
+
+@font-face {
+  font-family: "Bowlby One";
+  src: url("../fonts/BowlbyOne-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Container for search and add employee button */
+.search-add-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Search input group */
+.search-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-grow: 1;
+  max-width: 400px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+  background: white;
+}
+
+.search-input {
+  flex-grow: 1;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.search-btn {
+  background: none;
+  border: none;
+  color: var(--search-btn-color);
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.search-btn:hover {
+  color: var(--search-btn-hover);
+}
+
+/* Add employee button */
+.add-employee-btn {
+  background-color: var(--add-btn-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.add-employee-btn:hover {
+  background-color: var(--add-btn-hover);
+}
+
+.add-employee-btn i {
+  font-size: 1.1rem;
+}
+
+/* Employee list container */
+.employee-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-height: 600px;
+}
+
+/* Employee card */
+.employee-card {
+  background-color: var(--card-bg-color);
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  gap: 1.5rem;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  transition: padding 0.3s ease;
+}
+
+/* Minimized state reduces bottom padding */
+.employee-card.minimized {
+  padding-bottom: 1rem;
+}
+
+/* Card index colors for first three */
+.employee-card:first-child .card-index {
+  background-color: #28a745;
+}
+
+.employee-card:nth-child(2) .card-index {
+  background-color: #dc3545;
+}
+
+.employee-card:nth-child(3) .card-index {
+  background-color: #007bff;
+}
+
+/* Card index circle */
+.card-index {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 30px;
+  height: 30px;
+  background-color: #333;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+/* Image container with photo */
+.image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 100px;
+  padding-top: 1rem;
+  box-sizing: border-box;
+}
+
+.employee-photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+  display: block;
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+
+/* Employee details container */
+.employee-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 220px;
+}
+
+/* Uniform spacing for detail and expanded items */
+.detail-item,
+.expanded-item {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.detail-item strong,
+.expanded-item strong {
+  font-weight: 700;
+  min-width: 130px;
+  color: #444;
+  flex-shrink: 0;
+}
+
+/* Expanded details container with gray background and smooth max-height transition */
+.expanded-details {
+  width: 100%;
+  font-size: 1rem;
+  color: var(--gray-text);
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  display: flex;
+  flex-direction: column;
+  max-height: 0;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.expanded-details.visible {
+  max-height: 600px;
+}
+
+/* Employee actions container */
+.employee-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Action buttons */
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--main-font-color);
+  font-size: 1.25rem;
+  padding: 0.25rem;
+  border-radius: 6px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.action-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: var(--add-btn-color);
+}
+
+.action-btn-update {
+  color: var(--update-btn-color);
+}
+
+.action-btn-update:hover {
+  color: var(--update-btn-hover);
+  background-color: rgba(40, 167, 69, 0.15);
+}
+
+.action-btn-delete {
+  color: var(--delete-btn-color);
+}
+
+.action-btn-delete:hover {
+  color: var(--delete-btn-hover);
+  background-color: rgba(220, 53, 69, 0.15);
+}
+
+.action-btn-show-more {
+  color: var(--show-more-btn-color);
+  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
+.action-btn-show-more:hover {
+  color: var(--show-more-btn-hover);
+  background-color: rgba(0, 123, 255, 0.15);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-add-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-input-group {
+    max-width: 100%;
+  }
+
+  .add-employee-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .employee-card {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+  }
+
+  .image-container {
+    width: 100px;
+    margin-bottom: 0.5rem;
+    padding: 0;
+  }
+
+  .employee-details {
+    align-items: center;
+    min-width: auto;
+  }
+
+  .card-index {
+    position: static;
+    margin-bottom: 1rem;
+  }
+
+  .employee-actions {
+    flex-direction: row;
+    justify-content: center;
+    gap: 1rem;
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+
+  .expanded-details {
+    flex-direction: column;
+  }
+}
+
+
+
+
+/* Modal backdrop */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Show modal */
+.modal[aria-hidden="false"] {
+  display: flex;
+}
+
+/* Modal content box */
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 520px;       /* increased from max-width: 480px */
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* Modal header */
+.modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-family: "Bowlby One";
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #333;
+}
+
+/* Modal body */
+.modal-body {
+  padding: 1rem 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: minmax(50px, auto);
+  gap: 1rem 1.5rem;
+  overflow: visible;  /* prevent scroll */
+  flex-grow: 1;
+}
+
+/* Avatar upload container spans full width and is centered */
+.avatar-upload {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.avatar-upload label {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+#avatar-input {
+  cursor: pointer;
+  display: none;
+}
+
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  margin-bottom: 0.5rem;
+}
+
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Upload Image button styling */
+#upload-image-btn {
+  background-color: royalblue;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  color: white;
+  font-size: 1rem;
+  width: max-content;
+}
+
+#upload-image-btn:hover {
+  background-color: #2a52be; /* darker royal blue */
+}
+
+/* Form groups */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.form-group input,
+.form-group select {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline-offset: 2px;
+  outline-color: transparent;
+  transition: outline-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline-color: var(--add-btn-color, #007bff);
+  border-color: var(--add-btn-color, #007bff);
+}
+
+/* Modal footer */
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #ddd;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.btn {
+  padding: 0.5rem 1.25rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary {
+  background-color: var(--add-btn-color, #007bff);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--add-btn-hover, #0056b3);
+}
+
+.btn-secondary {
+  background-color: #ccc;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background-color: #bbb;
+}
+
+/* Grid layout for form inputs: two per row */
+.form-grid {
+  display: contents; /* no wrapper needed, modal-body is grid */
+}
+
+/* Responsive: stack inputs on small screens */
+@media (max-width: 640px) {
+  .modal-content {
+    width: 90vw;
+    height: auto;
+  }
+  .modal-body {
+    grid-template-columns: 1fr;
+  }
+  .avatar-upload {
+    grid-column: auto;
+  }
+}
+
+
+.filter-group {
+  margin-left: -40px;
+  margin-top: 16px;
+  display: flex;
+  align-items: start;
+}
+
+.filter-select {
+  padding: 12px 10px !important;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  min-width: 200px;
+  transition: border-color 0.3s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--add-btn-color, #007bff);
+}
