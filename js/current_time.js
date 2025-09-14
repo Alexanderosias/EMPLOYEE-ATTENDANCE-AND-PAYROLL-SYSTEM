@@ -1,5 +1,3 @@
-// script.js
-
 function updateDateTime() {
     const now = new Date();
     const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -23,8 +21,8 @@ function updateDateTime() {
     document.getElementById('current-datetime').textContent = `${formattedDate} at ${formattedTime}`;
 }
 
-// Update the time every second
+// Update time evry sec
 setInterval(updateDateTime, 1000);
 
-// Run on page load to display immediately
+// Run on page immediately 
 updateDateTime();

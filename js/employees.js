@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateEmployeeForm.emergencyContact.value = employeeData.emergencyContact || '';
     updateEmployeeForm.schedules.value = employeeData.schedules || '';
 
-    // Set avatar preview if available
+    // Set avatar preview if avlble
     if (employeeData.avatarUrl) {
       updateAvatarPreviewImg.src = employeeData.avatarUrl;
       updateAvatarPreviewImg.alt = 'Employee avatar preview';

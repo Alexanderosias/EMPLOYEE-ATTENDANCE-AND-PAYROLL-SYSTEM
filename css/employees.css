@@ -200,7 +200,6 @@
   flex-shrink: 0;
 }
 
-/* Expanded details container with gray background and smooth max-height transition */
 .expanded-details {
   width: 100%;
   font-size: 1rem;
@@ -218,7 +217,6 @@
   max-height: 600px;
 }
 
-/* Employee actions container */
 .employee-actions {
   display: flex;
   flex-direction: column;
@@ -228,7 +226,6 @@
   margin-left: auto;
 }
 
-/* Action buttons */
 .action-btn {
   background: none;
   border: none;
@@ -281,7 +278,6 @@
   background-color: rgba(0, 123, 255, 0.15);
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .search-add-bar {
     flex-direction: column;
@@ -358,7 +354,7 @@
 .modal-content {
   background: white;
   border-radius: 8px;
-  width: 520px;       /* increased from max-width: 480px */
+  width: 520px;       
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
@@ -367,8 +363,6 @@
   flex-direction: column;
 }
 
-
-/* Modal header */
 .modal-header {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #ddd;
@@ -392,18 +386,16 @@
   color: #333;
 }
 
-/* Modal body */
 .modal-body {
   padding: 1rem 1.5rem;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-auto-rows: minmax(50px, auto);
   gap: 1rem 1.5rem;
-  overflow: visible;  /* prevent scroll */
+  overflow: visible; 
   flex-grow: 1;
 }
 
-/* Avatar upload container spans full width and is centered */
 .avatar-upload {
   grid-column: 1 / -1;
   text-align: center;
@@ -442,7 +434,6 @@
   object-fit: cover;
 }
 
-/* Upload Image button styling */
 #upload-image-btn {
   background-color: royalblue;
   border: none;
@@ -456,7 +447,7 @@
 }
 
 #upload-image-btn:hover {
-  background-color: #2a52be; /* darker royal blue */
+  background-color: #2a52be; 
 }
 
 /* Form groups */
@@ -525,12 +516,11 @@
   background-color: #bbb;
 }
 
-/* Grid layout for form inputs: two per row */
+/* Grid layout */
 .form-grid {
-  display: contents; /* no wrapper needed, modal-body is grid */
+  display: contents; 
 }
 
-/* Responsive: stack inputs on small screens */
 @media (max-width: 640px) {
   .modal-content {
     width: 90vw;

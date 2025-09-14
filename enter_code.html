@@ -5,9 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verify Code</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for 'Inter' -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -31,7 +29,6 @@
             }
         }
 
-        /* Glassmorphism effect for the login card */
         .glass-card {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -39,7 +36,6 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
         
-        /* Styles for the 6-digit code inputs */
         .code-input-container {
             display: flex;
             justify-content: center;
@@ -65,7 +61,6 @@
             border-bottom: 2px solid #87CEEB;
         }
         
-        /* Spinner animation for the button loading state */
         .spinner {
             border: 2px solid #f0f8ff;
             border-top: 2px solid #4169E1;
@@ -85,14 +80,10 @@
 <body class="min-h-screen flex items-center justify-center p-4 text-gray-100">
 
     <div class="w-full max-w-md p-8 rounded-2xl glass-card text-center">
-        <!-- Verification Form Header -->
         <h2 class="text-4xl font-extrabold text-white mb-2">Verify Code</h2>
         <p class="text-gray-300 mb-6">A 6-digit code has been sent to</p>
         <p class="text-white text-lg font-semibold mb-6">admin@example.com</p>
-
-        <!-- Verification Code Form -->
         <form id="verifyCodeForm" class="space-y-6">
-            <!-- Code Field Container -->
             <div class="code-input-container">
                 <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-1" autocomplete="off">
                 <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-2" autocomplete="off">
@@ -121,7 +112,6 @@
         </form>
     </div>
 
-    <!-- JavaScript for button states and interactions -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const verifyCodeForm = document.getElementById('verifyCodeForm');

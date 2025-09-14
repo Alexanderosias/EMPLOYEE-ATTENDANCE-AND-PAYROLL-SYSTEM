@@ -1,13 +1,10 @@
-// Employees passed from PHP
-// const employees = [...];  <-- already injected in page
-
 function onScanSuccess(decodedText, decodedResult) {
   let scannedData;
   try {
-    scannedData = JSON.parse(decodedText); // try to parse JSON
+    scannedData = JSON.parse(decodedText); 
   } catch (e) {
     alert("Invalid QR Code!");
-    return; // stop here
+    return; 
   }
 
   // Check if employee_id exists in employees list
@@ -18,13 +15,13 @@ function onScanSuccess(decodedText, decodedResult) {
     return;
   }
 
-  // ✅ Valid QR Code → continue
+  
   document.getElementById("result").innerText =
     `✅ Employee Found: ${validEmp.first_name} ${validEmp.last_name} (ID: ${validEmp.employee_id})`;
 
   const video = document.querySelector("video");
 
-  // Delay 1 second before taking snapshot
+  // Delay 1 second b4 taking snapshot
   setTimeout(() => {
     const snapshotData = takeSnapshot(video);
 

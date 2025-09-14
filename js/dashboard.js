@@ -1,5 +1,3 @@
-// dashboard.js
-
 document.addEventListener('DOMContentLoaded', () => {
   const messageBox = document.getElementById('successMessageBox');
   const mainContent = document.querySelector('.main-content');

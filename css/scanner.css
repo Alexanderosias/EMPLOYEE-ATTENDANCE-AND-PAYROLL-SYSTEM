@@ -16,7 +16,6 @@ body {
       background-repeat: no-repeat;
       background-size: contain;
       background-image: url('');
-      /* Empty as per user instruction */
     }
     .container {
       max-width: 1200px;
@@ -32,7 +31,7 @@ body {
     header {
       text-align: center;
       font-weight: 900;
-      font-size: 1.875rem; /* 3xl */
+      font-size: 1.875rem;
       padding-top: 1rem;
       user-select: none;
       letter-spacing: 0.05em;
@@ -65,7 +64,7 @@ body {
       margin-top: 2rem;
       flex-grow: 1;
     }
-    /* Left panel - Guides */
+
     .left-panel {
       flex: 1 1 280px;
       max-width: 320px;
@@ -108,7 +107,6 @@ body {
       user-select: text;
     }
 
-    /* Center Panel - QR Scanner */
     .center-panel {
       flex: 1 1 370px;
       max-width: 430px;
@@ -195,7 +193,6 @@ body {
       margin-top: auto;
     }
 
-    /* Right panel - Recent and Mistake */
     .right-panel {
       flex: 1 1 300px;
       max-width: 360px;
@@ -204,17 +201,17 @@ body {
       gap: 1.5rem;
     }
     .recent-box {
-      background: rgba(21, 250, 0, 0.9); /* bright green for header */
+      background: rgba(21, 250, 0, 0.9); 
       border-radius: 8px 8px 14px 14px;
       overflow: hidden;
       user-select: none;
       box-shadow: 0 10px 20px rgb(0 0 0 / 0.25);
       display: flex;
       flex-direction: column;
-      color: transparent; /* text inside table will be from table styling */
+      color: transparent; 
     }
     .recent-header {
-      background-color: #16a34a; /* bright green */
+      background-color: #16a34a; 
       padding: 0.7rem 1rem;
       font-weight: 700;
       font-size: 1.1rem;

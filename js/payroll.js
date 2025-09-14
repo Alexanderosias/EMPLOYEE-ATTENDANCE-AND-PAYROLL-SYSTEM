@@ -162,7 +162,7 @@
             const philhealth = isMonthly ? calculatePhilHealth(employee.monthlySalary) : calculatePhilHealth(employee.monthlySalary) / 2;
             const sss = isMonthly ? calculateSSS(employee.monthlySalary) : calculateSSS(employee.monthlySalary) / 2;
             const pagibig = isMonthly ? calculatePagIbig(employee.monthlySalary) : calculatePagIbig(employee.monthlySalary) / 2;
-            const otherDeductions = 0; // Placeholder for other deductions
+            const otherDeductions = 0; 
             const totalDeductions = philhealth + sss + pagibig + otherDeductions;
             const netPay = grossPay - totalDeductions;
 
@@ -287,7 +287,7 @@
                 statusMessageDiv.classList.remove('hidden', 'text-red-600');
                 statusMessageDiv.classList.add('text-green-600');
                 setTimeout(() => statusMessageDiv.classList.add('hidden'), 3000);
-                await seedTaxRates(); // Re-fetch the newly saved rates
+                await seedTaxRates(); 
             } catch (e) {
                 console.error("Error saving tax rates: ", e);
                 statusMessageDiv.textContent = 'Error saving tax rates.';
@@ -428,7 +428,7 @@
             }
             userId = auth.currentUser?.uid || 'anonymous';
 
-            await seedTaxRates(); // Seed and fetch tax rates
+            await seedTaxRates(); 
 
             const today = new Date();
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);

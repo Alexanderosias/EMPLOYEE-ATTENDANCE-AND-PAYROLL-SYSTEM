@@ -1,6 +1,3 @@
-// schedule.js
-
-// --- UI Elements ---
 const employeeSelect = document.getElementById('employee-select');
 const weeklyScheduleContainer = document.getElementById('weekly-schedule-container');
 const scheduleModal = document.getElementById('schedule-modal');
