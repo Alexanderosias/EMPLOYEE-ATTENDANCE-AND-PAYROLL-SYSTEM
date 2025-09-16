@@ -48,6 +48,39 @@ ul.item-list li {
   color: var(--main-font-color, #333);
 }
 
+ul.item-list li .item-content {
+  flex-grow: 1;
+}
+
+ul.item-list li .item-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: background-color 0.3s ease;
+}
+
+.btn-delete:hover {
+  background-color: #c82333;
+}
+
+.btn-delete:focus {
+  outline: 2px solid #dc3545;
+  outline-offset: 2px;
+}
+
 ul.item-list li:last-child {
   border-bottom: none;
 }
@@ -181,6 +214,21 @@ ul.item-list li:last-child {
 
 .btn-secondary:hover {
   background-color: #bbb;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+.warning-text {
+  color: #dc3545;
+  font-weight: 600;
+  margin-top: 0.5rem;
 }
 
 /* Responsive */

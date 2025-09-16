@@ -1,38 +1,50 @@
-# Employees Page - Department and Job Position Filters
+# Add Delete Functionality to Department & Position Page
 
-Plan and step tracking for adding filters to employees_page.html and wiring logic in js/employees.js.
+## Tasks to Complete:
 
-## Tasks
+### 1. Update HTML Structure
+- [x] Add delete confirmation modal to department_position.html
+- [x] Update list items to support delete buttons (will be added via JavaScript)
 
-- [x] Update employees_page.html
-  - [x] Add two dropdowns in the search-add bar:
-    - Job Position filter (id: `filter-job-position-emp`) with default "All Job Positions"
-    - Department filter (id: `filter-department-emp`) with default "All Departments"
-  - [x] Add data attributes to employee cards to support filtering:
-    - `data-job-position`
-    - `data-department`
+### 2. Update JavaScript Functionality
+- [x] Modify list item creation to include delete buttons
+- [x] Add delete event listeners for departments and job positions
+- [x] Implement confirmation dialog functionality
+- [x] Add validation to prevent deletion of items with assigned employees
+- [x] Update existing departments and job positions to include delete buttons
 
-- [x] Update js/employees.js
-  - [x] Query and wire the new filter selects
-  - [x] Populate filter options dynamically from current employee cards (unique values)
-  - [x] Implement `applyFilters()` to filter by:
-    - Search term (matches name)
-    - Selected job position
-    - Selected department
-  - [x] Add event listeners:
-    - Search input typing and search button click trigger filtering
-    - Change on both selects triggers filtering
-  - [x] Ensure robust parsing:
-    - Prefer data attributes
-    - Fallback to parsing text content for "Name:", "Job Position:", and "Department:" labels
+### 3. Update CSS Styling
+- [x] Add styling for delete buttons within list items
+- [x] Style the delete confirmation modal
+- [x] Add hover effects and proper spacing
+- [x] Ensure responsive design compatibility
 
-- [x] Align filter styling to match schedule_page.html using Tailwind classes for selects and layout
+### 4. Testing
+- [x] Test delete functionality in browser
+- [x] Verify employee count validation
+- [x] Test accessibility features
+- [x] Test responsive design
 
-  - [ ] Confirm dropdowns render correctly
-  - [ ] Confirm filtering hides/shows cards as expected
-  - [ ] Confirm search + filters work in combination
+## Progress:
+- [x] Plan created and approved
+- [x] Implementation completed
+- [x] Testing completed successfully
 
-## Notes
+## Features Implemented:
 
-- No CSS changes required for functionality; the existing layout should adapt to the added controls.
-- Filtering will work with current static cards and will be resilient to future cards if they include either data attributes or the same labeled text structure.
+### Delete Functionality:
+- Delete buttons added to each department and job position
+- Confirmation modal with warning messages
+- Employee count validation (shows warning if employees are assigned)
+- Proper accessibility attributes and keyboard navigation
+
+### UI Improvements:
+- Clean, modern delete buttons with trash icons
+- Responsive design maintained
+- Consistent styling with existing design
+- Hover effects and focus states
+
+### Safety Features:
+- Confirmation dialog prevents accidental deletions
+- Warning messages when deleting items with assigned employees
+- Proper modal management and event handling
