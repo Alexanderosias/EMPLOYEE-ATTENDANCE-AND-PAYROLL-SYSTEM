@@ -62,6 +62,6 @@ function takeSnapshot(videoElement) {
 // Start scanner
 const html5QrcodeScanner = new Html5QrcodeScanner("reader", {
   fps: 100,
-  qrbox: 250
+  qrbox: 230
 });
 html5QrcodeScanner.render(onScanSuccess);

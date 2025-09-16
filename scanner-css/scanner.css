@@ -1,0 +1,166 @@
+body {
+  color: white;
+  background-image: url("../scanner-img/school-img-bg.png");
+  background-size: fill;
+  background-repeat: no-repeat;
+  background-position: center;
+  height: auto;
+  width: auto;
+  position: relative;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 20px;
+  box-sizing: border-box;
+}
+
+.cover {
+  position: fixed;
+  background-color: rgba(6, 50, 181, 0.8);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+}
+
+.top {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 35px;
+  font-weight: 700;
+  margin-top: 40px;
+  position: relative;
+}
+
+.card,
+.second {
+  box-shadow: 5px 10px 10px rgba(0, 0, 0, 0.4);
+}
+
+.img-container {
+  background-color: white;
+  height: 60px;
+  width: 60px;
+  object-fit: cover;
+  overflow: hidden;
+  box-sizing: border-box;
+  border-radius: 50%;
+  padding: 3px;
+  position: absolute;
+  margin-right: 1255px;
+  box-shadow: 5px 5px 8px rgba(0, 0, 0, 0.4);
+}
+
+.img-container img {
+  height: 100%;
+  width: 100%;
+  margin-left: -3px;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 20% 40% auto;
+  padding: 40px;
+  column-gap: 20px;
+}
+
+.card {
+  border: 1px solid white;
+  border-radius: 10px;
+  margin-top: 20px;
+  overflow: hidden;
+}
+
+.card ul {
+  background-color: rgba(0, 0, 0, 0.3);
+  margin: 0;
+}
+
+.card p {
+  background-color: rgba(0, 0, 0, 0.3);
+  margin: 0;
+}
+
+.card h3 {
+  padding: 10px 0;
+  margin: 0;
+  text-align: center;
+}
+
+.first .one h3 {
+  background-color: #D89B38;
+}
+
+.first .two h3 {
+  background-color: #D21717;
+}
+
+.card li {
+  padding: 5px 10px;
+}
+
+.first .two p {
+  padding: 10px 20px;
+}
+
+.second {
+  background-image: url("../scanner-img/students-img-bg.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 15px;
+  overflow: hidden;
+  text-align: center;
+  position: relative;
+}
+
+.second .overlay-white {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.7);
+  height: 100%;
+}
+
+.sub-header {
+  background-color: #1842ED;
+  color: white;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.sub-header h3 {
+  margin: 0;
+  padding: 15px 0;
+}
+
+video {
+  height: 350px;
+  width: 400px;
+  display: none;
+}
+
+#reader {
+  width: 380px;
+  height: 400px;
+  background-color: black;
+}
+
+#result {
+  color: rgb(24, 24, 24);
+  margin-top: 25px;
+  margin-bottom: 60px;
+  text-align: center;
+  font-size: 1.2em;
+  max-height: 50px;
+  overflow-y: auto;
+}
+
+footer {
+  text-align: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 20px;
+}

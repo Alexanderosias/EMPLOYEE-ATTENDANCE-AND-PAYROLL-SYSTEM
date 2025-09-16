@@ -78,12 +78,12 @@ body {
 .logout-btn {
   display: flex !important;
   align-items: center !important;
-  padding: 15px 20px !important;
+  padding: 12px 20px !important;
   border-radius: 15px !important;
   color: #fff !important;
   text-decoration: none !important;
   font-size: 0.9em !important;
-  line-height: 1.2 !important;
+  line-height: 1 !important;
   transition: background-color 0.3s ease;
 }
 
@@ -252,7 +252,7 @@ body {
 }
 
 .salary-distribution {
-  padding-top: 40px;
+  padding-top: 43px;
 }
 
 #attendance-chart,
