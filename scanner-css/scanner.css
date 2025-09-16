@@ -28,10 +28,12 @@ body {
   justify-content: center;
   align-items: center;
   color: white;
-  font-size: 35px;
-  font-weight: 700;
-  margin-top: 40px;
+  margin-top: 20px;
   position: relative;
+}
+
+.top h1 {
+  text-shadow: 2px 5px 5px rgba(0, 0, 0, 0.5);
 }
 
 .card,
@@ -62,7 +64,7 @@ body {
 .content-grid {
   display: grid;
   grid-template-columns: 20% 40% auto;
-  padding: 40px;
+  padding: 20px 40px 40px 40px;
   column-gap: 20px;
 }
 
