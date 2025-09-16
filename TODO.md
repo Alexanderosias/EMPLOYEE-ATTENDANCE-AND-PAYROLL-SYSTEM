@@ -28,7 +28,6 @@ Plan and step tracking for adding filters to employees_page.html and wiring logi
 
 - [x] Align filter styling to match schedule_page.html using Tailwind classes for selects and layout
 
-- [ ] Manual verification
   - [ ] Confirm dropdowns render correctly
   - [ ] Confirm filtering hides/shows cards as expected
   - [ ] Confirm search + filters work in combination
