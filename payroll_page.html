@@ -5,11 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Payroll Page</title>
-    <link rel="stylesheet" href="css/dashboard.css"/>
+    <link rel="stylesheet" href="css/dashboard.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- Include Inter font and Tailwind CSS for payroll dashboard -->
+    <link rel="stylesheet" href="src/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         main {
             font-family: 'Inter', sans-serif;
@@ -84,6 +83,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="profile_details_page.html">
+                            <img src="icons/user.png" alt="Settings" class="icon">
+                            Profile
+                        </a>
+                    </li>
+                    <li>
                         <a href="settings_page.html">
                             <img src="icons/coghweel.png" alt="Settings" class="icon">
                             Settings
@@ -100,27 +105,30 @@
 
         <main class="main-content">
             <header class="dashboard-header">
-                <h2>PAYROLL</h2>
-                <hr />
-                <p style="padding-top: 10px;" id="current-datetime"></p>
+                <div>
+                    <h2>PAYROLL</h2>
+                </div>
+                <div>
+                    <p id="current-datetime"></p>
+                </div>
             </header>
 
             <!-- Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-blue-100 p-6 rounded-lg shadow-sm">
-                        <p class="text-sm font-medium text-gray-600">Total Gross Pay</p>
-                        <p class="text-3xl font-bold text-blue-800 mt-1" id="total-gross-pay">₱0.00</p>
-                    </div>
-                    <div class="bg-red-100 p-6 rounded-lg shadow-sm">
-                        <p class="text-sm font-medium text-gray-600">Total Taxes & Deductions</p>
-                        <p class="text-3xl font-bold text-red-800 mt-1" id="total-deductions">₱0.00</p>
-                    </div>
-                    <div class="bg-green-100 p-6 rounded-lg shadow-sm">
-                        <p class="text-sm font-medium text-gray-600">Total Net Pay</p>
-                        <p class="text-3xl font-bold text-green-800 mt-1" id="total-net-pay">₱0.00</p>
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-blue-100 p-6 rounded-lg shadow-sm">
+                    <p class="text-sm font-medium text-gray-600">Total Gross Pay</p>
+                    <p class="text-3xl font-bold text-blue-800 mt-1" id="total-gross-pay">₱0.00</p>
                 </div>
-                
+                <div class="bg-red-100 p-6 rounded-lg shadow-sm">
+                    <p class="text-sm font-medium text-gray-600">Total Taxes & Deductions</p>
+                    <p class="text-3xl font-bold text-red-800 mt-1" id="total-deductions">₱0.00</p>
+                </div>
+                <div class="bg-green-100 p-6 rounded-lg shadow-sm">
+                    <p class="text-sm font-medium text-gray-600">Total Net Pay</p>
+                    <p class="text-3xl font-bold text-green-800 mt-1" id="total-net-pay">₱0.00</p>
+                </div>
+            </div>
+
             <!-- Inserted Payroll Dashboard Content Starts Here -->
             <!-- Main Container -->
             <div class="max-w-6xl mx-auto bg-white p-6 rounded-xl shadow-lg">
@@ -136,7 +144,7 @@
                         </div>
                         <p class="text-gray-500 mt-1" id="pay-period-display"></p>
                     </div>
-                    
+
                 </div>
 
                 <!-- Tax Rate Settings Panel -->

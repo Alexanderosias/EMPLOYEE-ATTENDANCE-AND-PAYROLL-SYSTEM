@@ -62,35 +62,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Attach event listeners for filtering
-  searchBtn.addEventListener('click', filterEmployees);
-  searchInput.addEventListener('input', filterEmployees);
-  filterDepartment.addEventListener('change', filterEmployees);
-  filterJobPosition.addEventListener('change', filterEmployees);
+  // Event listeners for filtering
+searchBtn.addEventListener('click', filterEmployees);
+searchInput.addEventListener('input', filterEmployees);
+filterDepartment.addEventListener('change', filterEmployees);
+filterJobPosition.addEventListener('change', filterEmployees);
 
-  // Existing employee card show more toggle
-  employeeListContainer.addEventListener('click', (event) => {
-    const showMoreBtn = event.target.closest('.action-btn-show-more');
-    if (showMoreBtn) {
-      const employeeCard = showMoreBtn.closest('.employee-card');
-      const expandedDetails = employeeCard.querySelector('.expanded-details');
-      const icon = showMoreBtn.querySelector('i');
+// Employee card show more toggle with image icon swap
+employeeListContainer.addEventListener('click', (event) => {
+  const showMoreBtn = event.target.closest('.action-btn-show-more');
+  if (showMoreBtn) {
+    const employeeCard = showMoreBtn.closest('.employee-card');
+    const expandedDetails = employeeCard.querySelector('.expanded-details');
+    const iconImg = showMoreBtn.querySelector('img');
 
-      if (expandedDetails.classList.contains('visible')) {
-        expandedDetails.classList.remove('visible');
-        expandedDetails.setAttribute('aria-hidden', 'true');
-        employeeCard.classList.add('minimized');
-        icon.classList.remove('fa-chevron-up');
-        icon.classList.add('fa-chevron-down');
-      } else {
-        expandedDetails.classList.add('visible');
-        expandedDetails.setAttribute('aria-hidden', 'false');
-        employeeCard.classList.remove('minimized');
-        icon.classList.remove('fa-chevron-down');
-        icon.classList.add('fa-chevron-up');
+    if (expandedDetails.classList.contains('visible')) {
+      expandedDetails.classList.remove('visible');
+      expandedDetails.setAttribute('aria-hidden', 'true');
+      employeeCard.classList.add('minimized');
+
+      if (iconImg) {
+        iconImg.src = 'icons/down-arrow.png';  
+        iconImg.alt = 'Expand details';
+      }
+    } else {
+      expandedDetails.classList.add('visible');
+      expandedDetails.setAttribute('aria-hidden', 'false');
+      employeeCard.classList.remove('minimized');
+
+      if (iconImg) {
+        iconImg.src = 'icons/up-arrow.png';
+        iconImg.alt = 'Collapse details';
       }
     }
-  });
+  }
+});
+
 
   // Update and Delete buttons
   employeeListContainer.addEventListener('click', (event) => {
@@ -135,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
   addEmployeeBtn.addEventListener('click', () => {
     addModal.setAttribute('aria-hidden', 'false');
     addEmployeeForm.reset();
-    addAvatarPreviewImg.src = 'https://placehold.co/100x100/cccccc/ffffff?text=Avatar';
+    addAvatarPreviewImg.src = 'img/user.jpg';
     addAvatarPreviewImg.alt = 'Avatar preview';
     addEmployeeForm.querySelector('input, select').focus();
   });
@@ -166,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       reader.readAsDataURL(file);
     } else {
-      addAvatarPreviewImg.src = 'https://placehold.co/100x100/cccccc/ffffff?text=Avatar';
+      addAvatarPreviewImg.src = 'img/user.jpg';
       addAvatarPreviewImg.alt = 'Avatar preview';
     }
   });
@@ -214,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateAvatarPreviewImg.src = employeeData.avatarUrl;
       updateAvatarPreviewImg.alt = 'Employee avatar preview';
     } else {
-      updateAvatarPreviewImg.src = 'https://placehold.co/100x100/cccccc/ffffff?text=Avatar';
+      updateAvatarPreviewImg.src = 'img/user.jpg';
       updateAvatarPreviewImg.alt = 'Avatar preview';
     }
 
@@ -247,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       reader.readAsDataURL(file);
     } else {
-      updateAvatarPreviewImg.src = 'https://placehold.co/100x100/cccccc/ffffff?text=Avatar';
+      updateAvatarPreviewImg.src = 'img/user.jpg';
       updateAvatarPreviewImg.alt = 'Avatar preview';
     }
   });

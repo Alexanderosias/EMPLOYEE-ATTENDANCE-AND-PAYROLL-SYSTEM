@@ -63,6 +63,17 @@
   transition: color 0.3s ease;
 }
 
+.search-btn img,
+.add-employee-btn img {
+  width: 18px;  
+  height: 18px;
+  vertical-align: middle;
+  margin-left: 0.5rem; 
+  pointer-events: none; 
+  display: inline-block;
+}
+
+
 .search-btn:hover {
   color: var(--search-btn-hover);
 }
@@ -85,10 +96,6 @@
 
 .add-employee-btn:hover {
   background-color: var(--add-btn-hover);
-}
-
-.add-employee-btn i {
-  font-size: 1.1rem;
 }
 
 /* Employee list container */
@@ -173,7 +180,6 @@
   flex-shrink: 0;
 }
 
-/* Employee details container */
 .employee-details {
   flex-grow: 1;
   display: flex;
@@ -182,7 +188,6 @@
   min-width: 220px;
 }
 
-/* Uniform spacing for detail and expanded items */
 .detail-item,
 .expanded-item {
   display: flex;
@@ -230,11 +235,9 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--main-font-color);
-  font-size: 1.25rem;
   padding: 0.25rem;
   border-radius: 6px;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -242,41 +245,35 @@
   height: 36px;
 }
 
-.action-btn:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-  color: var(--add-btn-color);
+.action-btn img {
+  width: 20px; 
+  height: 20px;
+  display: block; 
+  pointer-events: none; 
 }
 
-.action-btn-update {
-  color: var(--update-btn-color);
+.action-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .action-btn-update:hover {
-  color: var(--update-btn-hover);
   background-color: rgba(40, 167, 69, 0.15);
 }
 
-.action-btn-delete {
-  color: var(--delete-btn-color);
-}
-
 .action-btn-delete:hover {
-  color: var(--delete-btn-hover);
   background-color: rgba(220, 53, 69, 0.15);
 }
 
 .action-btn-show-more {
-  color: var(--show-more-btn-color);
-  font-size: 1.5rem;
   width: 36px;
   height: 36px;
   padding: 0;
 }
 
 .action-btn-show-more:hover {
-  color: var(--show-more-btn-hover);
   background-color: rgba(0, 123, 255, 0.15);
 }
+
 
 @media (max-width: 768px) {
   .search-add-bar {

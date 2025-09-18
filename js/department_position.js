@@ -2,11 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Simulated employee data (replace with real data or fetch from backend)
   const employees = [
     { name: "Francis Rivas", department: "Computer Engineering", jobPosition: "Instructor" },
-    { name: "Alice Smith", department: "Math", jobPosition: "Developer" },
-    { name: "Bob Johnson", department: "Physics", jobPosition: "Designer" },
-    { name: "Carol Lee", department: "IT", jobPosition: "Developer" },
-    { name: "David Kim", department: "Marketing", jobPosition: "Manager" },
-    { name: "Eve Davis", department: "Computer Engineering", jobPosition: "Developer" },
+    { name: "Adela Onlao", department: "Computer Engineering", jobPosition: "Instructor" },
     // Add more employees as needed
   ];
 
@@ -131,44 +127,52 @@ document.addEventListener('DOMContentLoaded', () => {
   // Function to create list item with delete button
   function createListItem(text, type) {
     const li = document.createElement('li');
-    
+
     const itemContent = document.createElement('span');
     itemContent.className = 'item-content';
     itemContent.textContent = text;
-    
+
     const itemActions = document.createElement('div');
     itemActions.className = 'item-actions';
-    
+
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-delete';
-    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
     deleteBtn.setAttribute('aria-label', `Delete ${text}`);
-    
+
+    // Replace icon with image
+    const deleteImg = document.createElement('img');
+    deleteImg.src = './icons/delete.png';  // Adjust path as needed
+    deleteImg.alt = 'Delete';
+    deleteImg.className = 'delete-icon'; // Optional: for styling (size, cursor, etc.)
+
+    deleteBtn.appendChild(deleteImg);
+
     deleteBtn.addEventListener('click', () => {
       showDeleteConfirmation(li, text, type);
     });
-    
+
     itemActions.appendChild(deleteBtn);
     li.appendChild(itemContent);
     li.appendChild(itemActions);
-    
+
     return li;
   }
+
 
   // Function to show delete confirmation
   function showDeleteConfirmation(listItem, itemName, type) {
     const typeName = type === 'department' ? 'department' : 'job position';
     const employeeCount = getEmployeeCount(itemName, type);
-    
+
     deleteConfirmationMessage.textContent = `Are you sure you want to delete the ${typeName} "${itemName}"?`;
-    
+
     if (employeeCount > 0) {
       deleteWarningMessage.textContent = `Warning: This ${typeName} has ${employeeCount} employee(s) assigned to it. Deleting it may affect employee records.`;
       deleteWarningMessage.style.display = 'block';
     } else {
       deleteWarningMessage.style.display = 'none';
     }
-    
+
     itemToDelete = listItem;
     itemType = type;
     openModal(deleteConfirmationModal);
