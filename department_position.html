@@ -65,6 +65,12 @@
             </a>
           </li>
           <li>
+            <a href="profile_details_page.html">
+              <img src="icons/user.png" alt="Settings" class="icon">
+              Profile
+            </a>
+          </li>
+          <li>
             <a href="settings_page.html">
               <img src="icons/coghweel.png" alt="Settings" class="icon" />
               Settings
@@ -81,9 +87,12 @@
 
     <main class="main-content">
       <header class="dashboard-header">
-        <h2>DEPARTMENTS & JOB POSITIONS</h2>
-        <hr />
-        <p id="current-datetime"></p>
+        <div>
+          <h2>DEPARTMENTS & JOB POSITIONS</h2>
+        </div>
+        <div>
+          <p id="current-datetime"></p>
+        </div>
       </header>
 
       <!-- Insert Departments and Job Positions container here -->
@@ -99,8 +108,10 @@
             <li>Marketing</li>
           </ul>
           <button id="add-department-btn" class="btn-add" aria-haspopup="dialog" aria-controls="add-department-modal">
-            <i class="fas fa-plus"></i> Add Department
+            <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
+            Add Department
           </button>
+
         </section>
 
         <!-- Job Positions Section -->
@@ -113,13 +124,15 @@
             <li>Manager</li>
           </ul>
           <button id="add-job-position-btn" class="btn-add" aria-haspopup="dialog" aria-controls="add-job-position-modal">
-            <i class="fas fa-plus"></i> Add Job Position
+            <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
+            Add Department
           </button>
         </section>
       </div>
 
       <!-- Add Department Modal -->
-      <div id="add-department-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="add-department-title" aria-modal="true">
+      <div id="add-department-modal" class="modal" aria-hidden="true" role="dialog"
+        aria-labelledby="add-department-title" aria-modal="true">
         <div class="modal-content">
           <header class="modal-header">
             <h4 id="add-department-title">Add Department</h4>
@@ -128,7 +141,8 @@
           <form id="add-department-form" novalidate>
             <div class="modal-body">
               <label for="department-name">Department Name</label>
-              <input type="text" id="department-name" name="departmentName" required placeholder="Enter department name" />
+              <input type="text" id="department-name" name="departmentName" required
+                placeholder="Enter department name" />
             </div>
             <footer class="modal-footer">
               <button type="submit" class="btn btn-primary">Add Department</button>
@@ -139,7 +153,8 @@
       </div>
 
       <!-- Add Job Position Modal -->
-      <div id="add-job-position-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="add-job-position-title" aria-modal="true">
+      <div id="add-job-position-modal" class="modal" aria-hidden="true" role="dialog"
+        aria-labelledby="add-job-position-title" aria-modal="true">
         <div class="modal-content">
           <header class="modal-header">
             <h4 id="add-job-position-title">Add Job Position</h4>
@@ -148,7 +163,8 @@
           <form id="add-job-position-form" novalidate>
             <div class="modal-body">
               <label for="job-position-name">Job Position Name</label>
-              <input type="text" id="job-position-name" name="jobPositionName" required placeholder="Enter job position name" />
+              <input type="text" id="job-position-name" name="jobPositionName" required
+                placeholder="Enter job position name" />
             </div>
             <footer class="modal-footer">
               <button type="submit" class="btn btn-primary">Add Job Position</button>
@@ -159,7 +175,8 @@
       </div>
 
       <!-- Delete Confirmation Modal -->
-      <div id="delete-confirmation-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="delete-confirmation-title" aria-modal="true">
+      <div id="delete-confirmation-modal" class="modal" aria-hidden="true" role="dialog"
+        aria-labelledby="delete-confirmation-title" aria-modal="true">
         <div class="modal-content">
           <header class="modal-header">
             <h4 id="delete-confirmation-title">Confirm Deletion</h4>

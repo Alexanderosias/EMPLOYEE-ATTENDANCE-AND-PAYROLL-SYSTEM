@@ -1,0 +1,24 @@
+{
+  "name": "employee-attendance-and-payroll-system",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/Alexanderosias/EMPLOYEE-ATTENDANCE-AND-PAYROLL-SYSTEM#readme",
+  "bugs": {
+    "url": "https://github.com/Alexanderosias/EMPLOYEE-ATTENDANCE-AND-PAYROLL-SYSTEM/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alexanderosias/EMPLOYEE-ATTENDANCE-AND-PAYROLL-SYSTEM.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tailwindcss -i ./src/input.css -o ./src/styles.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

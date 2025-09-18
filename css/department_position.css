@@ -6,6 +6,14 @@
   flex-wrap: wrap;
 }
 
+.delete-icon {
+  width: 20px;  
+  height: 20px;
+  pointer-events: none; 
+  user-select: none;
+}
+
+
 /* Each section box */
 .section-box {
   background-color: var(--card-bg-color, #f0f0f0);
@@ -59,7 +67,7 @@ ul.item-list li .item-actions {
 }
 
 .btn-delete {
-  background-color: #dc3545;
+  background-color: #bebebe;
   color: white;
   border: none;
   padding: 0.25rem 0.5rem;
@@ -73,11 +81,11 @@ ul.item-list li .item-actions {
 }
 
 .btn-delete:hover {
-  background-color: #c82333;
+  background-color: #d4d4d4;
 }
 
 .btn-delete:focus {
-  outline: 2px solid #dc3545;
+  outline: 2px solid #ff8383;
   outline-offset: 2px;
 }
 
@@ -91,7 +99,7 @@ ul.item-list li:last-child {
   background-color: var(--add-btn-color, #007bff);
   color: white;
   border: none;
-  padding: 0.5rem 1.25rem;
+  padding: 12px 15px;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
@@ -99,6 +107,12 @@ ul.item-list li:last-child {
   align-items: center;
   gap: 0.5rem;
   transition: background-color 0.3s ease;
+}
+
+.btn-add img {
+  width: 15px !important;  
+  height: 15px !important;
+  vertical-align: middle  !important;
 }
 
 .btn-add:hover {
