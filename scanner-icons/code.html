@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reports Page</title>
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    /* Container for reports page content */
+    .reports-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      background: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      color: #1f2937; /* gray-800 */
+      line-height: 1.5;
+    }
+
+    h2.section-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid #2563eb;
+      padding-left: 0.75rem;
+      color: #2563eb;
+    }
+
+    h3.report-subtitle {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: #111827; /* gray-900 */
+    }
+
+    ul.report-list {
+      list-style: none;
+      padding-left: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    ul.report-list li {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      color: #374151; /* gray-700 */
+    }
+
+    ul.report-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #2563eb;
+      font-weight: bold;
+      font-size: 1.25rem;
+      line-height: 1;
+      top: 0.15rem;
+    }
+
+    /* Emoji icon style for section headings */
+    .section-emoji {
+      font-size: 1.25rem;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+
+    /* Filter container */
+    .filter-container {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #f3f4f6; /* gray-100 */
+      border-radius: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .filter-label {
+      font-weight: 600;
+      color: #374151;
+      min-width: 120px;
+    }
+
+    select,
+    input[type="date"] {
+      padding: 0.4rem 0.6rem;
+      border-radius: 0.375rem;
+      border: 1px solid #d1d5db;
+      font-size: 1rem;
+      color: #374151;
+      cursor: pointer;
+      min-width: 150px;
+      transition: border-color 0.3s;
+    }
+
+    select:focus,
+    input[type="date"]:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4);
+    }
+
+    /* Action buttons */
+    .action-buttons {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    button.generate-btn,
+    button.export-btn {
+      background-color: #2563eb;
+      color: white;
+      padding: 0.5rem 1.25rem;
+      border-radius: 0.375rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.3s;
+      min-width: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    button.generate-btn:hover,
+    button.export-btn:hover {
+      background-color: #1d4ed8;
+    }
+
+    button.export-btn {
+      background-color: #059669;
+    }
+
+    button.export-btn:hover {
+      background-color: #047857;
+    }
+
+    /* Report output area */
+    .report-output {
+      margin-top: 1.5rem;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      min-height: 180px;
+      font-family: monospace, monospace;
+      font-size: 0.9rem;
+      color: #374151;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      max-height: 300px;
+      box-sizing: border-box;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .filter-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      select,
+      input[type="date"] {
+        min-width: 100%;
+      }
+
+      .action-buttons {
+        justify-content: center;
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      .reports-content,
+      .reports-content * {
+        visibility: visible;
+      }
+
+      .reports-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: none;
+        padding: 0;
+        background: white;
+        box-shadow: none !important;
+      }
+
+      /* Hide filters and buttons */
+      .filter-container,
+      .action-buttons {
+        display: none !important;
+      }
+
+      .report-output {
+        max-height: none !important;
+        overflow: visible !important;
+        font-size: 12pt;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="successMessageBox" style="display: none;">
+    Login successful!
+  </div>
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <a class="sidebar-header" href="#">
+        <img src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="Logo" class="logo" />
+        <span class="app-name">EAAPS Admin</span>
+      </a>
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="dashboard.html">
+              <img src="icons/home.png" alt="Dashboard" class="icon" />
+              Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="employees_page.html">
+              <img src="icons/group.png" alt="Employees" class="icon" />
+              Employees
+            </a>
+          </li>
+          <li>
+            <a href="schedule_page.html">
+              <img src="icons/calendar-deadline-date.png" alt="Schedules" class="icon" />
+              Schedules
+            </a>
+          </li>
+          <li>
+            <a href="department_position.html">
+              <img src="icons/networking.png" alt="departments&Positions" class="icon" />
+              Departments and Positions
+            </a>
+          </li>
+          <li>
+            <a href="attendance_logs_page.html">
+              <img src="icons/clock.png" alt="Attendance Logs" class="icon" />
+              Attendance Logs
+            </a>
+          </li>
+          <li>
+            <a href="payroll_page.html">
+              <img src="icons/cash.png" alt="Payroll" class="icon" />
+              Payroll
+            </a>
+          </li>
+          <li>
+            <a href="qr_codes_and_snapshots.html">
+              <img src="icons/snapshot.png" alt="Qr&Snapshots" class="icon" />
+              QR and Snapshots
+            </a>
+          </li>
+          <li class="active">
+            <a href="#">
+              <img src="icons/clipboard.png" alt="Reports" class="icon" />
+              Reports
+            </a>
+          </li>
+          <li>
+            <a href="profile_details_page.html">
+              <img src="icons/user.png" alt="Profile" class="icon" />
+              Profile
+            </a>
+          </li>
+          <li>
+            <a href="settings_page.html">
+              <img src="icons/coghweel.png" alt="Settings" class="icon" />
+              Settings
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <a class="logout-btn" href="login.html">
+        <img src="icons/sign-out-option.png" alt="Logout" class="logout-icon" />
+        Logout
+      </a>
+    </aside>
+
+    <main class="main-content p-6 bg-gray-50 min-h-screen overflow-auto">
+      <header class="dashboard-header flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-gray-800">REPORTS</h2>
+        <p id="current-datetime" class="text-gray-600 text-sm"></p>
+      </header>
+
+      <article class="reports-content" aria-label="Reports content">
+
+        <!-- Attendance Reports Section -->
+        <h2 class="section-title"><span class="section-emoji">📌</span>Attendance Reports</h2>
+        <ul class="report-list" aria-label="Attendance reports list">
+          <li><strong>Daily Attendance Report</strong> – list of employees present, absent, late, and on leave for the day.</li>
+          <li><strong>Weekly Attendance Report</strong> – attendance summary per employee for the week.</li>
+          <li><strong>Bi-Monthly / 15-Day Report</strong> – often used in companies that compute payroll every 15 days.</li>
+          <li><strong>Monthly Attendance Report</strong> – detailed log of attendance, tardiness, and absences.</li>
+          <li><strong>Yearly Attendance Summary</strong> – attendance overview for the entire year, useful for performance evaluation.</li>
+          <li><strong>Employee Attendance Record</strong> – individual employee’s attendance history.</li>
+        </ul>
+
+        <!-- Payroll Reports Section -->
+        <h2 class="section-title"><span class="section-emoji">📌</span>Payroll Reports</h2>
+        <ul class="report-list" aria-label="Payroll reports list">
+          <li><strong>Payroll Register Report</strong> – breakdown of gross pay, deductions, and net pay for all employees.</li>
+          <li><strong>Payslip Report</strong> – generates payslips for employees (individual format).</li>
+          <li><strong>Overtime Report</strong> – list of overtime hours and corresponding pay.</li>
+          <li><strong>Deductions Report</strong> – deductions like taxes.</li>
+          <li><strong>13th Month / Bonus Report</strong> – computation and release summary (if applicable).</li>
+          <li><strong>Year-End Payroll Summary</strong> – total salary, deductions, and benefits per employee.</li>
+        </ul>
+
+        <!-- Other Useful Reports Section -->
+        <h2 class="section-title"><span class="section-emoji">📌</span>Other Useful Reports</h2>
+        <ul class="report-list" aria-label="Other useful reports list">
+          <li><strong>Leave Report</strong> – details of approved, pending, and used leaves.</li>
+          <li><strong>Department/Position-wise Report</strong> – summary of attendance or payroll per department/position.</li>
+          <li><strong>Employee Performance Report (Attendance-Based)</strong> – insights on punctuality, absenteeism trends.</li>
+          <li><strong>Audit Report</strong> – logs of changes in attendance or payroll records for transparency.</li>
+        </ul>
+
+        <!-- Filters and Actions -->
+        <section class="filter-container" aria-label="Report filters and actions">
+          <label for="report-type" class="filter-label">Select Report Type:</label>
+          <select id="report-type" aria-describedby="report-type-desc">
+            <option value="attendance">Attendance Reports</option>
+            <option value="payroll">Payroll Reports</option>
+            <option value="other">Other Useful Reports</option>
+          </select>
+
+          <label for="frequency" class="filter-label">Select Frequency:</label>
+          <select id="frequency" aria-describedby="frequency-desc">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Bi-Monthly / 15 Days</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+            <option value="custom">Custom Range</option>
+          </select>
+
+          <label for="start-date" class="filter-label" id="start-date-label" style="display:none;">Start Date:</label>
+          <input type="date" id="start-date" style="display:none;" aria-labelledby="start-date-label" />
+
+          <label for="end-date" class="filter-label" id="end-date-label" style="display:none;">End Date:</label>
+          <input type="date" id="end-date" style="display:none;" aria-labelledby="end-date-label" />
+        </section>
+
+        <section class="action-buttons" aria-label="Report actions">
+          <button class="generate-btn" id="generate-report-btn" aria-describedby="generate-desc">
+            <i class="fas fa-file-alt"></i> Generate Report
+          </button>
+          <button class="export-btn" id="export-pdf-btn" aria-describedby="export-desc" disabled>
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+          <button class="export-btn" id="export-excel-btn" aria-describedby="export-desc" disabled>
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+          <button class="export-btn" id="export-csv-btn" aria-describedby="export-desc" disabled>
+            <i class="fas fa-file-csv"></i> Export CSV
+          </button>
+        </section>
+
+        <section class="report-output" id="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
+          <!-- Generated report content will appear here -->
+          <em>Select report type and frequency, then click Generate Report.</em>
+        </section>
+      </article>
+    </main>
+  </div>
+
+  <script src="js/dashboard.js"></script>
+  <script src="js/current_time.js"></script>
+  <script>
+    // Dummy report texts for demonstration
+    const reportTexts = {
+      attendance: {
+        daily: `Daily Attendance Report – list of employees present, absent, late, and on leave for the day.\n\nExample:\n- Present: 45\n- Absent: 5\n- Late: 3\n- On Leave: 2`,
+        weekly: `Weekly Attendance Report – attendance summary per employee for the week.\n\nExample:\nEmployee A: 5 days present\nEmployee B: 4 days present, 1 day absent`,
+        biweekly: `Bi-Monthly / 15-Day Report – often used in companies that compute payroll every 15 days.\n\nExample:\nPeriod: Sep 1 - Sep 15\nSummary of attendance and absences.`,
+        monthly: `Monthly Attendance Report – detailed log of attendance, tardiness, and absences.\n\nExample:\nSeptember 2025 detailed logs per employee.`,
+        yearly: `Yearly Attendance Summary – attendance overview for the entire year, useful for performance evaluation.\n\nExample:\nYear 2025 attendance summary.`,
+        custom: `Custom Date Range Attendance Report.\n\nPlease select start and end dates.`
+      },
+      payroll: {
+        daily: `Payroll Register Report – breakdown of gross pay, deductions, and net pay for all employees for the day.`,
+        weekly: `Weekly Payroll Report – payroll summary for the week.`,
+        biweekly: `Bi-Monthly Payroll Report – payroll summary for 15-day period.`,
+        monthly: `Monthly Payroll Report – detailed payroll for the month.`,
+        yearly: `Year-End Payroll Summary – total salary, deductions, and benefits per employee.`,
+        custom: `Custom Date Range Payroll Report.\n\nPlease select start and end dates.`
+      },
+      other: {
+        daily: `Leave Report – details of approved, pending, and used leaves for the day.`,
+        weekly: `Department/Position-wise Report – summary of attendance or payroll per department/position for the week.`,
+        biweekly: `Employee Performance Report (Attendance-Based) – insights on punctuality, absenteeism trends for 15 days.`,
+        monthly: `Audit Report – logs of changes in attendance or payroll records for the month.`,
+        yearly: `Yearly Other Reports Summary.`,
+        custom: `Custom Date Range Other Reports.\n\nPlease select start and end dates.`
+      }
+    };
+
+    // Elements
+    const reportTypeSelect = document.getElementById('report-type');
+    const frequencySelect = document.getElementById('frequency');
+    const startDateInput = document.getElementById('start-date');
+    const endDateInput = document.getElementById('end-date');
+    const startDateLabel = document.getElementById('start-date-label');
+    const endDateLabel = document.getElementById('end-date-label');
+    const generateBtn = document.getElementById('generate-report-btn');
+    const exportPdfBtn = document.getElementById('export-pdf-btn');
+    const exportExcelBtn = document.getElementById('export-excel-btn');
+    const exportCsvBtn = document.getElementById('export-csv-btn');
+    const reportOutput = document.getElementById('report-output');
+
+    // Show/hide custom date inputs based on frequency
+    frequencySelect.addEventListener('change', () => {
+      if (frequencySelect.value === 'custom') {
+        startDateInput.style.display = 'inline-block';
+        endDateInput.style.display = 'inline-block';
+        startDateLabel.style.display = 'inline-block';
+        endDateLabel.style.display = 'inline-block';
+      } else {
+        startDateInput.style.display = 'none';
+        endDateInput.style.display = 'none';
+        startDateLabel.style.display = 'none';
+        endDateLabel.style.display = 'none';
+        startDateInput.value = '';
+        endDateInput.value = '';
+      }

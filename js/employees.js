@@ -138,10 +138,12 @@ employeeListContainer.addEventListener('click', (event) => {
   const addAvatarPreviewImg = document.getElementById('avatar-preview-img');
   const addEmployeeForm = document.getElementById('add-employee-form');
   const addUploadImageBtn = document.getElementById('upload-image-btn');
+  const addCreditsInput = document.getElementById('credits');
 
   addEmployeeBtn.addEventListener('click', () => {
     addModal.setAttribute('aria-hidden', 'false');
     addEmployeeForm.reset();
+    addCreditsInput.value = '';
     addAvatarPreviewImg.src = 'img/user.jpg';
     addAvatarPreviewImg.alt = 'Avatar preview';
     addEmployeeForm.querySelector('input, select').focus();
@@ -199,6 +201,7 @@ employeeListContainer.addEventListener('click', (event) => {
   const updateUploadImageBtn = document.getElementById('update-upload-image-btn');
   const updateEmployeeForm = document.getElementById('update-employee-form');
   const updateCloseButtons = updateModal.querySelectorAll('.modal-close-btn');
+  const updateCreditsInput = document.getElementById('update-credits');
 
   function openUpdateModal(employeeData) {
     updateModal.setAttribute('aria-hidden', 'false');
@@ -215,6 +218,7 @@ employeeListContainer.addEventListener('click', (event) => {
     updateEmployeeForm.contactNumber.value = employeeData.contactNumber || '';
     updateEmployeeForm.emergencyContact.value = employeeData.emergencyContact || '';
     updateEmployeeForm.schedules.value = employeeData.schedules || '';
+    updateCreditsInput.value = employeeData.credits !== undefined ? employeeData.credits : '';
 
     // Set avatar preview if avlble
     if (employeeData.avatarUrl) {
