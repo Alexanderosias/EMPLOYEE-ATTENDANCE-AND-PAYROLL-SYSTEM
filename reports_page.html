@@ -2,17 +2,192 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Reports Page</title>
-  <link rel="stylesheet" href="css/dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    .reports-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      background: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      color: #1f2937;
+      line-height: 1.5;
+    }
+
+    h2.section-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid #2563eb;
+      padding-left: 0.75rem;
+      color: #2563eb;
+    }
+
+    h3.report-subtitle {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: #111827;
+    }
+
+    ul.report-list {
+      list-style: none;
+      padding-left: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    ul.report-list li {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      color: #374151;
+    }
+
+    ul.report-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #2563eb;
+      font-weight: bold;
+      font-size: 1.25rem;
+      line-height: 1;
+      top: 0.15rem;
+    }
+
+    .report-card {
+      background: #f9fafb;
+      border-radius: 0.5rem;
+      padding: 1rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 4px rgb(0 0 0 / 0.1);
+    }
+
+    .report-card h3 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      color: #2563eb;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    .frequency-select {
+      width: 200px;
+      padding: 0.4rem 0.6rem;
+      border-radius: 0.375rem;
+      border: 1px solid #d1d5db;
+      font-size: 1rem;
+      color: #374151;
+      cursor: pointer;
+      outline-offset: 2px;
+      transition: border-color 0.3s;
+      margin-bottom: 1rem;
+    }
+
+    .frequency-select:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-container {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    button.generate-btn,
+    button.print-btn {
+      background-color: #2563eb;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.3s;
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    button.print-btn {
+      background-color: #10b981;
+    }
+
+    button.generate-btn:hover {
+      background-color: #1d4ed8;
+    }
+
+    button.print-btn:hover {
+      background-color: #059669;
+    }
+
+    .report-output {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      min-height: 140px;
+      font-family: monospace, monospace;
+      font-size: 0.9rem;
+      color: #374151;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      max-height: 250px;
+      margin-top: 1rem;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      .report-card.printable,
+      .report-card.printable * {
+        visibility: visible;
+      }
+
+      .report-card.printable {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: none;
+        box-shadow: none !important;
+        border: none !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .frequency-select,
+      button.generate-btn,
+      button.print-btn {
+        display: none !important;
+      }
+
+      .report-output {
+        max-height: none !important;
+        overflow: visible !important;
+        font-size: 12pt;
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <div id="successMessageBox" style="display: none;">
-    Login successful!
-  </div>
   <div class="dashboard-container">
     <aside class="sidebar">
       <a class="sidebar-header" href="#">
@@ -90,19 +265,145 @@
       </a>
     </aside>
 
-    <main class="main-content">
-      <header class="dashboard-header">
-        <div>
-          <h2>REPORTS</h2>
-        </div>
-        <div>
-          <p id="current-datetime"></p>
-        </div>
+    <main class="main-content p-6 bg-gray-50 min-h-screen overflow-auto">
+      <header class="dashboard-header flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-gray-800">REPORTS</h2>
+        <p id="current-datetime" class="text-gray-600 text-sm"></p>
       </header>
+
+      <article class="reports-content" aria-label="Reports content">
+
+        <!-- Attendance Reports -->
+        <section class="report-card" id="attendance-report">
+          <h3>Attendance Reports</h3>
+          <select class="frequency-select" aria-label="Select attendance report frequency">
+            <option value="daily">Daily Attendance Report</option>
+            <option value="weekly">Weekly Attendance Report</option>
+            <option value="biweekly">Bi-Monthly / 15-Day Report</option>
+            <option value="monthly">Monthly Attendance Report</option>
+            <option value="yearly">Yearly Attendance Summary</option>
+            <option value="employee">Employee Attendance Record</option>
+          </select>
+          <div class="btn-container">
+            <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
+            <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
+          </div>
+          <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
+Select a report and click Generate.
+          </pre>
+        </section>
+
+        <!-- Payroll Reports -->
+        <section class="report-card" id="payroll-report">
+          <h3>Payroll Reports</h3>
+          <select class="frequency-select" aria-label="Select payroll report frequency">
+            <option value="register">Payroll Register Report</option>
+            <option value="payslip">Payslip Report</option>
+            <option value="overtime">Overtime Report</option>
+            <option value="deductions">Deductions Report</option>
+            <option value="bonus">13th Month / Bonus Report</option>
+            <option value="yearend">Year-End Payroll Summary</option>
+          </select>
+          <div class="btn-container">
+            <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
+            <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
+          </div>
+          <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
+Select a report and click Generate.
+          </pre>
+        </section>
+
+        <!-- Other Useful Reports -->
+        <section class="report-card" id="other-report">
+          <h3>Other Useful Reports</h3>
+          <select class="frequency-select" aria-label="Select other report frequency">
+            <option value="leave">Leave Report</option>
+            <option value="deptpos">Department/Position-wise Report</option>
+            <option value="performance">Employee Performance Report (Attendance-Based)</option>
+            <option value="audit">Audit Report</option>
+          </select>
+          <div class="btn-container">
+            <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
+            <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
+          </div>
+          <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
+Select a report and click Generate.
+          </pre>
+        </section>
+
+      </article>
     </main>
   </div>
-  <script src="js/dashboard.js"></script>
-  <script src="js/current_time.js"></script>
+
+  <script>
+    // Dummy report content for each report option
+    const reportData = {
+      attendance: {
+        daily: `Daily Attendance Report – list of employees present, absent, late, and on leave for the day.\n\nExample:\n- Present: 45\n- Absent: 5\n- Late: 3\n- On Leave: 2`,
+        weekly: `Weekly Attendance Report – attendance summary per employee for the week.\n\nExample:\nEmployee A: 5 days present\nEmployee B: 4 days present, 1 day absent`,
+        biweekly: `Bi-Monthly / 15-Day Report – often used in companies that compute payroll every 15 days.\n\nPeriod: Sep 1 - Sep 15\nSummary of attendance and absences.`,
+        monthly: `Monthly Attendance Report – detailed log of attendance, tardiness, and absences.\n\nSeptember 2025 detailed logs per employee.`,
+        yearly: `Yearly Attendance Summary – attendance overview for the entire year, useful for performance evaluation.\n\nYear 2025 attendance summary.`,
+        employee: `Employee Attendance Record – individual employee’s attendance history.\n\nExample:\nEmployee A: 230 days present, 10 days absent.`
+      },
+      payroll: {
+        register: `Payroll Register Report – breakdown of gross pay, deductions, and net pay for all employees.`,
+        payslip: `Payslip Report – generates payslips for employees (individual format).`,
+        overtime: `Overtime Report – list of overtime hours and corresponding pay.`,
+        deductions: `Deductions Report – deductions like taxes.`,
+        bonus: `13th Month / Bonus Report – computation and release summary (if applicable).`,
+        yearend: `Year-End Payroll Summary – total salary, deductions, and benefits per employee.`
+      },
+      other: {
+        leave: `Leave Report – details of approved, pending, and used leaves.`,
+        deptpos: `Department/Position-wise Report – summary of attendance or payroll per department/position.`,
+        performance: `Employee Performance Report (Attendance-Based) – insights on punctuality, absenteeism trends.`,
+        audit: `Audit Report – logs of changes in attendance or payroll records for transparency.`
+      }
+    };
+
+    // Helper to get report content by section and selected value
+    function getReportContent(section, key) {
+      return reportData[section]?.[key] || "No data available for this report.";
+    }
+
+    // Setup event listeners for each report card
+    document.querySelectorAll('.report-card').forEach(card => {
+      const select = card.querySelector('select.frequency-select');
+      const generateBtn = card.querySelector('button.generate-btn');
+      const printBtn = card.querySelector('button.print-btn');
+      const output = card.querySelector('pre.report-output');
+
+      generateBtn.addEventListener('click', () => {
+        const sectionId = card.id.split('-')[0]; // attendance, payroll, other
+        const selectedValue = select.value;
+        output.textContent = "Generating report...";
+        setTimeout(() => {
+          output.textContent = getReportContent(sectionId, selectedValue);
+          printBtn.disabled = false;
+          printBtn.focus();
+        }, 400);
+      });
+
+      printBtn.addEventListener('click', () => {
+        if (!output.textContent.trim() || output.textContent.includes("Select a report")) {
+          alert("Please generate the report before printing.");
+          return;
+        }
+        // Add printable class to this card only
+        card.classList.add("printable");
+        window.print();
+        // Remove printable class after print dialog closes
+        const mediaQueryList = window.matchMedia('print');
+        mediaQueryList.addListener(function mqlListener(mql) {
+          if (!mql.matches) {
+            card.classList.remove("printable");
+            mediaQueryList.removeListener(mqlListener);
+          }
+        });
+      });
+    });
+  </script>
 </body>
 
 </html>
