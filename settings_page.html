@@ -7,6 +7,319 @@
   <title>Settings Page</title>
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* Royal Blue Theme: Professional, clean design with blues (#4169E1 primary, #5A9BD4 secondary, whites/grays) */
+    :root {
+      --royal-blue: #4169E1;
+      --royal-blue-light: #5A9BD4;
+      --royal-blue-dark: #2E5BA8;
+      --bg-light: #F8FAFC;
+      --text-primary: #1A202C;
+      --text-secondary: #718096;
+      --border-color: #E2E8F0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .settings-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .settings-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .settings-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .settings-section h4 {
+      color: var(--royal-blue);
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+    }
+
+    .sub-section {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: #F8FAFC;
+      border-radius: 8px;
+      border-left: 4px solid var(--royal-blue);
+    }
+
+    .sub-section h5 {
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* Styles for section icons (images) */
+    .section-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 0.5rem;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s ease;
+      background: white;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--royal-blue);
+      box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-row.three-col {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    /* Logo Upload Styles */
+    .logo-preview-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .logo-preview {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: contain;
+      background: var(--bg-light);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .logo-preview:hover {
+      opacity: 0.8;
+    }
+
+    #logoUpload {
+      display: none;
+    }
+
+    .upload-hint {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    /* Toggle Switch Styles */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem;
+      background: #F8FAFC;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #CBD5E1;
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--royal-blue);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    .toggle-label {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--royal-blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--royal-blue-dark);
+    }
+
+    .btn-secondary {
+      background: var(--bg-light);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: #E2E8F0;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    /* Styles for button icons (images) */
+    .btn-icon {
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+    }
+
+    .status-message {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-weight: 500;
+      display: none;
+    }
+
+    .status-message.success {
+      background: #D4EDDA;
+      color: #155724;
+      border: 1px solid #C3E6CB;
+      display: block;
+    }
+
+    .status-message.error {
+      background: #F8D7DA;
+      color: #721C24;
+      border: 1px solid #F5C6CB;
+      display: block;
+    }
+
+    .small-text {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .formula-note {
+      background: #E6F3FF;
+      padding: 0.5rem;
+      border-radius: 4px;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      border-left: 3px solid var(--royal-blue);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .main-content {
+        padding: 1rem;
+      }
+
+      .form-row,
+      .form-row.three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .toggle-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .logo-preview-container {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -93,16 +406,512 @@
     <main class="main-content">
       <header class="dashboard-header">
         <div>
-          <h2>SETTINGS</h2>
+          <h2>SYSTEM SETTINGS</h2>
         </div>
         <div>
           <p id="current-datetime"></p>
         </div>
       </header>
+
+      <!-- Comprehensive Settings Content -->
+      <div class="settings-container">
+        <!-- Company Information Card -->
+        <div class="settings-card">
+          <div class="settings-section">
+            <h4>
+              <img src="icons/building.png" alt="Company Information" class="section-icon" />
+              School Information
+            </h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="companyName">Name of School</label>
+                <input type="text" id="companyName" value="Asian Development Foundation College" />
+              </div>
+              <div class="form-group">
+                <label for="taxId">Tax ID</label>
+                <input type="text" id="taxId" value="123-456-789-000" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="companyAddress">School Address</label>
+              <textarea id="companyAddress" rows="3">P. Burgos St. Tacloban City</textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="companyContact">Contact Number</label>
+                <input type="tel" id="companyContact" value="+63 (2) 123-4567" />
+              </div>
+              <div class="form-group">
+                <label for="companyEmail">School Email</label>
+                <input type="email" id="companyEmail" value="hr@adfc.com" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="logoUpload">School Logo</label>
+              <div class="logo-preview-container">
+                <img id="logoPreview" class="logo-preview" src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="Current Logo" onclick="triggerLogoUpload()" />
+                <input type="file" id="logoUpload" accept="image/*" />
+              </div>
+              <p class="upload-hint">Click the logo preview to upload a new image (PNG/JPG, <2MB). Current logo will be replaced on save.</p>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="saveCompanyInfo()">
+              <img src="icons/save.png" alt="Save" class="btn-icon" />
+              Save School Information
+            </button>
+          </div>
+        </div>
+
+        <!-- Time & Date Settings Card -->
+        <div class="settings-card">
+          <div class="settings-section">
+            <h4>
+              <img src="icons/clock.png" alt="Time & Date Settings" class="section-icon" />
+              Time & Date Settings
+            </h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="defaultTimezone">Default Timezone</label>
+                <select id="defaultTimezone">
+                  <option value="UTC">UTC</option>
+                  <option value="PST" selected>PST (Pacific Standard Time)</option>
+                  <option value="EST">EST (Eastern Standard Time)</option>
+                  <option value="PHST">PHST (Philippine Standard Time)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="dateFormat">Date Format</label>
+                <select id="dateFormat">
+                  <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                  <option value="DD/MM/YYYY" selected>DD/MM/YYYY</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="autoLogoutTime">Auto Logout Time (hours after last activity)</label>
+              <input type="number" id="autoLogoutTime" value="1" min="0.5" max="24" step="0.5" />
+              <p class="small-text">Set to 0 to disable. Employees will be automatically marked out after inactivity.</p>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="saveTimeDateSettings()">
+              <img src="icons/save.png" alt="Save" class="btn-icon" />
+              Save Time & Date Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- Payroll & Leave Settings Card -->
+        <div class="settings-card">
+          <div class="settings-section">
+            <h4>
+              <img src="icons/cash.png" alt="Payroll & Leave Settings" class="section-icon" />
+              Payroll & Leave Settings
+            </h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="payrollFrequency">Payroll Frequency</label>
+                <select id="payrollFrequency">
+                  <option value="weekly">Weekly</option>
+                  <option value="bi-weekly">Bi-Weekly</option>
+                  <option value="monthly" selected>Monthly</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="annualLeaveDays">Annual Paid Leave Days</label>
+                <input type="number" id="annualLeaveDays" value="15" min="0" max="30" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="unpaidLeaveDays">Annual Unpaid Leave Days</label>
+                <input type="number" id="unpaidLeaveDays" value="5" min="0" max="20" />
+              </div>
+              <div class="form-group">
+                <label for="sickLeaveDays">Annual Sick Leave Days</label>
+                <input type="number" id="sickLeaveDays" value="10" min="0" max="20" />
+              </div>
+            </div>
+            <div class="toggle-container">
+              <label class="toggle-label">Enable Salary Advance Requests</label>
+              <label class="toggle-switch">
+                                <input type="checkbox" id="enableSalaryAdvance" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <p class="small-text">Salary advances require approval and are limited to 50% of monthly salary.</p>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="savePayrollLeaveSettings()">
+              <img src="icons/save.png" alt="Save" class="btn-icon" />
+              Save Payroll & Leave Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- Attendance Settings Card -->
+        <div class="settings-card">
+          <div class="settings-section">
+            <h4>
+              <img src="icons/calendar-deadline-date.png" alt="Attendance Settings" class="section-icon" />
+              Attendance Settings
+            </h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="lateThreshold">Late Threshold (minutes)</label>
+                <input type="number" id="lateThreshold" value="15" min="0" max="60" />
+              </div>
+              <div class="form-group">
+                <label for="undertimeThreshold">Undertime Threshold (minutes)</label>
+                <input type="number" id="undertimeThreshold" value="30" min="0" max="120" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="regularOvertimeRate">Regular Overtime Rate (x)</label>
+                <input type="number" id="regularOvertimeRate" value="1.25" min="1" max="2" step="0.25" />
+              </div>
+              <div class="form-group">
+                <label for="holidayOvertimeRate">Holiday Overtime Rate (x)</label>
+                <input type="number" id="holidayOvertimeRate" value="2" min="1" max="3" step="0.25" />
+              </div>
+            </div>
+            <div class="toggle-container">
+              <label class="toggle-label">Enable Grace Period for Clock-In</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="enableGracePeriod" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <p class="small-text">Grace period allows flexible clock-in within the defined late threshold.</p>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="saveAttendanceSettings()">
+              <img src="icons/save.png" alt="Save" class="btn-icon" />
+              Save Attendance Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- UPDATED: Tax & Deduction Settings Card with Real Computation Layout -->
+        <div class="settings-card">
+          <div class="settings-section">
+            <h4>
+              <img src="icons/calculator.png" alt="Tax & Deduction Settings" class="section-icon" />
+              Tax & Deduction Settings
+            </h4>
+            
+            <!-- PhilHealth Sub-Section -->
+            <div class="sub-section">
+              <h5>🩺 PhilHealth Contribution (2025)</h5>
+              <p class="small-text">Monthly Premium = Monthly Basic Salary × 5% (Minimum: ₱500, Maximum: ₱5,000). Usually split 50/50 between employer and employee.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="philhealthRate">Premium Rate (%)</label>
+                  <input type="number" id="philhealthRate" value="5.0" min="0" max="10" step="0.1" readonly />
+                </div>
+                <div class="form-group">
+                  <label for="philhealthMin">Minimum Premium (₱)</label>
+                  <input type="number" id="philhealthMin" value="500" min="0" max="10000" step="100" />
+                </div>
+                <div class="form-group">
+                  <label for="philhealthMax">Maximum Premium (₱)</label>
+                  <input type="number" id="philhealthMax" value="5000" min="0" max="100000" step="100" />
+                </div>
+              </div>
+              <div class="toggle-container">
+                <label class="toggle-label">Auto-Split 50/50 (Employee/Employer)</label>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="philhealthSplit" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="formula-note">
+                Example: Salary ₱30,000 → ₱30,000 × 0.05 = ₱1,500 (₱750 each).
+              </div>
+            </div>
+
+            <!-- Pag-IBIG Sub-Section -->
+            <div class="sub-section">
+              <h5>🏦 Pag-IBIG Contribution (2025)</h5>
+              <p class="small-text">Employee: 1% if salary ≤ ₱1,500, 2% otherwise. Employer: Always 2%.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="pagibigThreshold">Low Salary Threshold (₱)</label>
+                  <input type="number" id="pagibigThreshold" value="1500" min="0" max="10000" step="100" />
+                </div>
+                <div class="form-group">
+                  <label for="pagibigEmployeeLow">Employee Rate (Low Salary) (%)</label>
+                  <input type="number" id="pagibigEmployeeLow" value="1.0" min="0" max="5" step="0.1" />
+                </div>
+                <div class="form-group">
+                  <label for="pagibigEmployeeHigh">Employee Rate (High Salary) (%)</label>
+                  <input type="number" id="pagibigEmployeeHigh" value="2.0" min="0" max="5" step="0.1" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="pagibigEmployerRate">Employer Rate (%)</label>
+                <input type="number" id="pagibigEmployerRate" value="2.0" min="0" max="5" step="0.1" readonly />
+              </div>
+              <div class="toggle-container">
+                <label class="toggle-label">Auto-Apply Pag-IBIG Rules</label>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="autoPagibig" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="formula-note">
+                Example: Salary ₱20,000 → Employee ₱400 (2%) + Employer ₱400 (2%) = Total ₱800.
+              </div>
+            </div>
+
+            <!-- SSS Sub-Section -->
+            <div class="sub-section">
+              <h5>🏥 SSS Contribution (2023 Table-Based)</h5>
+              <p class="small-text">Based on Monthly Salary Credit (MSC) table. Includes Regular SSS, EC, and WISP. Employer pays larger share.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sssMinSalary">Minimum Salary Range (₱)</label>
+                  <input type="number" id="sssMinSalary" value="10000" min="0" max="50000" step="1000" />
+                </div>
+                <div class="form-group">
+                  <label for="sssMSC">Monthly Salary Credit (₱)</label>
+                  <input type="number" id="sssMSC" value="10000" min="0" max="20000" step="1000" />
+                </div>
+                <div class="form-group">
+                  <label for="sssMaxSalary">Maximum Salary Range (₱)</label>
+                  <input type="number" id="sssMaxSalary" value="20000" min="10000" max="100000" step="1000" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sssERContribution">Employer Contribution (₱)</label>
+                  <input type="number" id="sssERContribution" value="1160" min="0" max="5000" step="10" />
+                </div>
+                <div class="form-group">
+                  <label for="sssEEContribution">Employee Contribution (₱)</label>
+                  <input type="number" id="sssEEContribution" value="450" min="0" max="2000" step="10" />
+                </div>
+                <div class="form-group">
+                  <label for="sssTotal">Total Contribution (₱)</label>
+                  <input type="number" id="sssTotal" value="1610" min="0" max="10000" step="10" readonly />
+                </div>
+              </div>
+              <div class="toggle-container">
+                <label class="toggle-label">Use SSS Table Lookup (Auto-Compute)</label>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="autoSSS" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="formula-note">
+                Example: Salary ₱20,000 → MSC ₱20,000, ER ₱2,400, EE ₱900, Total ₱3,300. Update table values as needed.
+              </div>
+            </div>
+
+            <!-- General Tax Settings -->
+            <div class="sub-section">
+              <h5>Income Tax & General Rules</h5>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="incomeTaxRate">Default Income Tax Rate (%)</label>
+                  <input type="number" id="incomeTaxRate" value="10" min="0" max="50" step="0.5" />
+                </div>
+                <div class="form-group">
+                  <label for="taxCalculationRule">Tax Calculation Rule</label>
+                  <select id="taxCalculationRule">
+                    <option value="standard">Standard (Progressive)</option>
+                    <option value="flat" selected>Flat Rate</option>
+                    <option value="custom">Custom Formula</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="customTaxFormula">Custom Tax Formula (if selected)</label>
+                <textarea id="customTaxFormula" rows="2" placeholder="e.g., (gross * 0.12) - deductions"> </textarea>
+                <p class="small-text">Use variables like {gross}, {deductions}, {sss}, {philhealth}, {pagibig} for custom calculations.</p>
+              </div>
+              <div class="toggle-container">
+                <label class="toggle-label">Auto-Apply All Government Deductions</label>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="autoApplyDeductions" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="saveTaxDeductionSettings()">
+              <img src="icons/save.png" alt="Save" class="btn-icon" />
+              Save Tax & Deduction Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- Backup & Restore Settings Card -->
+        <div class="settings-card">
+          <div class="settings-section">
+            <h4>
+              <img src="icons/backup.png" alt="Backup & Restore Settings" class="section-icon" />
+              Backup & Restore Settings
+            </h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="backupFrequency">Backup Frequency</label>
+                <select id="backupFrequency">
+                  <option value="daily">Daily</option>
+                  <option value="weekly" selected>Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="sessionTimeout">Session Timeout (minutes)</label>
+                <input type="number" id="sessionTimeout" value="30" min="5" max="120" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Backup Location</label>
+              <input type="text" value="Local Server (/backups)" readonly />
+              <p class="small-text">Backups are stored securely on the server. Use the buttons below to manage.</p>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-secondary" onclick="exportData()">
+              <img src="icons/export.png" alt="Export" class="btn-icon" />
+              Download Latest Backup
+            </button>
+            <button class="btn btn-primary" onclick="createBackup()">
+              <img src="icons/backup.png" alt="Create Backup" class="btn-icon" />
+              Create Backup Now
+            </button>
+            <button class="btn btn-secondary" onclick="restoreBackup()" style="background: #FF6B6B; color: white; border-color: #FF6B6B;">
+              <img src="icons/restore.png" alt="Restore" class="btn-icon" />
+              Restore from Backup
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Message (for feedback) -->
+      <div id="statusMessage" class="status-message"></div>
     </main>
   </div>
+
   <script src="js/dashboard.js"></script>
   <script src="js/current_time.js"></script>
+  <script>
+    let currentLogoFile = null;  // Track uploaded logo file
+
+    // Logo Upload Functions
+    function triggerLogoUpload() {
+      document.getElementById('logoUpload').click();
+    }
+
+    document.getElementById('logoUpload').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        if (!file.type.startsWith('image/')) {
+          showStatus('Please select a valid image file.', 'error');
+          return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+          showStatus('Image size must be less than 2MB.', 'error');
+          return;
+        }
+        currentLogoFile = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('logoPreview').src = e.target.result;
+          showStatus('Logo selected. Click Save to upload.', 'success');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // SSS Total Calculation (Auto-update on input change)
+    function updateSSSTotal() {
+      const er = parseFloat(document.getElementById('sssERContribution').value) || 0;
+      const ee = parseFloat(document.getElementById('sssEEContribution').value) || 0;
+      document.getElementById('sssTotal').value = (er + ee).toFixed(2);
+    }
+
+    document.getElementById('sssERContribution').addEventListener('input', updateSSSTotal);
+    document.getElementById('sssEEContribution').addEventListener('input', updateSSSTotal);
+
+    // Save Functions (Simulate - replace with API calls)
+    function saveCompanyInfo() {
+      if (currentLogoFile) {
+        // In real app: Upload logo via FormData
+        showStatus('Company information and logo updated successfully!', 'success');
+        currentLogoFile = null;
+      } else {
+        showStatus('Company information updated successfully!', 'success');
+      }
+    }
+
+    function saveTimeDateSettings() {
+      showStatus('Time & date settings updated successfully!', 'success');
+    }
+
+    function savePayrollLeaveSettings() {
+      showStatus('Payroll & leave settings updated successfully!', 'success');
+    }
+
+    function saveAttendanceSettings() {
+      showStatus('Attendance settings updated successfully!', 'success');
+    }
+
+    function saveTaxDeductionSettings() {
+      // In real app: Collect all tax fields and send to backend for validation/computation setup
+      showStatus('Tax & deduction settings updated successfully! Computations will use the configured rules.', 'success');
+    }
+
+    function exportData() {
+      showStatus('Backup download started.', 'success');
+      // In real app: window.open('/api/backup/download', '_blank');
+    }
+
+    function createBackup() {
+      showStatus('Backup created successfully!', 'success');
+      // In real app: fetch('/api/backup/create', { method: 'POST' });
+    }
+
+    function restoreBackup() {
+      if (confirm('Are you sure you want to restore from backup? This may overwrite current data.')) {
+        showStatus('Restore initiated. Please wait for completion.', 'success');
+        // In real app: Handle file upload and restore API
+      }
+    }
+
+    function showStatus(message, type) {
+      const statusDiv = document.getElementById('statusMessage');
+      statusDiv.textContent = message;
+      statusDiv.className = `status-message ${type}`;
+      statusDiv.style.display = 'block';
+      setTimeout(() => {
+        statusDiv.style.display = 'none';
+        statusDiv.className = 'status-message';
+      }, 5000);
+    }
+
+    // Auto-hide success message on load if present
+    window.addEventListener('load', () => {
+      const successBox = document.getElementById('successMessageBox');
+      if (successBox && successBox.style.display !== 'none') {
+        showStatus(successBox.textContent, 'success');
+        successBox.style.display = 'none';
+      }
+      updateSSSTotal();  // Initialize SSS total
+    });
+  </script>
 </body>
 
 </html>
