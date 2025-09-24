@@ -4,8 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Settings Page</title>
+  <title>Profile Page</title>
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/profile_details.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
@@ -99,10 +100,139 @@
           <p id="current-datetime"></p>
         </div>
       </header>
+
+      <!-- NEW: Profile Main Content -->
+      <div class="profile-container">
+        <!-- Profile Overview Card -->
+        <div class="profile-card" id="profileCard">
+          <div class="profile-header">
+            <div class="upload-overlay" onclick="triggerImageUpload()">
+              <img src="icons/camera.png" alt="Upload Photo" class="overlay-icon" />
+            </div>
+            <!-- UPDATED: Dynamic image avatar with fixed positioning -->
+            <img id="profileImage" class="profile-avatar"
+              src="icons/profile-picture.png"
+              alt="Profile Picture" onclick="triggerImageUpload()" />
+            <!-- NEW: Hidden file input for image upload -->
+            <input type="file" id="imageUpload" accept="image/*" />
+            <div class="profile-info">
+              <h3>John Doe</h3>
+              <p>System Administrator</p>
+            </div>
+          </div>
+
+          <!-- Personal Information Section -->
+          <div class="profile-section">
+            <h4>
+              <img src="icons/user-edit.png" alt="Personal Information" class="section-icon" />
+              Personal Information
+            </h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" value="John" readonly />
+              </div>
+              <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" value="Doe" readonly />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" value="john.doe@company.com" readonly />
+              </div>
+              <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" value="+1 (555) 123-4567" readonly />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="address">Address</label>
+              <textarea id="address" rows="3" readonly>123 Main Street, City, State 12345</textarea>
+            </div>
+          </div>
+
+          <!-- Account Settings Section -->
+          <div class="profile-section">
+            <h4>
+              <img src="icons/settings.png" alt="Account Settings" class="section-icon" />
+              Account Settings
+            </h4>
+            <div class="form-row">
+              <div class="form-group">
+              <label for="joinDate">Date Joined</label>
+              <input type="date" id="joinDate" value="2023-01-15" readonly />
+            </div>
+              <div class="form-group">
+                <label for="department">Department</label>
+                <select id="department" disabled>
+                  <option value="it">IT Department</option>
+                  <option value="hr">Human Resources</option>
+                  <option value="finance">Finance</option>
+                </select>
+              </div>
+            </div>
+            <!-- UPDATED: Date Joined always readonly -->
+            <div class="form-group">
+                <label for="role">Role</label>
+                <!-- UPDATED: Only 2 role options -->
+                <select id="role" disabled>
+                  <option value="administrator" selected>Administrator</option>
+                  <option value="head-administrator">Head Administrator</option>
+                </select>
+              </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="btn-group">
+            <button class="btn btn-secondary" onclick="editProfile()">
+              <img src="icons/edit.png" alt="Edit" class="btn-icon" />
+              Edit Profile
+            </button>
+            <button class="btn btn-primary" onclick="saveProfile()" style="display: none;">
+              <img src="icons/save.png" alt="Save" class="btn-icon" />
+              Save Changes
+            </button>
+          </div>
+        </div>
+
+        <!-- Security Card -->
+        <div class="profile-card">
+          <h4
+            style="color: var(--royal-blue); font-size: 1.25rem; margin-bottom: 1rem; font-weight: 600; display: flex; align-items: center;">
+            <img src="icons/computer-security-shield.png" alt="Security" class="section-icon" style="margin-right: 0.5rem;" />
+            Security & Password
+          </h4>
+          <div class="form-group">
+            <label for="confirmPassword">Current Password</label>
+            <input type="password" id="confirmPassword" placeholder="Enter current password" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="currentPassword">New Password</label>
+              <input type="password" id="currentPassword" placeholder="Enter new password" />
+            </div>
+            <div class="form-group">
+              <label for="newPassword">Confirm New Password</label>
+              <input type="password" id="newPassword" placeholder="Confirm new password" />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="changePassword()" style="margin-top: 1rem;">
+            <img src="icons/key.png" alt="Update Password" class="btn-icon" />
+            Update Password
+          </button>
+        </div>
+      </div>
+
+      <!-- Status Message (for feedback) -->
+      <div id="statusMessage" class="status-message"></div>
     </main>
   </div>
+
   <script src="js/dashboard.js"></script>
   <script src="js/current_time.js"></script>
+  <script src="js/profile_details.js"></script>
 </body>
 
 </html>
