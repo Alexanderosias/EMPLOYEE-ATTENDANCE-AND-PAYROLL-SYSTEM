@@ -107,32 +107,24 @@
         <section class="section-box" aria-labelledby="departments-title">
           <h3 id="departments-title">Departments</h3>
           <ul id="departments-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
-            <li>Computer Engineering</li>
-            <li>Math</li>
-            <li>Physics</li>
-            <li>IT</li>
-            <li>Marketing</li>
+            <!-- Dynamic items inserted by JS -->
           </ul>
           <button id="add-department-btn" class="btn-add" aria-haspopup="dialog" aria-controls="add-department-modal">
             <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
             Add Department
           </button>
-
         </section>
 
         <!-- Job Positions Section -->
         <section class="section-box" aria-labelledby="job-positions-title">
           <h3 id="job-positions-title">Job Positions</h3>
           <ul id="job-positions-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
-            <li>Instructor</li>
-            <li>Developer</li>
-            <li>Designer</li>
-            <li>Manager</li>
+            <!-- Dynamic items inserted by JS -->
           </ul>
           <button id="add-job-position-btn" class="btn-add" aria-haspopup="dialog"
             aria-controls="add-job-position-modal">
             <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
-            Add Department
+            Add Job Position
           </button>
         </section>
       </div>
@@ -148,7 +140,7 @@
           <form id="add-department-form" novalidate>
             <div class="modal-body">
               <label for="department-name">Department Name</label>
-              <input type="text" id="department-name" name="departmentName" required
+              <input type="text" id="department-name" name="name" required
                 placeholder="Enter department name" />
             </div>
             <footer class="modal-footer">
@@ -170,7 +162,7 @@
           <form id="add-job-position-form" novalidate>
             <div class="modal-body">
               <label for="job-position-name">Job Position Name</label>
-              <input type="text" id="job-position-name" name="jobPositionName" required
+              <input type="text" id="job-position-name" name="name" required
                 placeholder="Enter job position name" />
             </div>
             <footer class="modal-footer">
