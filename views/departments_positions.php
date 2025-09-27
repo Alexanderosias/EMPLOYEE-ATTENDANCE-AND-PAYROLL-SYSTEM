@@ -116,16 +116,24 @@ try {
             if ($id <= 0) {
                 throw new Exception('Invalid department ID.');
             }
-            // Unassign employees first
-            $updateStmt = $mysqli->prepare("UPDATE employees SET department_id = NULL WHERE department_id = ?");
-            if (!$updateStmt) {
+            // FIXED: Pre-check employee count before allowing delete
+            $countStmt = $mysqli->prepare("SELECT COUNT(e.id) as emp_count FROM employees e WHERE e.department_id = ?");
+            if (!$countStmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
-            $updateStmt->bind_param('i', $id);
-            $updateStmt->execute();
-            $unassignedCount = $updateStmt->affected_rows;
-            $updateStmt->close();
-            // Delete department
+            $countStmt->bind_param('i', $id);
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+            $countData = $countResult->fetch_assoc();
+            $empCount = (int)$countData['emp_count'];
+            $countStmt->close();
+
+            if ($empCount > 0) {
+                // Prevention: Do not delete; return error
+                throw new Exception("Cannot delete department: {$empCount} employee(s) are assigned to this department. Please reassign them first.");
+            }
+
+            // If count === 0, delete directly (no unassign needed)
             $deleteStmt = $mysqli->prepare("DELETE FROM departments WHERE id = ?");
             if (!$deleteStmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
@@ -133,11 +141,7 @@ try {
             $deleteStmt->bind_param('i', $id);
             $deleteStmt->execute();
             if ($deleteStmt->affected_rows > 0) {
-                $message = 'Department deleted successfully.';
-                if ($unassignedCount > 0) {
-                    $message .= " " . $unassignedCount . " employee(s) were unassigned.";
-                }
-                echo json_encode(['success' => true, 'message' => $message]);
+                echo json_encode(['success' => true, 'message' => 'Department deleted successfully.']);
             } else {
                 throw new Exception('Department not found.');
             }
@@ -149,16 +153,24 @@ try {
             if ($id <= 0) {
                 throw new Exception('Invalid job position ID.');
             }
-            // Unassign employees first
-            $updateStmt = $mysqli->prepare("UPDATE employees SET job_position_id = NULL WHERE job_position_id = ?");
-            if (!$updateStmt) {
+            // FIXED: Pre-check employee count before allowing delete
+            $countStmt = $mysqli->prepare("SELECT COUNT(e.id) as emp_count FROM employees e WHERE e.job_position_id = ?");
+            if (!$countStmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
-            $updateStmt->bind_param('i', $id);
-            $updateStmt->execute();
-            $unassignedCount = $updateStmt->affected_rows;
-            $updateStmt->close();
-            // Delete position
+            $countStmt->bind_param('i', $id);
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+            $countData = $countResult->fetch_assoc();
+            $empCount = (int)$countData['emp_count'];
+            $countStmt->close();
+
+            if ($empCount > 0) {
+                // Prevention: Do not delete; return error
+                throw new Exception("Cannot delete job position: {$empCount} employee(s) are assigned to this job position. Please reassign them first.");
+            }
+
+            // If count === 0, delete directly (no unassign needed)
             $deleteStmt = $mysqli->prepare("DELETE FROM job_positions WHERE id = ?");
             if (!$deleteStmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
@@ -166,11 +178,7 @@ try {
             $deleteStmt->bind_param('i', $id);
             $deleteStmt->execute();
             if ($deleteStmt->affected_rows > 0) {
-                $message = 'Job position deleted successfully.';
-                if ($unassignedCount > 0) {
-                    $message .= " " . $unassignedCount . " employee(s) were unassigned.";
-                }
-                echo json_encode(['success' => true, 'message' => $message]);
+                echo json_encode(['success' => true, 'message' => 'Job position deleted successfully.']);
             } else {
                 throw new Exception('Job position not found.');
             }

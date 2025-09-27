@@ -80,6 +80,17 @@ ul.item-list li .item-actions {
   transition: background-color 0.3s ease;
 }
 
+.btn-delete.disabled-delete {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;  
+}
+
+.btn-delete.disabled-delete:hover {
+  background-color: transparent;
+}
+
+
 .btn-delete:hover {
   background-color: #d4d4d4;
 }

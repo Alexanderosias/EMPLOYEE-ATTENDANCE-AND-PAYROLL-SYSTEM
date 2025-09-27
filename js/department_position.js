@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Function to create list item with delete button
+  // UPDATED: Function to create list item with delete button (disabled if employees assigned)
   function createListItem(id, text, count, type) {
     const li = document.createElement('li');
     li.setAttribute('data-id', id);
@@ -167,9 +167,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     deleteBtn.appendChild(deleteImg);
 
-    deleteBtn.addEventListener('click', () => {
-      showDeleteConfirmation(li, id, text, count, type);
-    });
+    // FIXED: Disable delete if employees assigned (prevents interaction)
+    const typeName = type === 'department' ? 'department' : 'job position';
+    if (count > 0) {
+      deleteBtn.disabled = true;
+      deleteBtn.setAttribute('aria-disabled', 'true');
+      deleteBtn.title = `Cannot delete this ${typeName} because it has ${count} employee(s) assigned. Please reassign employees first.`;
+      // Optional: Add visual style (e.g., opacity: 0.5; cursor: not-allowed;) via CSS class 'disabled-delete'
+      deleteBtn.classList.add('disabled-delete');  // Add CSS: .btn-delete.disabled-delete { opacity: 0.5; cursor: not-allowed; }
+      // ALTERNATIVE: Hide button entirely - uncomment below
+      // itemActions.style.display = 'none';  // Or don't append deleteBtn
+    } else {
+      // Enabled: Attach click listener to show confirmation
+      deleteBtn.addEventListener('click', () => {
+        showDeleteConfirmation(li, id, text, count, type);
+      });
+      deleteBtn.title = `Delete ${typeName} "${text}"`;
+    }
 
     itemActions.appendChild(deleteBtn);
     li.appendChild(itemContent);
@@ -178,17 +192,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return li;
   }
 
-  // Function to show delete confirmation
+  // UPDATED: Function to show delete confirmation (only if count === 0)
   function showDeleteConfirmation(listItem, id, itemName, employeeCount, type) {
     const typeName = type === 'department' ? 'department' : 'job position';
+    if (employeeCount > 0) {
+      // Prevention: Don't open modal; show alert instead (redundant with disabled button, but safety)
+      alert(`Cannot delete "${itemName}": This ${typeName} has ${employeeCount} employee(s) assigned. Please reassign them first.`);
+      return;  // Exit early
+    }
+
+    // Proceed only if count === 0
     deleteConfirmationMessage.textContent = `Are you sure you want to delete the ${typeName} "${itemName}"?`;
 
-    if (employeeCount > 0) {
-      deleteWarningMessage.textContent = `Warning: This ${typeName} has ${employeeCount} employee(s) assigned to it. Deleting it will unassign them from this ${typeName}.`;
-      deleteWarningMessage.style.display = 'block';
-    } else {
-      deleteWarningMessage.style.display = 'none';
-    }
+    // No warning needed since count === 0, but keep for future
+    deleteWarningMessage.style.display = 'none';
 
     itemToDelete = listItem;
     itemId = id;
@@ -202,14 +219,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(`${API_BASE}?action=list_departments`);
       const departments = await response.json();
       departmentsList.innerHTML = '';  // Clear
-      departments.forEach(dept => {
-        const li = createListItem(dept.id, dept.name, dept.employee_count, 'department');
-        departmentsList.appendChild(li);
-      });
+      if (departments.length === 0) {
+        departmentsList.innerHTML = '<li>No departments found.</li>';
+      } else {
+        departments.forEach(dept => {
+          const li = createListItem(dept.id, dept.name, dept.employee_count, 'department');
+          departmentsList.appendChild(li);
+        });
+      }
     } catch (error) {
       console.error('Error fetching departments:', error);
       alert('Failed to load departments. Please refresh the page.');
-      departmentsList.innerHTML = '<li>No departments found.</li>';  // Optional placeholder
+      departmentsList.innerHTML = '<li>Error loading departments.</li>';
     }
   }
 
@@ -219,14 +240,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(`${API_BASE}?action=list_positions`);
       const positions = await response.json();
       jobPositionsList.innerHTML = '';  // Clear
-      positions.forEach(pos => {
-        const li = createListItem(pos.id, pos.name, pos.employee_count, 'position');
-        jobPositionsList.appendChild(li);
-      });
+      if (positions.length === 0) {
+        jobPositionsList.innerHTML = '<li>No job positions found.</li>';
+      } else {
+        positions.forEach(pos => {
+          const li = createListItem(pos.id, pos.name, pos.employee_count, 'position');
+          jobPositionsList.appendChild(li);
+        });
+      }
     } catch (error) {
       console.error('Error fetching positions:', error);
       alert('Failed to load job positions. Please refresh the page.');
-      jobPositionsList.innerHTML = '<li>No job positions found.</li>';  // Optional placeholder
+      jobPositionsList.innerHTML = '<li>Error loading job positions.</li>';
     }
   }
 
