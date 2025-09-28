@@ -1,4 +1,68 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // FIXED: Encoded paths for spaces (recommend renaming folder to avoid %20)
+  const API_BASE = '/EMPLOYEE%20ATTENDANCE%20AND%20PAYROLL%20SYSTEM/views/employees.php';
+  const BASE_PATH = '/EMPLOYEE%20ATTENDANCE%20AND%20PAYROLL%20SYSTEM/';
+
+  // NEW: Simple toast notification (replaces alert for better UX, including sync messages)
+  function showToast(message, type = 'info') {
+    // Create toast element if not exists
+    let toast = document.getElementById('toast-notification');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toast-notification';
+      toast.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 12px 20px; 
+        background: #333; color: white; border-radius: 4px; z-index: 1000; 
+        display: none; min-width: 300px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        font-size: 14px; text-align: center;
+      `;
+      document.body.appendChild(toast);
+    }
+
+    // Set message and type (success: green, error: red, info: gray)
+    toast.textContent = message;
+    toast.style.background = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#333';
+    toast.style.display = 'block';
+
+    // Auto-hide after 4s (longer for sync messages)
+    setTimeout(() => { toast.style.display = 'none'; }, 4000);
+  }
+
+  // NEW: Check and sync pending operations (call on load/online)
+  async function checkAndSyncPending() {
+    if (navigator.onLine) {
+      try {
+        const response = await fetch(`${API_BASE}?action=sync_pending`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const result = await response.json();
+        if (result.success) {
+          if (result.data.synced > 0) {
+            showToast(result.message, 'success');  // e.g., "Pending sync completed: 2 synced..."
+          }
+          // If all good, no toast for 0 synced
+        } else {
+          console.warn('Sync pending failed:', result.message);
+          // Don't toast warnings – silent retry
+        }
+      } catch (error) {
+        console.error('Sync pending error:', error);
+        // Silent: Will retry on next online event
+      }
+    }
+  }
+
+  // NEW: Offline/online event listeners
+  window.addEventListener('online', () => {
+    showToast('Back online – syncing changes...', 'info');
+    checkAndSyncPending();
+  });
+  window.addEventListener('offline', () => {
+    showToast('Offline mode: Changes saved locally', 'info');
+  });
+
+  // Existing: Update datetime
   function updateDateTime() {
     const now = new Date();
     const options = {
@@ -15,8 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateDateTime, 60000);
 
   const employeeListContainer = document.getElementById('employee-list-container');
-  const API_BASE = '/EMPLOYEE ATTENDANCE AND PAYROLL SYSTEM/views/employees.php';  // Backend endpoint
-  const BASE_PATH = '/EMPLOYEE ATTENDANCE AND PAYROLL SYSTEM/';
 
   // Elements for filtering
   const searchInput = document.getElementById('search-input');
@@ -123,12 +185,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (updatePosSelect) updatePosSelect.innerHTML = addPosSelect.innerHTML;
     } catch (error) {
       console.error('Error loading options:', error);
-      alert('Failed to load departments/positions. Please refresh.');
+      showToast('Failed to load departments/positions. Please refresh.', 'error');
     }
   }
 
-  // Fetch and render employees - FIXED: Handle {success, data} structure, add debug logs, type parsing
+  // UPDATED: Fetch and render employees (added loading state & better error handling)
   async function fetchEmployees() {
+    employeeListContainer.innerHTML = '<p style="text-align: center; color: #666;">Loading employees...</p>';  // Loading state
+
     try {
       const response = await fetch(`${API_BASE}?action=list_employees`);
       if (!response.ok) {
@@ -156,12 +220,12 @@ document.addEventListener('DOMContentLoaded', () => {
       renderEmployeeCards(employees);
     } catch (error) {
       console.error('Error fetching employees:', error);
-      alert('Failed to load employees: ' + error.message);
+      showToast('Failed to load employees: ' + error.message, 'error');
       employeeListContainer.innerHTML = '<p style="color: red; text-align: center;">Error loading employees. Please refresh.</p>';
     }
   }
 
-  // Render employee cards dynamically (updated emergency display; added type parsing) - FIXED: Avatar path (absolute for your layout)
+  // UPDATED: Render employee cards (added type parsing; fixed avatar paths)
   function renderEmployeeCards(employees) {
     employeeListContainer.innerHTML = '';  // Clear existing
     if (employees.length === 0) {
@@ -205,47 +269,48 @@ document.addEventListener('DOMContentLoaded', () => {
       // FIXED: Avatar path - Absolute from domain root (matches API_BASE and your layout: root/uploads/)
       const avatarSrc = emp.avatar_path ? BASE_PATH + emp.avatar_path : BASE_PATH + 'img/user.jpg';
       card.innerHTML = `
-      <div class="card-index">${index + 1}</div>
-      <div class="image-container employee-avatar">
-        <img src="${avatarSrc}" alt="Employee Photo" class="employee-photo" onerror="this.src=BASE_PATH + 'img/user.jpg'" />
-      </div>
-      <div class="employee-details">
-        <p class="detail-item"><strong>Name:</strong> ${emp.first_name || ''} ${emp.last_name || ''}</p>
-        <p class="detail-item"><strong>Job Position:</strong> ${emp.position_name || 'N/A'}</p>
-        <p class="detail-item"><strong>Department:</strong> ${emp.department_name || 'N/A'}</p>
-        <p class="expanded-item ${statusClass}"><strong>Status:</strong> ${status}</p>
-        <div class="expanded-details" aria-hidden="true">
-          <p class="expanded-item"><strong>Gender:</strong> ${emp.gender || 'N/A'}</p>
-          <p class="expanded-item"><strong>Marital Status:</strong> ${emp.marital_status || 'Single'}</p>
-          <p class="detail-item"><strong>Address:</strong> ${emp.address || 'N/A'}</p>
-          <p class="expanded-item"><strong>Email Address:</strong> ${emp.email || ''}</p>
-          <p class="expanded-item"><strong>Rate per Hour:</strong> ₱${rate.toFixed(2)}</p>
-          <p class="expanded-item"><strong>Contact Number:</strong> ${formattedContact}</p>
-          <p class="expanded-item"><strong>Emergency Contact:</strong> ${formattedEmergency}</p>
-          <p class="expanded-item"><strong>Annual Paid Leave Days:</strong> ${paidLeave}</p>
-          <p class="expanded-item"><strong>Annual Unpaid Leave Days:</strong> ${unpaidLeave}</p>
-          <p class="expanded-item"><strong>Annual Sick Leave Days:</strong> ${sickLeave}</p>
-          <p class="expanded-item"><strong>Date Joined:</strong> ${emp.date_joined || 'N/A'}</p>
+        <div class="card-index">${index + 1}</div>
+        <div class="image-container employee-avatar">
+          <img src="${avatarSrc}" alt="Employee Photo" class="employee-photo" onerror="this.src='${BASE_PATH}img/user.jpg'" />
         </div>
-      </div>
-      <div class="employee-actions">
-        <button class="action-btn action-btn-update" title="Update info" aria-label="Update info">
-          <img src="icons/update.png" alt="Update info" />
-        </button>
-        <button class="action-btn action-btn-delete" title="Delete" aria-label="Delete">
-          <img src="icons/delete.png" alt="Delete" />
-        </button>
-        <button class="action-btn action-btn-show-more" title="Expand/Collapse details" aria-label="Expand or collapse details">
-          <img src="icons/down-arrow.png" alt="Expand or collapse details" />
-        </button>
-      </div>
-    `;
+        <div class="employee-details">
+          <p class="detail-item"><strong>Name:</strong> ${emp.first_name || ''} ${emp.last_name || ''}</p>
+          <p class="detail-item"><strong>Job Position:</strong> ${emp.position_name || 'N/A'}</p>
+          <p class="detail-item"><strong>Department:</strong> ${emp.department_name || 'N/A'}</p>
+          <p class="expanded-item ${statusClass}"><strong>Status:</strong> ${status}</p>
+          <div class="expanded-details" aria-hidden="true">
+            <p class="expanded-item"><strong>Gender:</strong> ${emp.gender || 'N/A'}</p>
+            <p class="expanded-item"><strong>Marital Status:</strong> ${emp.marital_status || 'Single'}</p>
+            <p class="detail-item"><strong>Address:</strong> ${emp.address || 'N/A'}</p>
+            <p class="expanded-item"><strong>Email Address:</strong> ${emp.email || ''}</p>
+            <p class="expanded-item"><strong>Rate per Hour:</strong> ₱${rate.toFixed(2)}</p>
+            <p class="expanded-item"><strong>Contact Number:</strong> ${formattedContact}</p>
+            <p class="expanded-item"><strong>Emergency Contact:</strong> ${formattedEmergency}</p>
+            <p class="expanded-item"><strong>Annual Paid Leave Days:</strong> ${paidLeave}</p>
+            <p class="expanded-item"><strong>Annual Unpaid Leave Days:</strong> ${unpaidLeave}</p>
+            <p class="expanded-item"><strong>Annual Sick Leave Days:</strong> ${sickLeave}</p>
+            <p class="expanded-item"><strong>Date Joined:</strong> ${emp.date_joined || 'N/A'}</p>
+          </div>
+        </div>
+        <div class="employee-actions">
+          <button class="action-btn action-btn-update" title="Update info" aria-label="Update info">
+            <img src="icons/update.png" alt="Update info" />
+          </button>
+          <button class="action-btn action-btn-delete" title="Delete" aria-label="Delete">
+            <img src="icons/delete.png" alt="Delete" />
+          </button>
+          <button class="action-btn action-btn-show-more" title="Expand/Collapse details" aria-label="Expand or collapse details">
+            <img src="icons/down-arrow.png" alt="Expand or collapse details" />
+          </button>
+        </div>
+      `;
       employeeListContainer.appendChild(card);
     });
   }
 
-  // Open update modal - FIXED: Relative avatar path for preview (shows current employee avatar on open)
+  // UPDATED: Open update modal (fixed relative avatar path for preview; added focus)
   function openUpdateModal(employeeData) {
+    const updateModal = document.getElementById('update-employee-modal');
     updateModal.setAttribute('aria-hidden', 'false');
 
     // Set hidden ID field
@@ -320,9 +385,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // Handler auto-removes after load
     };
 
+    // Focus on first input
+    const updateEmployeeForm = document.getElementById('update-employee-form');
     updateEmployeeForm.querySelector('input, select').focus();
   }
-
 
   // Filtering function (client-side on rendered cards)
   function filterEmployees() {
@@ -408,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
         openUpdateModal(responseData.data);
       } catch (error) {
         console.error('Error fetching employee for update:', error);
-        alert('Failed to load employee data for update: ' + error.message);
+        showToast('Failed to load employee data for update: ' + error.message, 'error');
       }
 
     } else if (event.target.closest('.action-btn-delete')) {
@@ -421,7 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Delete employee function
+  // UPDATED: Delete employee function (with toast & error handling)
   async function deleteEmployee(id) {
     try {
       const formData = new FormData();
@@ -438,18 +504,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const result = await response.json();
       if (result.success) {
-        alert(result.message || 'Employee deleted successfully.');
+        showToast(result.message || 'Employee deleted successfully.', 'success');  // Includes sync status
         fetchEmployees();  // Refresh list
       } else {
-        alert('Error: ' + (result.message || 'Failed to delete employee'));
+        showToast('Error: ' + (result.message || 'Failed to delete employee'), 'error');
       }
     } catch (error) {
       console.error('Delete error:', error);
-      alert('Failed to delete employee: ' + error.message);
+      showToast('Failed to delete employee: ' + error.message, 'error');
     }
   }
 
-  // Add Employee Modal Logic - UPDATED for new emergency fields
+  // Add Employee Modal Logic - UPDATED for new emergency fields, loading, toast, validation
   const addModal = document.getElementById('add-employee-modal');
   const addEmployeeBtn = document.getElementById('add-employee-btn');
   const addCloseButtons = addModal.querySelectorAll('.modal-close-btn');
@@ -513,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Add form submit - FIXED: Debug logs; phones overridden to DB keys (consistent)
+  // UPDATED: Add form submit (loading state, validation, clean phones, toast)
   addEmployeeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -533,21 +599,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const ratePerHour = parseFloat(document.getElementById('rate-per-hour').value) || 0;
 
     if (!firstName || !lastName || !email || !address || !gender || !maritalStatus || !contactNumber || !emergencyName || !emergencyPhone || !emergencyRelationship || !departmentId || !jobPositionId || ratePerHour < 0) {
-      alert('Please fill all required fields correctly (e.g., names, email, address, selections, emergency details, non-negative rate).');
+      showToast('Please fill all required fields correctly.', 'error');
       return;
     }
     if (!email.includes('@')) {
-      alert('Please enter a valid email address.');
+      showToast('Please enter a valid email address.', 'error');
       return;
     }
     // Phone format validation (with spaces)
     if (!validatePhoneFormat(contactNumber)) {
-      alert('Contact number must be in format 093 0590 9175.');
+      showToast('09X XXXX XXXX', 'error');
       document.getElementById('contact-number').focus();
       return;
     }
     if (!validatePhoneFormat(emergencyPhone)) {
-      alert('Emergency phone must be in format 093 0590 9175.');
+      showToast('09X XXXX XXXX', 'error');
       document.getElementById('emergency-phone').focus();
       return;
     }
@@ -560,6 +626,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const cleanedEmergencyPhone = cleanPhoneNumber(emergencyPhone);
     formData.set('contact_number', cleanedContact);
     formData.set('emergency_contact_phone', cleanedEmergencyPhone);
+
+    // NEW: Loading state
+    const submitBtn = addEmployeeForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Adding...';
+    submitBtn.disabled = true;
 
     // DEBUG: Log FormData contents (remove after testing)
     console.log('Add FormData keys:', Array.from(formData.keys()));
@@ -576,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const result = await response.json();
       if (result.success) {
-        alert(result.message || 'Employee added successfully.');
+        showToast(result.message || 'Employee added successfully.', 'success');  // Includes sync/queue status
         addModal.setAttribute('aria-hidden', 'true');
         addEmployeeForm.reset();
         // Reset defaults (no status/date_joined; clear emergency)
@@ -591,15 +663,19 @@ document.addEventListener('DOMContentLoaded', () => {
         addAvatarPreviewImg.src = 'img/user.jpg';
         fetchEmployees();  // Refresh list
       } else {
-        alert('Error: ' + (result.message || 'Failed to add employee'));
+        showToast('Error: ' + (result.message || 'Failed to add employee'), 'error');
       }
     } catch (error) {
       console.error('Add error:', error);
-      alert('Failed to add employee: ' + error.message);
+      showToast('Failed to add employee: ' + error.message, 'error');
+    } finally {
+      // Reset loading
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
     }
   });
 
-  // Update Employee Modal Logic - UPDATED for new emergency fields
+  // Update Employee Modal Logic - UPDATED for new emergency fields, loading, toast, validation
   const updateModal = document.getElementById('update-employee-modal');
   const updateAvatarInput = document.getElementById('update-avatar-input');
   const updateAvatarPreviewImg = document.getElementById('update-avatar-preview-img');
@@ -612,46 +688,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const updateEmergencyPhoneInput = document.getElementById('update-emergency-phone');
   if (updateContactInput) updateContactInput.addEventListener('input', () => autoFormatPhoneInput(updateContactInput));
   if (updateEmergencyPhoneInput) updateEmergencyPhoneInput.addEventListener('input', () => autoFormatPhoneInput(updateEmergencyPhoneInput));
-
-  // Open update modal - UPDATED: Populate new emergency fields (format phone)
-  function openUpdateModal(employeeData) {
-    updateModal.setAttribute('aria-hidden', 'false');
-
-    // Set hidden ID field
-    const idInput = document.getElementById('update-employee-id');
-    if (idInput) idInput.value = employeeData.id || '';
-
-    // Prefill text fields (no status/date_joined)
-    document.getElementById('update-first-name').value = employeeData.first_name || '';
-    document.getElementById('update-last-name').value = employeeData.last_name || '';
-    document.getElementById('update-address').value = employeeData.address || '';
-    document.getElementById('update-email').value = employeeData.email || '';
-    document.getElementById('update-contact-number').value = formatPhoneForDisplay(employeeData.contact_number || '') || '';
-    document.getElementById('update-rate-per-hour').value = parseFloat(employeeData.rate_per_hour) || 0.00;
-
-    // Set selects (no status; include marital)
-    document.getElementById('update-gender').value = employeeData.gender || '';
-    document.getElementById('update-marital-status').value = employeeData.marital_status || 'Single';
-    document.getElementById('update-department').value = employeeData.department_id || '';
-    document.getElementById('update-job-position').value = employeeData.job_position_id || '';
-
-    // Set numbers for leave days
-    document.getElementById('update-annual-paid-leave-days').value = parseInt(employeeData.annual_paid_leave_days, 10) || 15;
-    document.getElementById('update-annual-unpaid-leave-days').value = parseInt(employeeData.annual_unpaid_leave_days, 10) || 5;
-    document.getElementById('update-annual-sick-leave-days').value = parseInt(employeeData.annual_sick_leave_days, 10) || 10;
-
-    // Set new emergency fields
-    document.getElementById('update-emergency-name').value = employeeData.emergency_contact_name || '';
-    document.getElementById('update-emergency-phone').value = formatPhoneForDisplay(employeeData.emergency_contact_phone || '') || '';
-    document.getElementById('update-emergency-relationship').value = employeeData.emergency_contact_relationship || '';
-
-    // Set avatar preview (prepend ../ if needed)
-    const avatarSrc = employeeData.avatar_path ? `../${employeeData.avatar_path}` : 'img/user.jpg';
-    updateAvatarPreviewImg.src = avatarSrc;
-    updateAvatarPreviewImg.alt = 'Employee avatar preview';
-
-    updateEmployeeForm.querySelector('input, select').focus();
-  }
 
   updateCloseButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -685,17 +721,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Optionally refetch, but for simplicity, use default
         updateAvatarPreviewImg.src = 'img/user.jpg';
       }
-      updateAvatarPreviewImg.alt = 'Avatar preview';
+      updateAvatarPreviewImg.alt = 'Avatar preview    ';
     }
   });
 
-  // Update form submit - FIXED: No 'update-' prefix for phones (consistent with add); debug logs; optional emergency validation
+  // UPDATED: Update form submit (loading state, validation, clean phones, toast)
   updateEmployeeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const id = document.getElementById('update-employee-id')?.value;
     if (!id) {
-      alert('Employee ID not found. Please refresh and try again.');
+      showToast('Employee ID not found. Please refresh and try again.', 'error');
       return;
     }
 
@@ -715,21 +751,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const ratePerHour = parseFloat(document.getElementById('update-rate-per-hour').value) || 0;
 
     if (!firstName || !lastName || !email || !address || !gender || !maritalStatus || !departmentId || !jobPositionId || ratePerHour < 0) {
-      alert('Please fill all required fields correctly (e.g., names, email, address, selections, non-negative rate).');
+      showToast('Please fill all required fields correctly.', 'error');
       return;
     }
     if (!email.includes('@')) {
-      alert('Please enter a valid email address.');
+      showToast('Please enter a valid email address.', 'error');
       return;
     }
     // Phone format validation (with spaces) - only if provided (optional for update)
     if (contactNumber && !validatePhoneFormat(contactNumber)) {
-      alert('Contact number must be in format 093 0590 9175.');
+      showToast('09X XXXX XXXX', 'error');
       document.getElementById('update-contact-number').focus();
       return;
     }
     if (emergencyPhone && !validatePhoneFormat(emergencyPhone)) {
-      alert('Emergency phone must be in format 093 0590 9175.');
+      showToast('09X XXXX XXXX', 'error');
       document.getElementById('update-emergency-phone').focus();
       return;
     }
@@ -743,6 +779,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const cleanedEmergencyPhone = emergencyPhone ? cleanPhoneNumber(emergencyPhone) : '';
     formData.set('contact_number', cleanedContact);
     formData.set('emergency_contact_phone', cleanedEmergencyPhone);
+
+    // NEW: Loading state
+    const submitBtn = updateEmployeeForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Updating...';
+    submitBtn.disabled = true;
 
     // DEBUG: Log FormData contents (remove after testing)
     console.log('Update FormData keys:', Array.from(formData.keys()));
@@ -759,7 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const result = await response.json();
       if (result.success) {
-        alert(result.message || 'Employee updated successfully.');
+        showToast(result.message || 'Employee updated successfully.', 'success');  // Includes sync/queue status
         updateModal.setAttribute('aria-hidden', 'true');
         updateEmployeeForm.reset();
         // Reset defaults (no status/date_joined; clear emergency)
@@ -774,16 +816,32 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAvatarPreviewImg.src = 'img/user.jpg';
         fetchEmployees();  // Refresh list
       } else {
-        alert('Error: ' + (result.message || 'Failed to update employee'));
+        showToast('Error: ' + (result.message || 'Failed to update employee'), 'error');
       }
     } catch (error) {
       console.error('Update error:', error);
-      alert('Failed to update employee: ' + error.message);
+      showToast('Failed to update employee: ' + error.message, 'error');
+    } finally {
+      // Reset loading
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
     }
   });
 
-  // Initialize on load: Load options and employees
+  // NEW: Close modals on Escape key (global accessibility)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const openModals = document.querySelectorAll('[aria-hidden="false"]');
+      openModals.forEach(modal => {
+        modal.setAttribute('aria-hidden', 'true');
+        const form = modal.querySelector('form');
+        if (form) form.reset();
+      });
+    }
+  });
+
+  // Initialize on load: Load options, employees, and check pending sync
   loadSelectOptions();
   fetchEmployees();
+  checkAndSyncPending();  // Initial sync if online
 });
-

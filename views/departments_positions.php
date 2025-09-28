@@ -1,15 +1,64 @@
 <?php
 header('Content-Type: application/json');
-require_once 'conn.php';  // Now returns mysqli via conn()
+require_once 'conn.php';  // Now returns array: ['mysqli' => ..., 'firebase' => ...]
 
+// UPDATED: Get database connections with extra safety
+$db = null;
+$mysqli = null;
 try {
-    $mysqli = conn();  // Get mysqli connection
-    $action = $_GET['action'] ?? ($_POST['action'] ?? null);
+    $db = conn();  // May throw if MySQL fails
+    $mysqli = $db['mysqli'];
+    if (!$mysqli || $mysqli->connect_error) {
+        throw new Exception('MySQL connection invalid after init.');
+    }
+} catch (Exception $e) {
+    error_log("Departments/Positions Connection Error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]);
+    exit;
+}
 
-    if (!$action) {
-        throw new Exception('No action specified.');
+$action = $_GET['action'] ?? ($_POST['action'] ?? null);
+
+if (!$action) {
+    throw new Exception('No action specified.');
+}
+
+// Helper: Sync department or position to Firebase Realtime DB (after MySQL success)
+function syncDeptOrPositionToFirebase($db, $type, $id, $data, $action = 'set') {
+    if (!hasFirebase($db)) {
+        error_log("Firebase unavailable – skipping sync for " . $type . " ID: " . $id);
+        return false;
     }
 
+    try {
+        $database = $db['firebase'];  // Database instance from conn.php
+        $path = ($type === 'department') ? 'departments/' : 'job_positions/';
+        $ref = $database->getReference($path . $id);
+
+        // Prepare data (simple: id + name)
+        $sync_data = [
+            'id' => $id,
+            'name' => $data['name']
+        ];
+
+        // Sync: 'set' (add/edit), 'remove' (delete)
+        if ($action === 'remove') {
+            $ref->remove();
+            error_log($type . " ID " . $id . " removed from Firebase");
+        } else {
+            $ref->set($sync_data);  // Full replace
+            error_log($type . " ID " . $id . " synced to Firebase (" . $action . "): " . json_encode($sync_data));
+        }
+
+        return true;  // Success
+    } catch (Exception $sync_error) {
+        error_log("Firebase Sync Error for " . $type . " ID " . $id . ": " . $sync_error->getMessage());
+        return false;  // Fail silently (MySQL already succeeded)
+    }
+}
+
+try {
     switch ($action) {
         case 'list_departments':
             // Fetch departments with employee count (mysqli version)
@@ -71,9 +120,14 @@ try {
             $stmt->execute();
             $newId = $mysqli->insert_id;
             $stmt->close();
+
+            // NEW: Sync to Firebase
+            $sync_data = ['name' => $name];
+            $sync_success = syncDeptOrPositionToFirebase($db, 'department', $newId, $sync_data, 'set');
+
             echo json_encode([
                 'success' => true,
-                'message' => 'Department added successfully.',
+                'message' => 'Department added successfully' . ($sync_success ? ' and synced to cloud' : ' (cloud sync skipped)'),
                 'id' => $newId
             ]);
             break;
@@ -104,9 +158,14 @@ try {
             $stmt->execute();
             $newId = $mysqli->insert_id;
             $stmt->close();
+
+            // NEW: Sync to Firebase
+            $sync_data = ['name' => $name];
+            $sync_success = syncDeptOrPositionToFirebase($db, 'position', $newId, $sync_data, 'set');
+
             echo json_encode([
                 'success' => true,
-                'message' => 'Job position added successfully.',
+                'message' => 'Job position added successfully' . ($sync_success ? ' and synced to cloud' : ' (cloud sync skipped)'),
                 'id' => $newId
             ]);
             break;
@@ -141,7 +200,13 @@ try {
             $deleteStmt->bind_param('i', $id);
             $deleteStmt->execute();
             if ($deleteStmt->affected_rows > 0) {
-                echo json_encode(['success' => true, 'message' => 'Department deleted successfully.']);
+                // NEW: Sync delete to Firebase
+                $sync_success = syncDeptOrPositionToFirebase($db, 'department', $id, [], 'remove');
+
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Department deleted successfully' . ($sync_success ? ' and removed from cloud' : ' (cloud removal skipped)')
+                ]);
             } else {
                 throw new Exception('Department not found.');
             }
@@ -178,7 +243,13 @@ try {
             $deleteStmt->bind_param('i', $id);
             $deleteStmt->execute();
             if ($deleteStmt->affected_rows > 0) {
-                echo json_encode(['success' => true, 'message' => 'Job position deleted successfully.']);
+                // NEW: Sync delete to Firebase
+                $sync_success = syncDeptOrPositionToFirebase($db, 'position', $id, [], 'remove');
+
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Job position deleted successfully' . ($sync_success ? ' and removed from cloud' : ' (cloud removal skipped)')
+                ]);
             } else {
                 throw new Exception('Job position not found.');
             }
@@ -192,5 +263,10 @@ try {
     error_log('Departments/Positions API Error: ' . $e->getMessage());
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+}
+
+// Close MySQLi connection (good practice)
+if ($mysqli) {
+    $mysqli->close();
 }
 ?>

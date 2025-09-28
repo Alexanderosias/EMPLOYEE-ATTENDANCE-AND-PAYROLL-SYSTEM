@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 26, 2025 at 06:08 AM
+-- Generation Time: Sep 28, 2025 at 01:17 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -76,8 +76,7 @@ CREATE TABLE `departments` (
 
 INSERT INTO `departments` (`id`, `name`, `created_at`, `updated_at`) VALUES
 (1, 'Computer Engineering', '2025-09-25 15:13:02', '2025-09-25 15:13:02'),
-(4, 'IT', '2025-09-25 15:13:02', '2025-09-25 15:13:02'),
-(5, 'Marketing', '2025-09-25 15:13:02', '2025-09-25 15:13:02');
+(4, 'IT', '2025-09-25 15:13:02', '2025-09-25 15:13:02');
 
 -- --------------------------------------------------------
 
@@ -91,10 +90,13 @@ CREATE TABLE `employees` (
   `last_name` varchar(100) NOT NULL,
   `address` text NOT NULL,
   `gender` enum('Male','Female','Other') NOT NULL,
+  `marital_status` enum('Single','Married','Divorced','Widowed','Other') DEFAULT 'Single',
   `status` enum('Active','Inactive','On Leave') DEFAULT 'Active',
   `email` varchar(255) NOT NULL,
   `contact_number` varchar(20) NOT NULL,
-  `emergency_contact` varchar(255) NOT NULL,
+  `emergency_contact_name` varchar(100) NOT NULL DEFAULT '',
+  `emergency_contact_phone` varchar(20) NOT NULL DEFAULT '',
+  `emergency_contact_relationship` varchar(50) NOT NULL DEFAULT '',
   `date_joined` date NOT NULL,
   `department_id` int(11) NOT NULL,
   `job_position_id` int(11) NOT NULL,
@@ -111,8 +113,8 @@ CREATE TABLE `employees` (
 -- Dumping data for table `employees`
 --
 
-INSERT INTO `employees` (`id`, `first_name`, `last_name`, `address`, `gender`, `status`, `email`, `contact_number`, `emergency_contact`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`) VALUES
-(1, 'John', 'Doe', '123 Main St', 'Male', 'Active', 'john@example.com', '123-456-7890', 'Emergency: 098-765-4321', '2023-01-01', 1, 1, 50000.00, 10, 5, 7, NULL, '2025-09-25 16:21:50', '2025-09-25 16:21:50');
+INSERT INTO `employees` (`id`, `first_name`, `last_name`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`) VALUES
+(11, 'Jake', 'Amano', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Wife', '2025-09-28', 1, 8, 119.99, 15, 5, 10, 'uploads/avatars/emp_1759057689_68d91719c3624.png', '2025-09-28 11:08:09', '2025-09-28 11:12:34');
 
 -- --------------------------------------------------------
 
@@ -174,6 +176,22 @@ CREATE TABLE `payroll` (
   `payment_date` date DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pending_operations`
+--
+
+CREATE TABLE `pending_operations` (
+  `id` int(11) NOT NULL,
+  `operation_type` enum('add','update','delete') NOT NULL,
+  `employee_id` int(11) NOT NULL,
+  `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`data`)),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `synced` tinyint(4) DEFAULT 0,
+  `attempts` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -339,7 +357,9 @@ ALTER TABLE `employees`
   ADD KEY `department_id` (`department_id`),
   ADD KEY `job_position_id` (`job_position_id`),
   ADD KEY `idx_email` (`email`),
-  ADD KEY `idx_date_joined` (`date_joined`);
+  ADD KEY `idx_date_joined` (`date_joined`),
+  ADD KEY `idx_marital_status` (`marital_status`),
+  ADD KEY `idx_emergency_contact` (`emergency_contact_phone`);
 
 --
 -- Indexes for table `job_positions`
@@ -365,6 +385,14 @@ ALTER TABLE `payroll`
   ADD KEY `idx_employee_period` (`employee_id`,`payroll_period_start`),
   ADD KEY `idx_period` (`payroll_period_start`,`payroll_period_end`),
   ADD KEY `idx_paid_status` (`paid_status`);
+
+--
+-- Indexes for table `pending_operations`
+--
+ALTER TABLE `pending_operations`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_type_synced` (`operation_type`,`synced`),
+  ADD KEY `idx_employee` (`employee_id`);
 
 --
 -- Indexes for table `qr_codes`
@@ -443,13 +471,13 @@ ALTER TABLE `departments`
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `job_positions`
 --
 ALTER TABLE `job_positions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
@@ -464,10 +492,16 @@ ALTER TABLE `payroll`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `pending_operations`
+--
+ALTER TABLE `pending_operations`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `schedules`

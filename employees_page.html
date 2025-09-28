@@ -132,7 +132,7 @@
         aria-modal="true">
         <div class="modal-content">
           <header class="modal-header">
-            <h3 id="modal-title">Add Employees</h3>
+            <h3 id="modal-title">Add Employee</h3>
             <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
           </header>
           <form id="add-employee-form" novalidate>
@@ -211,12 +211,12 @@
 
                 <div class="form-group">
                   <label for="contact-number">Contact Number</label>
-                  <input type="tel" id="contact-number" name="contact_number" required placeholder="09XX XXX XXXX" />
+                  <input type="tel" id="contact-number" name="contact_number" required placeholder="Enter contact number (11 digits)" />
                 </div>
 
                 <div class="form-group">
                   <label for="rate-per-hour">Rate per Hour</label>
-                  <input type="number" id="rate-per-hour" name="rate_per_hour" min="0" step="0.01" required
+                  <input type="number" id="rate-per-hour" name="rate_per_hour" min="0" step="10" required
                     placeholder="Enter rate per hour" value="0.00" />
                 </div>
 
@@ -243,17 +243,17 @@
                   <div class="form-group">
                     <label for="emergency-name">Name</label>
                     <input type="text" id="emergency-name" name="emergency_contact_name" required
-                      placeholder="Enter emergency contact name (e.g., Jane Doe)" />
+                      placeholder="Emergency contact full name" />
                   </div>
                   <div class="form-group">
                     <label for="emergency-phone">Phone Number</label>
                     <input type="tel" id="emergency-phone" name="emergency_contact_phone" required
-                      placeholder="Enter phone (e.g., 093 0590 9175)" />
+                      placeholder="Enter contact number (11 digits)" />
                   </div>
                   <div class="form-group">
                     <label for="emergency-relationship">Relationship</label>
                     <input type="text" id="emergency-relationship" name="emergency_contact_relationship" required
-                      placeholder="Enter relationship (e.g., Wife, Parent)" />
+                      placeholder="Relationship to employee" />
                   </div>
                 </div>
 
@@ -353,12 +353,12 @@
                 <div class="form-group">
                   <label for="update-contact-number">Contact Number</label>
                   <input type="tel" id="update-contact-number" name="contact_number" required
-                    placeholder="09XX XXX XXXX" />
+                    placeholder="Enter contact number (11 digits)" />
                 </div>
 
                 <div class="form-group">
                   <label for="update-rate-per-hour">Rate per Hour</label>
-                  <input type="number" id="update-rate-per-hour" name="rate_per_hour" min="0" step="0.01" required
+                  <input type="number" id="update-rate-per-hour" name="rate_per_hour" min="0" step="10" required
                     placeholder="Enter rate per hour" value="0.00" />
                 </div>
 
@@ -385,17 +385,17 @@
                   <div class="form-group">
                     <label for="update-emergency-name">Name</label>
                     <input type="text" id="update-emergency-name" name="emergency_contact_name" required
-                      placeholder="Enter emergency contact name (e.g., Jane Doe)" />
+                      placeholder="Emergency contact full name" />
                   </div>
                   <div class="form-group">
                     <label for="update-emergency-phone">Phone Number</label>
                     <input type="tel" id="update-emergency-phone" name="emergency_contact_phone" required
-                      placeholder="Enter phone (e.g., 093 0590 9175)" />
+                      placeholder="Enter contact number (11 digits)" />
                   </div>
                   <div class="form-group">
                     <label for="update-emergency-relationship">Relationship</label>
                     <input type="text" id="update-emergency-relationship" name="emergency_contact_relationship" required
-                      placeholder="Enter relationship (e.g., Wife, Parent)" />
+                      placeholder="Relationship to employee" />
                   </div>
                 </div>
               </div>
