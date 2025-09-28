@@ -113,7 +113,7 @@ let isEditMode = false;
     }
 
     function showStatus(message, type) {
-      const statusDiv = document.getElementById('statusMessage');
+      const statusDiv = document.getElementById('status-message');
       statusDiv.textContent = message;
       statusDiv.className = `status-message ${type}`;
       statusDiv.style.display = 'block';

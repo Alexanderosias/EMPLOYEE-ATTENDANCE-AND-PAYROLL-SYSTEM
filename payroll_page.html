@@ -7,6 +7,7 @@
     <title>Payroll Page - Main Content</title>
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/payroll.css">
+    <link rel="stylesheet" href="css/status-message.css">
 
 </head>
 
@@ -180,9 +181,16 @@
                             Rates</button>
                     </div>
                 </section>
-
-                <button id="mark-as-paid-btn" class="mark-paid-btn" disabled type="button">Mark all as Paid</button>
-
+                <div class="below-settings">
+                    <div class="toggle-container">
+                        <label class="toggle-label">Auto-Apply All Government Deductions</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoApplyDeductions" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <button id="mark-as-paid-btn" class="mark-paid-btn" disabled type="button">Mark all as Paid</button>
+                </div>
                 <div class="payroll-table-container" aria-label="Payroll records table">
                     <table class="payroll-table" role="table" aria-describedby="pay-period-display">
                         <thead>

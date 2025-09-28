@@ -1,10 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Simulated employee data (replace with real data or fetch from backend)
-  const employees = [
-    { name: "Francis Rivas", department: "Computer Engineering", jobPosition: "Instructor" },
-    { name: "Adela Onlao", department: "Computer Engineering", jobPosition: "Instructor" },
-    // Add more employees as needed
-  ];
+  const API_BASE = '/EMPLOYEE ATTENDANCE AND PAYROLL SYSTEM/views/departments_positions.php';  // Backend endpoint
 
   // Modal helper functions
   function openModal(modal) {
@@ -17,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function closeModal(modal) {
     modal.setAttribute('aria-hidden', 'true');
+    modal.querySelector('form')?.reset();
   }
 
   // Delete confirmation modal elements
@@ -25,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const deleteWarningMessage = document.getElementById('delete-warning-message');
   const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
   let itemToDelete = null;
-  let itemType = null;
+  let itemId = null;
+  let itemType = null;  // 'department' or 'position'
 
   // Setup delete confirmation modal
   deleteConfirmationModal.querySelectorAll('.modal-close-btn').forEach(btn => {
@@ -37,14 +34,35 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   confirmDeleteBtn.addEventListener('click', () => {
-    if (itemToDelete) {
-      itemToDelete.remove();
-      closeModal(deleteConfirmationModal);
-      updateCounts();
-      itemToDelete = null;
-      itemType = null;
+    if (itemId && itemType) {
+      deleteItem(itemId, itemType);
     }
   });
+
+  // Delete function
+  async function deleteItem(id, type) {
+    try {
+      const response = await fetch(`${API_BASE}?action=delete_${type}&id=${id}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (result.success) {
+        alert(result.message || 'Item deleted successfully.');
+        closeModal(deleteConfirmationModal);
+        if (type === 'department') {
+          fetchDepartments();
+        } else {
+          fetchPositions();
+        }
+      } else {
+        alert('Error: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Failed to delete item.');
+    }
+    itemToDelete = null;
+    itemId = null;
+    itemType = null;
+  }
 
   // Departments
   const addDepartmentBtn = document.getElementById('add-department-btn');
@@ -62,26 +80,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === addDepartmentModal) closeModal(addDepartmentModal);
   });
 
-  addDepartmentForm.addEventListener('submit', e => {
+  addDepartmentForm.addEventListener('submit', async e => {
     e.preventDefault();
-    const input = addDepartmentForm['departmentName'];
-    const newDept = input.value.trim();
-    if (newDept) {
-      // Check for duplicates (case-insensitive)
-      const exists = Array.from(departmentsList.children).some(li => {
-        const itemContent = li.querySelector('.item-content');
-        const text = itemContent ? itemContent.textContent : li.textContent;
-        return text.replace(/\s*\(\d+\)$/, '').toLowerCase() === newDept.toLowerCase();
+    const formData = new FormData(addDepartmentForm);
+    formData.append('action', 'add_department');
+
+    try {
+      const response = await fetch(API_BASE, {
+        method: 'POST',
+        body: formData
       });
-      if (exists) {
-        alert('This department already exists.');
-        return;
+      const result = await response.json();
+      if (result.success) {
+        alert(result.message || 'Department added successfully.');
+        closeModal(addDepartmentModal);
+        fetchDepartments();  // Refresh list
+      } else {
+        alert('Error: ' + result.message);
       }
-      const li = createListItem(newDept, 'department');
-      departmentsList.appendChild(li);
-      input.value = '';
-      closeModal(addDepartmentModal);
-      updateCounts();
+    } catch (error) {
+      console.error('Add department error:', error);
+      alert('Failed to add department.');
     }
   });
 
@@ -101,36 +120,38 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === addJobPositionModal) closeModal(addJobPositionModal);
   });
 
-  addJobPositionForm.addEventListener('submit', e => {
+  addJobPositionForm.addEventListener('submit', async e => {
     e.preventDefault();
-    const input = addJobPositionForm['jobPositionName'];
-    const newJob = input.value.trim();
-    if (newJob) {
-      // Check for duplicates (case-insensitive)
-      const exists = Array.from(jobPositionsList.children).some(li => {
-        const itemContent = li.querySelector('.item-content');
-        const text = itemContent ? itemContent.textContent : li.textContent;
-        return text.replace(/\s*\(\d+\)$/, '').toLowerCase() === newJob.toLowerCase();
+    const formData = new FormData(addJobPositionForm);
+    formData.append('action', 'add_position');
+
+    try {
+      const response = await fetch(API_BASE, {
+        method: 'POST',
+        body: formData
       });
-      if (exists) {
-        alert('This job position already exists.');
-        return;
+      const result = await response.json();
+      if (result.success) {
+        alert(result.message || 'Job position added successfully.');
+        closeModal(addJobPositionModal);
+        fetchPositions();  // Refresh list
+      } else {
+        alert('Error: ' + result.message);
       }
-      const li = createListItem(newJob, 'jobPosition');
-      jobPositionsList.appendChild(li);
-      input.value = '';
-      closeModal(addJobPositionModal);
-      updateCounts();
+    } catch (error) {
+      console.error('Add position error:', error);
+      alert('Failed to add job position.');
     }
   });
 
-  // Function to create list item with delete button
-  function createListItem(text, type) {
+  // UPDATED: Function to create list item with delete button (disabled if employees assigned)
+  function createListItem(id, text, count, type) {
     const li = document.createElement('li');
+    li.setAttribute('data-id', id);
 
     const itemContent = document.createElement('span');
     itemContent.className = 'item-content';
-    itemContent.textContent = text;
+    itemContent.textContent = `${text} (${count})`;
 
     const itemActions = document.createElement('div');
     itemActions.className = 'item-actions';
@@ -139,17 +160,30 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteBtn.className = 'btn-delete';
     deleteBtn.setAttribute('aria-label', `Delete ${text}`);
 
-    // Replace icon with image
     const deleteImg = document.createElement('img');
     deleteImg.src = './icons/delete.png';  // Adjust path as needed
     deleteImg.alt = 'Delete';
-    deleteImg.className = 'delete-icon'; // Optional: for styling (size, cursor, etc.)
+    deleteImg.className = 'delete-icon';
 
     deleteBtn.appendChild(deleteImg);
 
-    deleteBtn.addEventListener('click', () => {
-      showDeleteConfirmation(li, text, type);
-    });
+    // FIXED: Disable delete if employees assigned (prevents interaction)
+    const typeName = type === 'department' ? 'department' : 'job position';
+    if (count > 0) {
+      deleteBtn.disabled = true;
+      deleteBtn.setAttribute('aria-disabled', 'true');
+      deleteBtn.title = `Cannot delete this ${typeName} because it has ${count} employee(s) assigned. Please reassign employees first.`;
+      // Optional: Add visual style (e.g., opacity: 0.5; cursor: not-allowed;) via CSS class 'disabled-delete'
+      deleteBtn.classList.add('disabled-delete');  // Add CSS: .btn-delete.disabled-delete { opacity: 0.5; cursor: not-allowed; }
+      // ALTERNATIVE: Hide button entirely - uncomment below
+      // itemActions.style.display = 'none';  // Or don't append deleteBtn
+    } else {
+      // Enabled: Attach click listener to show confirmation
+      deleteBtn.addEventListener('click', () => {
+        showDeleteConfirmation(li, id, text, count, type);
+      });
+      deleteBtn.title = `Delete ${typeName} "${text}"`;
+    }
 
     itemActions.appendChild(deleteBtn);
     li.appendChild(itemContent);
@@ -158,94 +192,70 @@ document.addEventListener('DOMContentLoaded', () => {
     return li;
   }
 
-
-  // Function to show delete confirmation
-  function showDeleteConfirmation(listItem, itemName, type) {
+  // UPDATED: Function to show delete confirmation (only if count === 0)
+  function showDeleteConfirmation(listItem, id, itemName, employeeCount, type) {
     const typeName = type === 'department' ? 'department' : 'job position';
-    const employeeCount = getEmployeeCount(itemName, type);
-
-    deleteConfirmationMessage.textContent = `Are you sure you want to delete the ${typeName} "${itemName}"?`;
-
     if (employeeCount > 0) {
-      deleteWarningMessage.textContent = `Warning: This ${typeName} has ${employeeCount} employee(s) assigned to it. Deleting it may affect employee records.`;
-      deleteWarningMessage.style.display = 'block';
-    } else {
-      deleteWarningMessage.style.display = 'none';
+      // Prevention: Don't open modal; show alert instead (redundant with disabled button, but safety)
+      alert(`Cannot delete "${itemName}": This ${typeName} has ${employeeCount} employee(s) assigned. Please reassign them first.`);
+      return;  // Exit early
     }
 
+    // Proceed only if count === 0
+    deleteConfirmationMessage.textContent = `Are you sure you want to delete the ${typeName} "${itemName}"?`;
+
+    // No warning needed since count === 0, but keep for future
+    deleteWarningMessage.style.display = 'none';
+
     itemToDelete = listItem;
+    itemId = id;
     itemType = type;
     openModal(deleteConfirmationModal);
   }
 
-  // Function to get employee count for a department or job position
-  function getEmployeeCount(itemName, type) {
-    if (type === 'department') {
-      return employees.filter(emp => emp.department === itemName).length;
-    } else {
-      return employees.filter(emp => emp.jobPosition === itemName).length;
+  // Fetch and render departments
+  async function fetchDepartments() {
+    try {
+      const response = await fetch(`${API_BASE}?action=list_departments`);
+      const departments = await response.json();
+      departmentsList.innerHTML = '';  // Clear
+      if (departments.length === 0) {
+        departmentsList.innerHTML = '<li>No departments found.</li>';
+      } else {
+        departments.forEach(dept => {
+          const li = createListItem(dept.id, dept.name, dept.employee_count, 'department');
+          departmentsList.appendChild(li);
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      alert('Failed to load departments. Please refresh the page.');
+      departmentsList.innerHTML = '<li>Error loading departments.</li>';
     }
   }
 
-  // Function to update counts next to departments and job positions
-  function updateCounts() {
-    // Count employees per department
-    const deptCounts = {};
-    employees.forEach(emp => {
-      const dept = emp.department || "Unassigned";
-      deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-    });
-
-    // Count employees per job position
-    const jobCounts = {};
-    employees.forEach(emp => {
-      const job = emp.jobPosition || "Unassigned";
-      jobCounts[job] = (jobCounts[job] || 0) + 1;
-    });
-
-    // Update department list items with counts
-    Array.from(departmentsList.children).forEach(li => {
-      const itemContent = li.querySelector('.item-content');
-      if (itemContent) {
-        const deptName = itemContent.textContent.replace(/\s*\(\d+\)$/, '').trim();
-        const count = deptCounts[deptName] || 0;
-        itemContent.textContent = `${deptName} (${count})`;
+  // Fetch and render job positions
+  async function fetchPositions() {
+    try {
+      const response = await fetch(`${API_BASE}?action=list_positions`);
+      const positions = await response.json();
+      jobPositionsList.innerHTML = '';  // Clear
+      if (positions.length === 0) {
+        jobPositionsList.innerHTML = '<li>No job positions found.</li>';
+      } else {
+        positions.forEach(pos => {
+          const li = createListItem(pos.id, pos.name, pos.employee_count, 'position');
+          jobPositionsList.appendChild(li);
+        });
       }
-    });
-
-    // Update job position list items with counts
-    Array.from(jobPositionsList.children).forEach(li => {
-      const itemContent = li.querySelector('.item-content');
-      if (itemContent) {
-        const jobName = itemContent.textContent.replace(/\s*\(\d+\)$/, '').trim();
-        const count = jobCounts[jobName] || 0;
-        itemContent.textContent = `${jobName} (${count})`;
-      }
-    });
+    } catch (error) {
+      console.error('Error fetching positions:', error);
+      alert('Failed to load job positions. Please refresh the page.');
+      jobPositionsList.innerHTML = '<li>Error loading job positions.</li>';
+    }
   }
 
-  // Function to convert existing list items to new format with delete buttons
-  function convertExistingItems() {
-    // Convert departments
-    Array.from(departmentsList.children).forEach(li => {
-      if (!li.querySelector('.item-content')) {
-        const text = li.textContent.trim();
-        const newLi = createListItem(text, 'department');
-        li.parentNode.replaceChild(newLi, li);
-      }
-    });
-
-    // Convert job positions
-    Array.from(jobPositionsList.children).forEach(li => {
-      if (!li.querySelector('.item-content')) {
-        const text = li.textContent.trim();
-        const newLi = createListItem(text, 'jobPosition');
-        li.parentNode.replaceChild(newLi, li);
-      }
-    });
-  }
-
-  // Convert existing items and update counts
-  convertExistingItems();
-  updateCounts();
+  // Initialize on load: Fetch and render lists
+  fetchDepartments();
+  fetchPositions();
 });
