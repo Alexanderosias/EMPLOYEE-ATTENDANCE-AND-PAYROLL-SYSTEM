@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 28, 2025 at 01:17 PM
+-- Generation Time: Oct 13, 2025 at 03:26 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -114,7 +114,8 @@ CREATE TABLE `employees` (
 --
 
 INSERT INTO `employees` (`id`, `first_name`, `last_name`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`) VALUES
-(11, 'Jake', 'Amano', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Wife', '2025-09-28', 1, 8, 119.99, 15, 5, 10, 'uploads/avatars/emp_1759057689_68d91719c3624.png', '2025-09-28 11:08:09', '2025-09-28 11:12:34');
+(15, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexandersias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'brother', '2025-09-28', 1, 7, 123.00, 15, 5, 10, 'uploads/avatars/emp_15_1759069867.jpg', '2025-09-28 14:30:49', '2025-10-04 14:00:19'),
+(16, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexander123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'brother', '2025-10-01', 1, 1, 100.00, 15, 5, 10, 'uploads/avatars/emp_1759276204_68dc6cac9d4a0.png', '2025-09-30 23:50:04', '2025-10-05 03:29:06');
 
 -- --------------------------------------------------------
 
@@ -207,6 +208,14 @@ CREATE TABLE `qr_codes` (
   `qr_image_path` varchar(500) NOT NULL,
   `generated_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `qr_codes`
+--
+
+INSERT INTO `qr_codes` (`id`, `employee_id`, `qr_data`, `qr_image_path`, `generated_at`) VALUES
+(11, 15, 'ID:15|First:Alexander|Last:Osias|Position:Cashier|Joined:2025-09-28', 'qrcodes/AlexanderOsias.png', '2025-10-04 14:00:20'),
+(13, 16, 'ID:16|First:Alexander|Last:Osias|Position:Instructor|Joined:2025-10-01', 'qrcodes/AlexanderOsias_16_1.png', '2025-10-05 03:29:06');
 
 -- --------------------------------------------------------
 
@@ -471,7 +480,7 @@ ALTER TABLE `departments`
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `job_positions`
@@ -495,13 +504,13 @@ ALTER TABLE `payroll`
 -- AUTO_INCREMENT for table `pending_operations`
 --
 ALTER TABLE `pending_operations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `schedules`
