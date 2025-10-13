@@ -13,6 +13,7 @@
   --delete-btn-hover: #c82333;
   --show-more-btn-color: #007bff;
   --show-more-btn-hover: #0056b3;
+  --bg-main-color: #f0f2f5;
 }
 
 @font-face {
@@ -22,17 +23,21 @@
   font-style: normal;
 }
 
-/* Container for search and add employee button */
 .search-add-bar {
   display: flex;
+  position: sticky;
+  top: 75px;
+  background-color: rgb(240, 242, 245, 0.8);
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
   gap: 1rem;
   margin-bottom: 2rem;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  z-index: 100;
 }
 
-/* Search input group */
 .search-input-group {
   display: flex;
   align-items: center;
@@ -78,7 +83,6 @@
   color: var(--search-btn-hover);
 }
 
-/* Add employee button */
 .add-employee-btn {
   background-color: var(--add-btn-color);
   display: flex;
@@ -98,7 +102,6 @@
   background-color: var(--add-btn-hover);
 }
 
-/* Employee list container */
 .employee-list {
   display: flex;
   flex-direction: column;
@@ -106,7 +109,6 @@
   min-height: 600px;
 }
 
-/* Employee card */
 .employee-card {
   background-color: var(--card-bg-color);
   padding: 1.5rem;
@@ -118,15 +120,17 @@
   gap: 1.5rem;
   flex-wrap: nowrap;
   flex-direction: row;
-  transition: padding 0.3s ease;
+  transition: padding 0.3s ease, transform 0.3s ease;
 }
 
-/* Minimized state reduces bottom padding */
+.employee-card:hover {
+  transform: translateY(-5px);
+}
+
 .employee-card.minimized {
   padding-bottom: 1rem;
 }
 
-/* Card index colors for first three */
 .employee-card:first-child .card-index {
   background-color: #28a745;
 }
@@ -139,7 +143,6 @@
   background-color: #007bff;
 }
 
-/* Card index circle */
 .card-index {
   position: absolute;
   top: 10px;
@@ -157,7 +160,6 @@
   flex-shrink: 0;
 }
 
-/* Image container with photo */
 .image-container {
   display: flex;
   flex-direction: column;
@@ -326,9 +328,6 @@
 }
 
 
-
-
-/* Modal backdrop */
 .modal {
   position: fixed;
   top: 0;
@@ -342,12 +341,10 @@
   z-index: 1000;
 }
 
-/* Show modal */
 .modal[aria-hidden="false"] {
   display: flex;
 }
 
-/* Modal content box */
 .modal-content {
   background: white;
   border-radius: 8px;
@@ -472,7 +469,6 @@
   background-color: #2a52be;
 }
 
-/* Form groups */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -500,7 +496,6 @@
   border-color: var(--add-btn-color, #007bff);
 }
 
-/* Modal footer */
 .modal-footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid #ddd;
@@ -538,7 +533,6 @@
   background-color: #bbb;
 }
 
-/* Grid layout */
 .form-grid {
   display: contents;
 }

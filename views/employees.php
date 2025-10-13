@@ -1,6 +1,6 @@
 <?php
 ob_start();
-ini_set('display_errors', 0);  // Set to 1 temporarily for debugging if needed
+ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
@@ -8,7 +8,6 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Handle CORS preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -16,7 +15,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'conn.php';
 
-// QR Library: From root (views/ is subdir)
 $qr_lib_path = '../phpqrcode/qrlib.php';
 if (file_exists($qr_lib_path)) {
     require_once $qr_lib_path;
@@ -24,11 +22,10 @@ if (file_exists($qr_lib_path)) {
     error_log("QR Library missing: Place qrlib.php in root/phpqrcode/");
 }
 
-// Get connections
 $db = null;
 $mysqli = null;
 try {
-    $db = conn();  // ['mysqli', 'firebase']
+    $db = conn();
     $mysqli = $db['mysqli'];
     if (!$mysqli || $mysqli->connect_error) {
         throw new Exception('MySQL connection failed: ' . ($mysqli ? $mysqli->connect_error : 'No connection'));
@@ -38,7 +35,6 @@ try {
     die(json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]));
 }
 
-// Helper: Generate QR Code and Return Web Path (uses root qrcodes/)
 function generateQRCode($employee_data, $qr_dir = '../qrcodes/')
 {
     global $mysqli;
@@ -51,9 +47,9 @@ function generateQRCode($employee_data, $qr_dir = '../qrcodes/')
             mkdir($qr_dir, 0755, true);
         }
         $id = (int)$employee_data['id'];
-        $first = trim(preg_replace('/[^a-zA-Z]/', '', $employee_data['first_name'] ?? ''));  // Sanitize for filename
+        $first = trim(preg_replace('/[^a-zA-Z]/', '', $employee_data['first_name'] ?? ''));
         $last = trim(preg_replace('/[^a-zA-Z]/', '', $employee_data['last_name'] ?? ''));
-        $pos = trim($employee_data['position_name'] ?? 'N/A');  // From JOIN
+        $pos = trim($employee_data['position_name'] ?? 'N/A');
         $joined = ($employee_data['date_joined'] === '0000-00-00' || empty($employee_data['date_joined'])) ? 'N/A' : $employee_data['date_joined'];
 
         $qr_data = "ID:$id|First:$first|Last:$last|Position:$pos|Joined:$joined";
@@ -66,7 +62,6 @@ function generateQRCode($employee_data, $qr_dir = '../qrcodes/')
         $file_path = $qr_dir . $filename;
         $web_path = 'qrcodes/' . $filename;
 
-        // Generate QR (L correction, size 10, PNG)
         QRcode::png($qr_data, $file_path, QR_ECLEVEL_L, 10, 2);
         error_log("QR Generated: $web_path for Employee ID $id (Data: $qr_data)");
         return ['path' => $web_path, 'data' => $qr_data];
@@ -76,11 +71,9 @@ function generateQRCode($employee_data, $qr_dir = '../qrcodes/')
     }
 }
 
-// Helper: Delete QR (record + file)
 function deleteQRCode($mysqli, $employee_id)
 {
     try {
-        // Fetch path first
         $stmt = $mysqli->prepare("SELECT qr_image_path FROM qr_codes WHERE employee_id = ?");
         $stmt->bind_param('i', $employee_id);
         $stmt->execute();
@@ -89,14 +82,13 @@ function deleteQRCode($mysqli, $employee_id)
         $stmt->close();
 
         if ($qr && $qr['qr_image_path']) {
-            $file_path = '../' . $qr['qr_image_path'];  // Root-relative
+            $file_path = '../' . $qr['qr_image_path'];
             if (file_exists($file_path)) {
                 unlink($file_path);
                 error_log("QR File Deleted: " . $qr['qr_image_path'] . " for Employee ID $employee_id");
             }
         }
 
-        // Delete record
         $stmt = $mysqli->prepare("DELETE FROM qr_codes WHERE employee_id = ?");
         $stmt->bind_param('i', $employee_id);
         $stmt->execute();
@@ -107,10 +99,8 @@ function deleteQRCode($mysqli, $employee_id)
     }
 }
 
-// Helper: Sync to Firebase (added qr_data, qr_image_path)
 function syncEmployeeToFirebase($db, $mysqli, $employee_id, $employee_data, $operation_type)
 {
-    // Use global hasFirebase from conn.php
     if (!function_exists('hasFirebase') || !hasFirebase($db)) {
         error_log("No Firebase – queuing Employee ID: $employee_id, Type: $operation_type");
         insertPendingOperation($mysqli, $operation_type, $employee_id, $employee_data);
@@ -128,7 +118,6 @@ function syncEmployeeToFirebase($db, $mysqli, $employee_id, $employee_data, $ope
             return true;
         }
 
-        // Exact mapping to employees table (no extras; skip if delete) - REMOVED: qr_data, qr_image_path
         $sync_data = [
             'id' => (int)($employee_data['id'] ?? 0),
             'first_name' => trim($employee_data['first_name'] ?? ''),
@@ -145,21 +134,18 @@ function syncEmployeeToFirebase($db, $mysqli, $employee_id, $employee_data, $ope
             'date_joined' => isset($employee_data['date_joined']) && $employee_data['date_joined'] && $employee_data['date_joined'] !== '0000-00-00' ? date('c', strtotime($employee_data['date_joined'])) : null,
             'department_id' => (int)($employee_data['department_id'] ?? 0),
             'job_position_id' => (int)($employee_data['job_position_id'] ?? 0),
+            'job_position_name' => trim($employee_data['position_name'] ?? ''), // Added actual job position name
             'rate_per_hour' => (float)($employee_data['rate_per_hour'] ?? 0),
             'annual_paid_leave_days' => (int)($employee_data['annual_paid_leave_days'] ?? 15),
             'annual_unpaid_leave_days' => (int)($employee_data['annual_unpaid_leave_days'] ?? 5),
             'annual_sick_leave_days' => (int)($employee_data['annual_sick_leave_days'] ?? 10),
             'avatar_path' => trim($employee_data['avatar_path'] ?? ''),
-            // REMOVED: 'qr_data' => trim($employee_data['qr_data'] ?? ''),
-            // REMOVED: 'qr_image_path' => trim($employee_data['qr_image_path'] ?? ''),
             'created_at' => isset($employee_data['created_at']) && $employee_data['created_at'] ? date('c', strtotime($employee_data['created_at'])) : null,
             'updated_at' => isset($employee_data['updated_at']) && $employee_data['updated_at'] ? date('c', strtotime($employee_data['updated_at'])) : null
         ];
 
         $ref->set($sync_data);
         error_log("Firebase: Synced Employee ID $employee_id ($operation_type): " . json_encode($sync_data));
-
-        // Remove pending on success
         removePendingOperation($mysqli, $operation_type, $employee_id);
         return true;
     } catch (Exception $e) {
@@ -169,7 +155,6 @@ function syncEmployeeToFirebase($db, $mysqli, $employee_id, $employee_data, $ope
     }
 }
 
-// insertPendingOperation, removePendingOperation, processPendingSync, cleanPhone, validatePhone (unchanged from previous)
 function insertPendingOperation($mysqli, $operation_type, $employee_id, $data = null)
 {
     try {
@@ -189,7 +174,6 @@ function insertPendingOperation($mysqli, $operation_type, $employee_id, $data = 
     }
 }
 
-// Remove pending (unchanged)
 function removePendingOperation($mysqli, $operation_type, $employee_id)
 {
     try {
@@ -208,7 +192,6 @@ function removePendingOperation($mysqli, $operation_type, $employee_id)
     }
 }
 
-// Process pending with retry (unchanged)
 function processPendingSync($db, $mysqli)
 {
     $synced = 0;
@@ -228,7 +211,6 @@ function processPendingSync($db, $mysqli)
             $type = $pending['operation_type'];
             $data = json_decode($pending['data'], true) ?? [];
 
-            // For add/update: Fetch latest from MySQL (with position_name for QR if needed)
             if ($type !== 'delete') {
                 $fetch_query = "
                     SELECT e.*, d.name AS department_name, jp.name AS position_name, qc.qr_data, qc.qr_image_path
@@ -257,10 +239,7 @@ function processPendingSync($db, $mysqli)
                 }
             }
 
-            // Sync (uses conn.php's hasFirebase)
             $success = syncEmployeeToFirebase($db, $mysqli, $id, $data, $type);
-
-            // Update attempts/synced
             $synced_val = $success ? 1 : 0;
             $update_stmt = $mysqli->prepare("UPDATE pending_operations SET synced = ?, attempts = attempts + 1 WHERE id = ?");
             if ($update_stmt) {
@@ -286,21 +265,18 @@ function processPendingSync($db, $mysqli)
     return ['synced' => $synced, 'failed' => $failed];
 }
 
-// Clean phone (unchanged)
 function cleanPhone($phone)
 {
     $phone = $phone ?? '';
     return preg_replace('/\D/', '', $phone);
 }
 
-// Validate phone (unchanged)
 function validatePhone($phone)
 {
     $clean = cleanPhone($phone);
     return strlen($clean) === 11 && ctype_digit($clean);
 }
 
-// Handle action
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 switch ($action) {
@@ -322,7 +298,6 @@ switch ($action) {
             $employees = $result->fetch_all(MYSQLI_ASSOC);
             $result->free();
 
-            // Process (clean/cast) - ADDED: qr_data, qr_image_path
             foreach ($employees as &$emp) {
                 $emp['id'] = (int)($emp['id'] ?? 0);
                 $emp['first_name'] = trim($emp['first_name'] ?? '');
@@ -344,14 +319,14 @@ switch ($action) {
                 $emp['annual_unpaid_leave_days'] = (int)($emp['annual_unpaid_leave_days'] ?? 5);
                 $emp['annual_sick_leave_days'] = (int)($emp['annual_sick_leave_days'] ?? 10);
                 $emp['avatar_path'] = trim($emp['avatar_path'] ?? '');
-                $emp['qr_data'] = trim($emp['qr_data'] ?? '');  // NEW
-                $emp['qr_image_path'] = trim($emp['qr_image_path'] ?? '');  // NEW
+                $emp['qr_data'] = trim($emp['qr_data'] ?? '');
+                $emp['qr_image_path'] = trim($emp['qr_image_path'] ?? '');
                 $emp['created_at'] = trim($emp['created_at'] ?? '');
                 $emp['updated_at'] = trim($emp['updated_at'] ?? '');
                 $emp['department_name'] = trim($emp['department_name'] ?? 'Unassigned');
                 $emp['position_name'] = trim($emp['position_name'] ?? 'Unassigned');
             }
-            unset($emp);  // Clean reference
+            unset($emp);
 
             ob_end_clean();
             echo json_encode(['success' => true, 'data' => $employees], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -395,7 +370,6 @@ switch ($action) {
                 break;
             }
 
-            // Process same as list - ADDED: qr_data, qr_image_path
             $emp['id'] = (int)$emp['id'];
             $emp['first_name'] = trim($emp['first_name'] ?? '');
             $emp['last_name'] = trim($emp['last_name'] ?? '');
@@ -416,8 +390,8 @@ switch ($action) {
             $emp['annual_unpaid_leave_days'] = (int)($emp['annual_unpaid_leave_days'] ?? 5);
             $emp['annual_sick_leave_days'] = (int)($emp['annual_sick_leave_days'] ?? 10);
             $emp['avatar_path'] = trim($emp['avatar_path'] ?? '');
-            $emp['qr_data'] = trim($emp['qr_data'] ?? '');  // NEW
-            $emp['qr_image_path'] = trim($emp['qr_image_path'] ?? '');  // NEW
+            $emp['qr_data'] = trim($emp['qr_data'] ?? '');
+            $emp['qr_image_path'] = trim($emp['qr_image_path'] ?? '');
             $emp['created_at'] = trim($emp['created_at'] ?? '');
             $emp['updated_at'] = trim($emp['updated_at'] ?? '');
             $emp['department_name'] = trim($emp['department_name'] ?? 'Unassigned');
@@ -439,7 +413,6 @@ switch ($action) {
             break;
         }
         try {
-            // Sanitize inputs (all required fields) - FIXED: Match JS FormData keys (underscores, e.g., department_id)
             $first_name = trim($_POST['first_name'] ?? '');
             $last_name = trim($_POST['last_name'] ?? '');
             $address = trim($_POST['address'] ?? '');
@@ -450,14 +423,13 @@ switch ($action) {
             $emergency_contact_name = trim($_POST['emergency_contact_name'] ?? '');
             $emergency_contact_phone = cleanPhone($_POST['emergency_contact_phone'] ?? '');
             $emergency_contact_relationship = trim($_POST['emergency_contact_relationship'] ?? '');
-            $department_id = (int)($_POST['department_id'] ?? 0);  // FIXED: department_id (not 'department')
-            $job_position_id = (int)($_POST['job_position_id'] ?? 0);  // FIXED: job_position_id (not 'job-position')
-            $rate_per_hour = (float)($_POST['rate_per_hour'] ?? 0);  // FIXED: rate_per_hour (not 'rate-per-hour')
+            $department_id = (int)($_POST['department_id'] ?? 0);
+            $job_position_id = (int)($_POST['job_position_id'] ?? 0);
+            $rate_per_hour = (float)($_POST['rate_per_hour'] ?? 0);
             $annual_paid_leave_days = (int)($_POST['annual_paid_leave_days'] ?? 15);
             $annual_unpaid_leave_days = (int)($_POST['annual_unpaid_leave_days'] ?? 5);
             $annual_sick_leave_days = (int)($_POST['annual_sick_leave_days'] ?? 10);
 
-            // Validation - FIXED: Explicit checks (e.g., department_id > 0, not just !0)
             if (empty($first_name) || empty($last_name) || empty($address) || empty($gender) || empty($email) || empty($contact_number) || empty($emergency_contact_name) || empty($emergency_contact_phone) || empty($emergency_contact_relationship) || $department_id <= 0 || $job_position_id <= 0 || $rate_per_hour < 0) {
                 throw new Exception('All required fields must be provided (names, address, gender, email, phones, emergency details, department, position, non-negative rate).');
             }
@@ -465,9 +437,8 @@ switch ($action) {
                 throw new Exception('Invalid email format.');
             }
             if (!validatePhone($contact_number) || !validatePhone($emergency_contact_phone)) {
-                throw new Exception('Phone numbers must be 11 digits (e.g., 09305909175).');
+                throw new Exception('Phone numbers must be 11 digits.');
             }
-            // Check email unique
             $check_stmt = $mysqli->prepare("SELECT id FROM employees WHERE email = ?");
             if (!$check_stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
@@ -479,7 +450,6 @@ switch ($action) {
             }
             $check_stmt->close();
 
-            // Check department/position exist
             $dept_check = $mysqli->prepare("SELECT id FROM departments WHERE id = ?");
             if (!$dept_check) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
@@ -502,7 +472,6 @@ switch ($action) {
             }
             $pos_check->close();
 
-            // Avatar upload (optional)
             $avatar_path = null;
             if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
                 $upload_dir = '../uploads/avatars/';
@@ -519,20 +488,19 @@ switch ($action) {
                 }
             }
 
-            // In add_employee case, replace the INSERT query and bind_param block with this:
             $query = "INSERT INTO employees (
     first_name, last_name, address, gender, marital_status, status, email,
     contact_number, emergency_contact_name, emergency_contact_phone,
     emergency_contact_relationship, date_joined, department_id, job_position_id,
     rate_per_hour, annual_paid_leave_days, annual_unpaid_leave_days,
     annual_sick_leave_days, avatar_path
-) VALUES (?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?)";  // FIXED: 5? pre-'Active' + 5? (email-relationship) + CURDATE() + 7? (dept-avatar) = 17? + 2 literals = 19 values
+) VALUES (?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $mysqli->prepare($query);
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
-            // Types unchanged: 10s (strings) + i(dept) i(pos) d(rate) i(paid) i(unpaid) i(sick) s(avatar) = 'ssssssssssiidiiis'
+
             $types = 'ssssssssssiidiiis';
             $params = [
                 $first_name,
@@ -552,10 +520,10 @@ switch ($action) {
                 $annual_unpaid_leave_days,
                 $annual_sick_leave_days,
                 $avatar_path
-            ];  // 17 params - FIXED: Ensure $avatar_path is last (null if no upload)
+            ];
             $stmt->bind_param($types, ...$params);
             if (!$stmt->execute()) {
-                throw new Exception('Execute failed: ' . $stmt->error);  // This will now catch the mismatch if any
+                throw new Exception('Execute failed: ' . $stmt->error);
             }
             $new_id = $mysqli->insert_id;
             $stmt->close();
@@ -565,7 +533,6 @@ switch ($action) {
                 throw new Exception('Failed to insert employee.');
             }
 
-            // Fetch full data for QR and sync (with position_name via JOIN)
             $fetch_query = "
                 SELECT e.*, d.name AS department_name, jp.name AS position_name
                 FROM employees e
@@ -587,12 +554,10 @@ switch ($action) {
                 throw new Exception('Failed to fetch new employee data.');
             }
 
-            // Generate QR Code (on add: always generate)
             $qr_result = generateQRCode($new_employee);
             $qr_path = $qr_result['path'];
             $qr_data = $qr_result['data'];
 
-            // Insert into qr_codes
             if ($qr_data && $qr_path) {
                 $qr_stmt = $mysqli->prepare("INSERT INTO qr_codes (employee_id, qr_data, qr_image_path) VALUES (?, ?, ?)");
                 if ($qr_stmt) {
@@ -603,10 +568,8 @@ switch ($action) {
                 }
             }
 
-            // Sync to Firebase (non-blocking; queue if fail)
             $sync_success = syncEmployeeToFirebase($db, $mysqli, $new_id, $new_employee, 'add');
 
-            // Message
             $msg = 'Employee added successfully';
             if ($avatar_path) {
                 $msg .= ' with avatar';
@@ -642,7 +605,6 @@ switch ($action) {
             break;
         }
         try {
-            // Fetch current to check existence, handle avatar/QR update, and compare for QR regen
             $current_query = "
                 SELECT e.*, d.name AS department_name, jp.name AS position_name,
                        qc.qr_data, qc.qr_image_path
@@ -666,42 +628,36 @@ switch ($action) {
                 throw new Exception('Employee not found.');
             }
 
-            // Helper: Strip 'update-' prefix if present (common in update forms)
             function getUpdateValue($post_key, $current_val)
             {
                 $value = $_POST[$post_key] ?? null;
                 if ($value === null) {
-                    // Try with 'update-' prefix
-                    $update_key = 'update-' . str_replace('_', '-', $post_key);  // e.g., 'first_name' -> 'update-first-name'
+                    $update_key = 'update-' . str_replace('_', '-', $post_key);
                     $value = $_POST[$update_key] ?? $current_val;
                 }
                 return $value;
             }
 
-            // Sanitize inputs (status/date_joined unchanged) - FIXED: Handle both underscore and 'update-' hyphenated keys
             $first_name = trim(getUpdateValue('first_name', $current_employee['first_name']));
             $last_name = trim(getUpdateValue('last_name', $current_employee['last_name']));
             $address = trim(getUpdateValue('address', $current_employee['address']));
             $gender = trim(getUpdateValue('gender', $current_employee['gender']));
             $marital_status = trim(getUpdateValue('marital_status', $current_employee['marital_status']));
             $email = trim(getUpdateValue('email', $current_employee['email']));
-            $contact_number = cleanPhone($_POST['contact_number'] ?? $current_employee['contact_number']);  // JS overrides to no prefix
+            $contact_number = cleanPhone($_POST['contact_number'] ?? $current_employee['contact_number']);
             $emergency_contact_name = trim(getUpdateValue('emergency_contact_name', $current_employee['emergency_contact_name']));
-            $emergency_contact_phone = cleanPhone($_POST['emergency_contact_phone'] ?? $current_employee['emergency_contact_phone']);  // JS overrides
+            $emergency_contact_phone = cleanPhone($_POST['emergency_contact_phone'] ?? $current_employee['emergency_contact_phone']);
             $emergency_contact_relationship = trim(getUpdateValue('emergency_contact_relationship', $current_employee['emergency_contact_relationship']));
-            $department_id = (int)(getUpdateValue('department_id', $current_employee['department_id']));  // FIXED: department_id
-            $job_position_id = (int)(getUpdateValue('job_position_id', $current_employee['job_position_id']));  // FIXED: job_position_id
-            $rate_per_hour = (float)(getUpdateValue('rate_per_hour', $current_employee['rate_per_hour']));  // FIXED: rate_per_hour
+            $department_id = (int)(getUpdateValue('department_id', $current_employee['department_id']));
+            $job_position_id = (int)(getUpdateValue('job_position_id', $current_employee['job_position_id']));
+            $rate_per_hour = (float)(getUpdateValue('rate_per_hour', $current_employee['rate_per_hour']));
             $annual_paid_leave_days = (int)(getUpdateValue('annual_paid_leave_days', $current_employee['annual_paid_leave_days']));
             $annual_unpaid_leave_days = (int)(getUpdateValue('annual_unpaid_leave_days', $current_employee['annual_unpaid_leave_days']));
             $annual_sick_leave_days = (int)(getUpdateValue('annual_sick_leave_days', $current_employee['annual_sick_leave_days']));
-
-            // Check if QR needs regeneration (name or position changed)
             $qr_changed = ($first_name !== $current_employee['first_name'] ||
                 $last_name !== $current_employee['last_name'] ||
                 $job_position_id !== (int)$current_employee['job_position_id']);
 
-            // Validation (similar to add, but allow empty for optional updates) - FIXED: >0 checks
             if (empty($first_name) || empty($last_name) || empty($address) || empty($gender) || empty($email) || $department_id <= 0 || $job_position_id <= 0 || $rate_per_hour < 0) {
                 throw new Exception('Required fields cannot be empty (names, address, gender, email, department, position, non-negative rate).');
             }
@@ -714,7 +670,6 @@ switch ($action) {
             if (!empty($emergency_contact_phone) && !validatePhone($emergency_contact_phone)) {
                 throw new Exception('Emergency phone must be 11 digits.');
             }
-            // Email unique check (allow same if unchanged)
             if ($email !== $current_employee['email']) {
                 $check_stmt = $mysqli->prepare("SELECT id FROM employees WHERE email = ? AND id != ?");
                 if (!$check_stmt) {
@@ -727,8 +682,6 @@ switch ($action) {
                 }
                 $check_stmt->close();
             }
-
-            // Check new department/position exist (if changed)
             if ($department_id !== (int)$current_employee['department_id']) {
                 $dept_check = $mysqli->prepare("SELECT id FROM departments WHERE id = ?");
                 $dept_check->bind_param('i', $department_id);
@@ -748,15 +701,12 @@ switch ($action) {
                 $pos_check->close();
             }
 
-            // Avatar update (optional)
             $avatar_path = $current_employee['avatar_path'];
             $avatar_changed = false;
             if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-                // Delete old avatar if exists
                 if ($avatar_path && file_exists('../' . $avatar_path)) {
                     unlink('../' . $avatar_path);
                 }
-                // Upload new
                 $upload_dir = '../uploads/avatars/';
                 if (!is_dir($upload_dir)) {
                     mkdir($upload_dir, 0755, true);
@@ -772,7 +722,6 @@ switch ($action) {
                 }
             }
 
-            // UPDATE employees (exclude status, date_joined, created_at) - VERIFIED: 18 params, types 'ssssssssssiidiiisi'
             $query = "UPDATE employees SET 
                 first_name = ?, last_name = ?, address = ?, gender = ?, marital_status = ?,
                 email = ?, contact_number = ?, emergency_contact_name = ?, emergency_contact_phone = ?,
@@ -784,7 +733,7 @@ switch ($action) {
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
-            // Types: 10s + 2i + d + 3i + s (avatar) + i (WHERE id) = 18
+
             $types = 'ssssssssssiidiiisi';
             $params = [
                 $first_name,
@@ -817,11 +766,9 @@ switch ($action) {
                 throw new Exception('No changes made or employee not found.');
             }
 
-            // If QR changed, delete old and generate new
             if ($qr_changed) {
-                deleteQRCode($mysqli, $id);  // Deletes old record and file
+                deleteQRCode($mysqli,                $id);
 
-                // Fetch updated employee for new QR (with new position_name)
                 $updated_query = "
                     SELECT e.*, d.name AS department_name, jp.name AS position_name
                     FROM employees e
@@ -853,7 +800,6 @@ switch ($action) {
                 }
             }
 
-            // Fetch updated data for sync (full with QR)
             $fetch_query = "
                 SELECT e.*, d.name AS department_name, jp.name AS position_name,
                        qc.qr_data, qc.qr_image_path
@@ -873,10 +819,8 @@ switch ($action) {
             $updated_employee = $result->fetch_assoc();
             $fetch_stmt->close();
 
-            // Sync
             $sync_success = syncEmployeeToFirebase($db, $mysqli, $id, $updated_employee, 'update');
 
-            // Message
             $msg = 'Employee updated successfully';
             if ($avatar_changed) {
                 $msg .= ' with new avatar';
@@ -912,7 +856,6 @@ switch ($action) {
             break;
         }
         try {
-            // Fetch for cleanup (avatar and QR paths)
             $cleanup_query = "
                 SELECT e.avatar_path, qc.qr_image_path
                 FROM employees e
@@ -929,16 +872,13 @@ switch ($action) {
             $emp = $result->fetch_assoc();
             $stmt->close();
 
-            // Cleanup avatar
             if ($emp && $emp['avatar_path'] && file_exists('../' . $emp['avatar_path'])) {
                 unlink('../' . $emp['avatar_path']);
                 error_log("Avatar Deleted for Employee ID $id");
             }
 
-            // Cleanup QR (uses helper: deletes record and file)
             deleteQRCode($mysqli, $id);
 
-            // DELETE from employees
             $stmt = $mysqli->prepare("DELETE FROM employees WHERE id = ?");
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
@@ -952,10 +892,8 @@ switch ($action) {
                 throw new Exception('Employee not found or already deleted.');
             }
 
-            // Sync delete (empty data)
             $sync_success = syncEmployeeToFirebase($db, $mysqli, $id, [], 'delete');
 
-            // Message
             $msg = 'Employee deleted successfully';
             if ($sync_success) {
                 $msg .= ' and removed from cloud';
@@ -1031,7 +969,6 @@ switch ($action) {
         break;
 }
 
-// Close MySQLi connection
 if ($mysqli) {
     $mysqli->close();
 }

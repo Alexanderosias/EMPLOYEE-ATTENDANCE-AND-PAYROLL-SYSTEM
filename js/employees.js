@@ -1,11 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // FIXED: Encoded paths for spaces (recommend renaming folder to avoid %20)
   const API_BASE = '/EMPLOYEE%20ATTENDANCE%20AND%20PAYROLL%20SYSTEM/views/employees.php';
   const BASE_PATH = '/EMPLOYEE%20ATTENDANCE%20AND%20PAYROLL%20SYSTEM/';
 
-  // NEW: Simple toast notification (replaces alert for better UX, including sync messages)
   function showToast(message, type = 'info') {
-    // Create toast element if not exists
     let toast = document.getElementById('toast-notification');
     if (!toast) {
       toast = document.createElement('div');
@@ -19,16 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.appendChild(toast);
     }
 
-    // Set message and type (success: green, error: red, info: gray)
     toast.textContent = message;
     toast.style.background = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#333';
     toast.style.display = 'block';
-
-    // Auto-hide after 4s (longer for sync messages)
     setTimeout(() => { toast.style.display = 'none'; }, 4000);
   }
 
-  // NEW: Check and sync pending operations (call on load/online)
   async function checkAndSyncPending() {
     if (navigator.onLine) {
       try {
@@ -39,21 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await response.json();
         if (result.success) {
           if (result.data.synced > 0) {
-            showToast(result.message, 'success');  // e.g., "Pending sync completed: 2 synced..."
+            showToast(result.message, 'success');  
           }
-          // If all good, no toast for 0 synced
         } else {
           console.warn('Sync pending failed:', result.message);
-          // Don't toast warnings – silent retry
         }
       } catch (error) {
         console.error('Sync pending error:', error);
-        // Silent: Will retry on next online event
       }
     }
   }
 
-  // NEW: Offline/online event listeners
   window.addEventListener('online', () => {
     showToast('Back online – syncing changes...', 'info');
     checkAndSyncPending();
@@ -62,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('Offline mode: Changes saved locally', 'info');
   });
 
-  // Existing: Update datetime
   function updateDateTime() {
     const now = new Date();
     const options = {
@@ -79,18 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateDateTime, 60000);
 
   const employeeListContainer = document.getElementById('employee-list-container');
-
-  // Elements for filtering
   const searchInput = document.getElementById('search-input');
   const searchBtn = document.getElementById('search-btn');
   const filterDepartment = document.getElementById('filter-department');
   const filterJobPosition = document.getElementById('filter-job-position');
-
-  // Global arrays for dynamic selects
   let departments = [];
   let jobPositions = [];
 
-  // Helper function to get detail item text by label (searches both .detail-item and .expanded-item)
   function getDetailItemText(card, label) {
     const items = card.querySelectorAll('.detail-item, .expanded-item');
     for (const item of items) {
@@ -101,37 +84,31 @@ document.addEventListener('DOMContentLoaded', () => {
     return '';
   }
 
-  // Format phone for display (add spaces: 09305909175 -> 093 0590 9175)
   function formatPhoneForDisplay(cleanPhone) {
     if (!cleanPhone || typeof cleanPhone !== 'string') return '';
-    const digits = cleanPhone.replace(/\D/g, '');  // Extract digits only
-    if (digits.length !== 11) return cleanPhone;  // Fallback if invalid
+    const digits = cleanPhone.replace(/\D/g, '');  
+    if (digits.length !== 11) return cleanPhone;  
     return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7, 11)}`;
   }
 
-  // Clean phone: Remove all non-digits for DB save
   function cleanPhoneNumber(phone) {
-    return phone.replace(/\D/g, '');  // Keep only digits
+    return phone.replace(/\D/g, ''); 
   }
 
-  // Auto-format phone input as user types (for contact_number and emergency_phone)
   function autoFormatPhoneInput(input) {
-    let value = input.value.replace(/\s/g, '');  // Remove existing spaces
+    let value = input.value.replace(/\s/g, ''); 
     let cursorPos = input.selectionStart;
 
-    // Add first space after 3 digits
     if (value.length > 3) {
       value = value.slice(0, 3) + ' ' + value.slice(3);
-      cursorPos++;  // Adjust for added space
+      cursorPos++; 
     }
 
-    // Add second space after 7 digits (3 + space + 4)
-    if (value.length > 8) {  // 3 digits + space + 4 digits = 8 chars
+    if (value.length > 8) { 
       value = value.slice(0, 8) + ' ' + value.slice(8);
-      if (cursorPos > 8) cursorPos++;  // Adjust if cursor after first space
+      if (cursorPos > 8) cursorPos++;  
     }
 
-    // Limit to 11 digits
     const digitsOnly = value.replace(/\D/g, '').slice(0, 11);
     value = digitsOnly.slice(0, 3);
     if (digitsOnly.length > 3) value += ' ' + digitsOnly.slice(3, 7);
@@ -139,18 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     input.value = value;
 
-    // Restore cursor position (approximate)
     const newCursor = Math.min(cursorPos, input.value.length);
     input.setSelectionRange(newCursor, newCursor);
   }
 
-  // Validate phone format (with spaces: 093 0590 9175)
   function validatePhoneFormat(phone) {
     const phoneRegex = /^\d{3} \d{4} \d{4}$/;
     return phoneRegex.test(phone);
   }
 
-  // Fetch and populate departments and job positions for selects
   async function loadSelectOptions() {
     try {
       const [deptRes, posRes] = await Promise.all([
@@ -163,22 +137,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!deptData.success || !posData.success) throw new Error('Invalid options response');
       departments = deptData.data || [];
       jobPositions = posData.data || [];
-
-      // Ensure arrays
       if (!Array.isArray(departments)) departments = [];
       if (!Array.isArray(jobPositions)) jobPositions = [];
 
-      // Populate filter selects (use names for filtering)
       filterDepartment.innerHTML = '<option value="">All Departments</option>' + departments.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
       filterJobPosition.innerHTML = '<option value="">All Job Positions</option>' + jobPositions.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
 
-      // Populate add modal selects (use IDs for submission)
       const addDeptSelect = document.getElementById('department');
       const addPosSelect = document.getElementById('job-position');
       addDeptSelect.innerHTML = '<option value="" disabled selected>Select department</option>' + departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
       addPosSelect.innerHTML = '<option value="" disabled selected>Select job position</option>' + jobPositions.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-
-      // Populate update modal selects (same)
       const updateDeptSelect = document.getElementById('update-department');
       const updatePosSelect = document.getElementById('update-job-position');
       if (updateDeptSelect) updateDeptSelect.innerHTML = addDeptSelect.innerHTML;
@@ -189,9 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // UPDATED: Fetch and render employees (added loading state & better error handling)
   async function fetchEmployees() {
-    employeeListContainer.innerHTML = '<p style="text-align: center; color: #666;">Loading employees...</p>';  // Loading state
+    employeeListContainer.innerHTML = '<p style="text-align: center; color: #666;">Loading employees...</p>'; 
 
     try {
       const response = await fetch(`${API_BASE}?action=list_employees`);
@@ -199,20 +166,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
-      const responseData = await response.json();  // Full {success, data}
-      console.log('Raw JSON response:', responseData);  // Debug: Full object
+      const responseData = await response.json(); 
+      console.log('Raw JSON response:', responseData);  
       if (!responseData || typeof responseData !== 'object') {
         throw new Error('Invalid response format: Not an object');
       }
       if (!responseData.success) {
         throw new Error(responseData.message || 'Failed to fetch employees');
       }
-      const employees = responseData.data || [];  // Extract array
-      console.log('Data type:', typeof employees);  // 'object' (array)
+      const employees = responseData.data || [];  
+      console.log('Data type:', typeof employees);  
       console.log('Employees length:', employees.length);
       if (employees.length > 0) {
-        console.log('First employee ID type:', typeof employees[0].id);  // Number or string
-        console.log('Processing employee:', employees[0]);  // Log full object
+        console.log('First employee ID type:', typeof employees[0].id);  
+        console.log('Processing employee:', employees[0]); 
       }
       if (!Array.isArray(employees)) {
         throw new Error('Invalid response format: Data is not an array');
@@ -225,22 +192,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // UPDATED: Render employee cards (added type parsing; fixed avatar paths)
   function renderEmployeeCards(employees) {
-    employeeListContainer.innerHTML = '';  // Clear existing
+    employeeListContainer.innerHTML = '';  
     if (employees.length === 0) {
       employeeListContainer.innerHTML = '<p style="text-align: center; color: #666;">No employees found.</p>';
       return;
     }
     employees.forEach((emp, index) => {
-      // Parse types for safe display (handle string/numbers from PHP)
       const id = parseInt(emp.id, 10);
       const rate = parseFloat(emp.rate_per_hour) || 0;
       const paidLeave = parseInt(emp.annual_paid_leave_days, 10) || 15;
       const unpaidLeave = parseInt(emp.annual_unpaid_leave_days, 10) || 5;
       const sickLeave = parseInt(emp.annual_sick_leave_days, 10) || 10;
-
-      // Determine status class for coloring
       let statusClass = '';
       const status = emp.status || 'Active';
       if (status === 'On Leave') {
@@ -251,10 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusClass = 'status-inactive';
       }
 
-      // Format contact phone for display
       const formattedContact = formatPhoneForDisplay(emp.contact_number || '');
-
-      // Format emergency: Name (Relationship) - Phone
       let formattedEmergency = 'N/A';
       if (emp.emergency_contact_name || emp.emergency_contact_relationship || emp.emergency_contact_phone) {
         const name = emp.emergency_contact_name || '';
@@ -266,7 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('div');
       card.className = 'employee-card minimized';
       card.setAttribute('data-id', id);
-      // FIXED: Avatar path - Absolute from domain root (matches API_BASE and your layout: root/uploads/)
       const avatarSrc = emp.avatar_path ? BASE_PATH + emp.avatar_path : BASE_PATH + 'img/user.jpg';
       card.innerHTML = `
         <div class="card-index">${index + 1}</div>
@@ -308,41 +267,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // UPDATED: Open update modal (fixed relative avatar path for preview; added focus)
   function openUpdateModal(employeeData) {
     const updateModal = document.getElementById('update-employee-modal');
     updateModal.setAttribute('aria-hidden', 'false');
-
-    // Set hidden ID field
     const idInput = document.getElementById('update-employee-id');
-    if (idInput) idInput.value = employeeData.id || '';
 
-    // Prefill text fields (no status/date_joined)
+    if (idInput) idInput.value = employeeData.id || '';
     document.getElementById('update-first-name').value = employeeData.first_name || '';
     document.getElementById('update-last-name').value = employeeData.last_name || '';
     document.getElementById('update-address').value = employeeData.address || '';
     document.getElementById('update-email').value = employeeData.email || '';
     document.getElementById('update-contact-number').value = formatPhoneForDisplay(employeeData.contact_number || '') || '';
     document.getElementById('update-rate-per-hour').value = parseFloat(employeeData.rate_per_hour) || 0.00;
-
-    // Set selects (no status; include marital)
     document.getElementById('update-gender').value = employeeData.gender || '';
     document.getElementById('update-marital-status').value = employeeData.marital_status || 'Single';
     document.getElementById('update-department').value = employeeData.department_id || '';
     document.getElementById('update-job-position').value = employeeData.job_position_id || '';
-
-    // Set numbers for leave days
     document.getElementById('update-annual-paid-leave-days').value = parseInt(employeeData.annual_paid_leave_days, 10) || 15;
     document.getElementById('update-annual-unpaid-leave-days').value = parseInt(employeeData.annual_unpaid_leave_days, 10) || 5;
     document.getElementById('update-annual-sick-leave-days').value = parseInt(employeeData.annual_sick_leave_days, 10) || 10;
-
-    // Set new emergency fields
     document.getElementById('update-emergency-name').value = employeeData.emergency_contact_name || '';
     document.getElementById('update-emergency-phone').value = formatPhoneForDisplay(employeeData.emergency_contact_phone || '') || '';
     document.getElementById('update-emergency-relationship').value = employeeData.emergency_contact_relationship || '';
 
-    // FIXED: Avatar preview - Relative path to show current employee avatar (fallback to default)
-    const previewImg = document.getElementById('update-avatar-preview-img');  // Ensure element exists
+    const previewImg = document.getElementById('update-avatar-preview-img'); 
     if (!previewImg) {
       console.error('Update avatar preview img not found!');
       return;
@@ -350,47 +298,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let avatarSrc;
     if (employeeData.avatar_path && employeeData.avatar_path.trim() !== '') {
-      // PRIORITY: Relative path (matches your root layout: uploads/ at same level as img/)
-      avatarSrc = employeeData.avatar_path;  // e.g., 'uploads/avatars/emp_123.jpg'
-      // ALTERNATIVE: If relative fails, use absolute: avatarSrc = BASE_PATH + employeeData.avatar_path;
+      avatarSrc = employeeData.avatar_path; 
     } else {
-      avatarSrc = 'img/user.jpg';  // Relative default (works as per your HTML)
+      avatarSrc = 'img/user.jpg'; 
     }
 
-    // Clear current src to avoid cache issues, then set new
-    previewImg.src = '';  // Reset
+    previewImg.src = '';  
     previewImg.alt = 'Loading employee avatar preview...';
 
-    // Set the src after a tiny delay (ensures DOM/modal is fully visible)
     setTimeout(() => {
       previewImg.src = avatarSrc;
       previewImg.alt = 'Employee avatar preview';
-    }, 50);  // 50ms delay - minimal, prevents race conditions
+    }, 50);  
 
-    // DEBUG: Log paths (check Console when opening modal; remove after testing)
     console.log('Update Modal: Setting avatar src to:', avatarSrc);
     console.log('Update Modal: DB avatar_path:', employeeData.avatar_path);
     console.log('Update Modal: Employee ID:', employeeData.id);
 
-    // Add onerror handler: Fallback if current avatar fails to load (prevents broken image)
     previewImg.onerror = function () {
       console.warn('Update avatar preview failed to load (ID:', employeeData.id, '), falling back to default');
-      this.src = 'img/user.jpg';  // Relative fallback
+      this.src = 'img/user.jpg'; 
       this.alt = 'Default avatar preview';
     };
 
-    // Optional: On successful load, log and clean up handler
     previewImg.onload = function () {
       console.log('Update avatar preview loaded successfully for ID:', employeeData.id);
-      // Handler auto-removes after load
     };
 
-    // Focus on first input
     const updateEmployeeForm = document.getElementById('update-employee-form');
     updateEmployeeForm.querySelector('input, select').focus();
   }
 
-  // Filtering function (client-side on rendered cards)
   function filterEmployees() {
     const searchTerm = searchInput.value.toLowerCase();
     const departmentFilter = filterDepartment.value;
@@ -419,13 +357,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Event listeners for filtering
   searchBtn.addEventListener('click', filterEmployees);
   searchInput.addEventListener('input', filterEmployees);
   filterDepartment.addEventListener('change', filterEmployees);
   filterJobPosition.addEventListener('change', filterEmployees);
 
-  // Employee card show more toggle with image icon swap
   employeeListContainer.addEventListener('click', (event) => {
     const showMoreBtn = event.target.closest('.action-btn-show-more');
     if (showMoreBtn) {
@@ -453,7 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Update and Delete buttons
   employeeListContainer.addEventListener('click', async (event) => {
     if (event.target.closest('.action-btn-update')) {
       const employeeCard = event.target.closest('.employee-card');
@@ -461,7 +396,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log("Update info clicked for ID:", employeeId);
 
       try {
-        // Fetch full employee data for accurate IDs and values
         const response = await fetch(`${API_BASE}?action=get_employee&id=${employeeId}`);
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -487,7 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // UPDATED: Delete employee function (with toast & error handling)
   async function deleteEmployee(id) {
     try {
       const formData = new FormData();
@@ -504,8 +437,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const result = await response.json();
       if (result.success) {
-        showToast(result.message || 'Employee deleted successfully.', 'success');  // Includes sync status
-        fetchEmployees();  // Refresh list
+        showToast(result.message || 'Employee deleted successfully.', 'success'); 
+        fetchEmployees();  
       } else {
         showToast('Error: ' + (result.message || 'Failed to delete employee'), 'error');
       }
@@ -515,7 +448,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Add Employee Modal Logic - UPDATED for new emergency fields, loading, toast, validation
   const addModal = document.getElementById('add-employee-modal');
   const addEmployeeBtn = document.getElementById('add-employee-btn');
   const addCloseButtons = addModal.querySelectorAll('.modal-close-btn');
@@ -523,8 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const addAvatarPreviewImg = document.getElementById('avatar-preview-img');
   const addEmployeeForm = document.getElementById('add-employee-form');
   const addUploadImageBtn = document.getElementById('upload-image-btn');
-
-  // Auto-format listeners for add modal phone inputs
   const addContactInput = document.getElementById('contact-number');
   const addEmergencyPhoneInput = document.getElementById('emergency-phone');
   if (addContactInput) addContactInput.addEventListener('input', () => autoFormatPhoneInput(addContactInput));
@@ -533,13 +463,11 @@ document.addEventListener('DOMContentLoaded', () => {
   addEmployeeBtn.addEventListener('click', () => {
     addModal.setAttribute('aria-hidden', 'false');
     addEmployeeForm.reset();
-    // Set defaults for optional/nullable fields (no status/date_joined - auto-handled by PHP)
     document.getElementById('marital-status').value = 'Single';
     document.getElementById('annual-paid-leave-days').value = 15;
     document.getElementById('annual-unpaid-leave-days').value = 5;
     document.getElementById('annual-sick-leave-days').value = 10;
     document.getElementById('rate-per-hour').value = 0.00;
-    // Reset emergency fields to empty (required, user must fill)
     document.getElementById('emergency-name').value = '';
     document.getElementById('emergency-phone').value = '';
     document.getElementById('emergency-relationship').value = '';
@@ -579,11 +507,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // UPDATED: Add form submit (loading state, validation, clean phones, toast)
   addEmployeeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // Client-side validation for NOT NULL fields (no status/date_joined - auto by PHP)
     const firstName = document.getElementById('first-name').value.trim();
     const lastName = document.getElementById('last-name').value.trim();
     const email = document.getElementById('email').value.trim();
@@ -606,7 +532,6 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Please enter a valid email address.', 'error');
       return;
     }
-    // Phone format validation (with spaces)
     if (!validatePhoneFormat(contactNumber)) {
       showToast('09X XXXX XXXX', 'error');
       document.getElementById('contact-number').focus();
@@ -619,21 +544,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const formData = new FormData(addEmployeeForm);
-    formData.append('action', 'add_employee');  // CRITICAL: Include action for PHP
-
-    // Clean phones (remove spaces/non-digits) before sending - override to DB keys
+    formData.append('action', 'add_employee');  
     const cleanedContact = cleanPhoneNumber(contactNumber);
     const cleanedEmergencyPhone = cleanPhoneNumber(emergencyPhone);
     formData.set('contact_number', cleanedContact);
     formData.set('emergency_contact_phone', cleanedEmergencyPhone);
-
-    // NEW: Loading state
     const submitBtn = addEmployeeForm.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Adding...';
     submitBtn.disabled = true;
-
-    // DEBUG: Log FormData contents (remove after testing)
     console.log('Add FormData keys:', Array.from(formData.keys()));
     console.log('Add FormData values:', Object.fromEntries(formData.entries()));
 
@@ -648,10 +567,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const result = await response.json();
       if (result.success) {
-        showToast(result.message || 'Employee added successfully.', 'success');  // Includes sync/queue status
+        showToast(result.message || 'Employee added successfully.', 'success'); 
         addModal.setAttribute('aria-hidden', 'true');
         addEmployeeForm.reset();
-        // Reset defaults (no status/date_joined; clear emergency)
         document.getElementById('marital-status').value = 'Single';
         document.getElementById('annual-paid-leave-days').value = 15;
         document.getElementById('annual-unpaid-leave-days').value = 5;
@@ -661,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('emergency-phone').value = '';
         document.getElementById('emergency-relationship').value = '';
         addAvatarPreviewImg.src = 'img/user.jpg';
-        fetchEmployees();  // Refresh list
+        fetchEmployees();  
       } else {
         showToast('Error: ' + (result.message || 'Failed to add employee'), 'error');
       }
@@ -669,21 +587,17 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Add error:', error);
       showToast('Failed to add employee: ' + error.message, 'error');
     } finally {
-      // Reset loading
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
     }
   });
 
-  // Update Employee Modal Logic - UPDATED for new emergency fields, loading, toast, validation
   const updateModal = document.getElementById('update-employee-modal');
   const updateAvatarInput = document.getElementById('update-avatar-input');
   const updateAvatarPreviewImg = document.getElementById('update-avatar-preview-img');
   const updateUploadImageBtn = document.getElementById('update-upload-image-btn');
   const updateEmployeeForm = document.getElementById('update-employee-form');
   const updateCloseButtons = updateModal.querySelectorAll('.modal-close-btn');
-
-  // Auto-format listeners for update modal phone inputs
   const updateContactInput = document.getElementById('update-contact-number');
   const updateEmergencyPhoneInput = document.getElementById('update-emergency-phone');
   if (updateContactInput) updateContactInput.addEventListener('input', () => autoFormatPhoneInput(updateContactInput));
@@ -715,17 +629,14 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       reader.readAsDataURL(file);
     } else {
-      // Reset to original employee avatar or default
       const idInput = document.getElementById('update-employee-id').value;
       if (idInput) {
-        // Optionally refetch, but for simplicity, use default
         updateAvatarPreviewImg.src = 'img/user.jpg';
       }
       updateAvatarPreviewImg.alt = 'Avatar preview    ';
     }
   });
 
-  // UPDATED: Update form submit (loading state, validation, clean phones, toast)
   updateEmployeeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -735,7 +646,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Client-side validation (no status/date_joined - not updated; emergency/contact optional if empty)
     const firstName = document.getElementById('update-first-name').value.trim();
     const lastName = document.getElementById('update-last-name').value.trim();
     const email = document.getElementById('update-email').value.trim();
@@ -758,7 +668,6 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Please enter a valid email address.', 'error');
       return;
     }
-    // Phone format validation (with spaces) - only if provided (optional for update)
     if (contactNumber && !validatePhoneFormat(contactNumber)) {
       showToast('09X XXXX XXXX', 'error');
       document.getElementById('update-contact-number').focus();
@@ -771,22 +680,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const formData = new FormData(updateEmployeeForm);
-    formData.append('action', 'edit_employee');  // FIXED: Correct action for PHP
-    formData.append('id', id);  // Ensure ID is sent
+    formData.append('action', 'edit_employee');
+    formData.append('id', id);  
 
-    // Clean phones (remove spaces/non-digits) before sending - use DB keys (no 'update-' prefix, consistent with add)
     const cleanedContact = contactNumber ? cleanPhoneNumber(contactNumber) : '';
     const cleanedEmergencyPhone = emergencyPhone ? cleanPhoneNumber(emergencyPhone) : '';
     formData.set('contact_number', cleanedContact);
     formData.set('emergency_contact_phone', cleanedEmergencyPhone);
 
-    // NEW: Loading state
     const submitBtn = updateEmployeeForm.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Updating...';
     submitBtn.disabled = true;
 
-    // DEBUG: Log FormData contents (remove after testing)
     console.log('Update FormData keys:', Array.from(formData.keys()));
     console.log('Update FormData values:', Object.fromEntries(formData.entries()));
 
@@ -801,10 +707,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const result = await response.json();
       if (result.success) {
-        showToast(result.message || 'Employee updated successfully.', 'success');  // Includes sync/queue status
+        showToast(result.message || 'Employee updated successfully.', 'success');  
         updateModal.setAttribute('aria-hidden', 'true');
         updateEmployeeForm.reset();
-        // Reset defaults (no status/date_joined; clear emergency)
         document.getElementById('update-marital-status').value = 'Single';
         document.getElementById('update-annual-paid-leave-days').value = 15;
         document.getElementById('update-annual-unpaid-leave-days').value = 5;
@@ -814,7 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('update-emergency-phone').value = '';
         document.getElementById('update-emergency-relationship').value = '';
         updateAvatarPreviewImg.src = 'img/user.jpg';
-        fetchEmployees();  // Refresh list
+        fetchEmployees();  
       } else {
         showToast('Error: ' + (result.message || 'Failed to update employee'), 'error');
       }
@@ -822,13 +727,11 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Update error:', error);
       showToast('Failed to update employee: ' + error.message, 'error');
     } finally {
-      // Reset loading
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
     }
   });
 
-  // NEW: Close modals on Escape key (global accessibility)
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       const openModals = document.querySelectorAll('[aria-hidden="false"]');
@@ -840,8 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Initialize on load: Load options, employees, and check pending sync
   loadSelectOptions();
   fetchEmployees();
-  checkAndSyncPending();  // Initial sync if online
+  checkAndSyncPending();  
 });
