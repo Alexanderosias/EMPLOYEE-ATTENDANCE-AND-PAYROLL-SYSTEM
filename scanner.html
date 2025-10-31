@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="scanner-css/scanner.css">
+    <title>QR Scanner</title>
+</head>
+
+<body>
+    <div class="cover"></div>
+    <div class="main">
+        <div id="callout-message" class="callout-message" style="display: none;">
+            <p style="color: rgb(95, 95, 95);"><strong>Offline Mode</strong></p>
+            <p><img src="scanner-icons/notification.png" alt=""><strong>There is/are <span id="unsync-count">1</span> Unsynced attendance.</strong></p>
+        </div>
+        <div class="top">
+            <a href="#" class="img-container">
+                <img src="scanner-img/adfc_logo.png" alt="ADFC">
+            </a>
+            <h1>ADFC Employee Attendance</h1>
+        </div>
+        <div class="content-grid">
+            <div class="first column">
+                <div class="card one">
+                    <h3>Guide</h3>
+                    <ul>
+                        <li>Hold your QR code steady in front of the scanner/camera.</li>
+                        <li>When the light turns green, your attendance has been successfully logged.</li>
+                        <li>Look for your name on the screen to confirm.</li>
+                    </ul>
+                </div>
+                <div class="card two">
+                    <h3>Please be Advised</h3>
+                    <div class="advised-section">
+                        <p>
+                            A snapshot is captured during the QR scanning process to verify identity.This is to ensure
+                            accountability and prevent buddy punching.
+                        </p>
+                        <p class="info-banner">
+                            <strong><img src="scanner-icons/mark.png" alt="">Don’t hide your face upon
+                                scanning.</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="second column">
+                <div class="overlay-white">
+                    <div class="sub-header">
+                        <h3>QR Scanner</h3>
+                    </div>
+                    <div id="reader"></div>  <!-- Scanner renders here: 380x400px; library injects video + UI -->
+                    <video style="display: none;" id="cameraPreview" autoplay playsinline></video>  <!-- 400x350px; hidden via CSS -->
+                    <canvas id="snapshotCanvas" style="display:none;"></canvas>  <!-- For takeSnapshot() -->
+                    <div style="padding: 0 10px;" id="result">Scan a QR code to log attendance</div>  <!-- Updated with success msg + img preview -->
+                </div>
+            </div>
+            <div class="third column">
+                <div class="table-container">
+                    <h3 class="table-header">Recent</h3>
+                    <table>
+                        <tr>
+                            <th id="nme">Name</th>
+                            <th id="jp">Job Position</th>
+                            <th>In</th>
+                            <th>Out</th>
+                        </tr>
+                        <tbody id="recent-logs-body">  <!-- Dynamic: JS populates up to 7 rows -->
+                            <tr><td colspan="4" style="text-align: center;">Loading recent logs...</td></tr>  <!-- Initial state -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card one">
+                    <h3>Scanned by mistake?</h3>
+                    <ul>
+                        <li>Contact HR/Admin</li>
+                    </ul>
+                </div>
+                <div class="buttons-section">
+                    <button class="btn export" onclick="window.open('backend/scanner_api.php?action=export', '_blank');">
+                        <img src="scanner-icons/share.png" alt="Export Icon">
+                        Export Attendance
+                    </button>
+                </div>
+            </div>
+        </div>
+        <footer>
+            ©ADFC 2025 All rights reserved.
+        </footer>
+        <p id="current-datetime"></p>
+    </div>
+
+    <!-- Scripts: Library first, then custom JS -->
+    <script src="scanner-js/html5-qrcode.min.js"></script>
+    <script src="scanner-js/scanner.js"></script>
+    <script src="js/current_time.js"></script>
+</body>
+
+</html>
