@@ -30,7 +30,7 @@ body {
   max-height: 80px;
   top: -10px;
   right: 5px;
-  background-color: rgb(248, 228, 185);
+  background-color: rgba(248, 228, 185, 0.7);
   color: rgb(173, 113, 0);
   border-left: 5px solid rgb(255, 115, 0);
   border-radius: 5px;
@@ -251,11 +251,22 @@ table {
   margin-top: -20px;
   border-spacing: 0;
   overflow: hidden;
+  table-layout: fixed;
 }
 
 th {
   background: linear-gradient(135deg, #4169E1, #27408B);
   color: #fff;
+  width: 25%;
+
+}
+
+#nme {
+  width: 30%;
+}
+
+#jp {
+  width: 20%;
 }
 
 tr,
@@ -272,6 +283,14 @@ th {
   padding: 8px 10px;
   overflow-y: auto;
   max-width: 80px;
+
+  word-wrap: break-word;
+
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
 }
 
 .third .card {
@@ -335,4 +354,16 @@ footer {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.6);
   padding: 20px;
+}
+
+#current-datetime {
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+}
+
+/* #recentLogs ul li { } */
+
+#recentLogs img {
+  border: 1px solid #ccc;
 }

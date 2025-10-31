@@ -11,13 +11,13 @@
 <body>
     <div class="cover"></div>
     <div class="main">
-        <div id="callout-message" class="callout-message">
-            <p style="color: rgb(19, 180, 19);"><strong>Internet Restored</strong></p>
+        <div id="callout-message" class="callout-message" style="display: none;">
+            <p style="color: rgb(95, 95, 95);"><strong>Offline Mode</strong></p>
             <p><img src="scanner-icons/notification.png" alt=""><strong>There is/are <span id="unsync-count">1</span> Unsynced attendance.</strong></p>
         </div>
         <div class="top">
             <a href="#" class="img-container">
-                <img src="scanner-img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="ADFC">
+                <img src="scanner-img/adfc_logo.png" alt="ADFC">
             </a>
             <h1>ADFC Employee Attendance</h1>
         </div>
@@ -38,8 +38,6 @@
                             A snapshot is captured during the QR scanning process to verify identity.This is to ensure
                             accountability and prevent buddy punching.
                         </p>
-
-
                         <p class="info-banner">
                             <strong><img src="scanner-icons/mark.png" alt="">Don’t hide your face upon
                                 scanning.</strong>
@@ -52,65 +50,27 @@
                     <div class="sub-header">
                         <h3>QR Scanner</h3>
                     </div>
-                    <div id="reader"></div>
-                    <video id="cameraPreview" autoplay playsinline></video> <canvas id="snapshotCanvas"
-                        style="display:none;"></canvas>
-
-                    <div id="result">Scan a QR code to log attendance</div>
+                    <div id="reader"></div>  <!-- Scanner renders here: 380x400px; library injects video + UI -->
+                    <video style="display: none;" id="cameraPreview" autoplay playsinline></video>  <!-- 400x350px; hidden via CSS -->
+                    <canvas id="snapshotCanvas" style="display:none;"></canvas>  <!-- For takeSnapshot() -->
+                    <div style="padding: 0 10px;" id="result">Scan a QR code to log attendance</div>  <!-- Updated with success msg + img preview -->
                 </div>
             </div>
             <div class="third column">
-                <table>
+                <div class="table-container">
                     <h3 class="table-header">Recent</h3>
-                    <tr>
-                        <th>Name</th>
-                        <th>Job Position</th>
-                        <th>In</th>
-                        <th>Out</th>
-                    </tr>
-                    <tr>
-                        <td>Francis Rivas</td>
-                        <td>Instructor</td>
-                        <td>7:00</td>
-                        <td>--</td>
-                    </tr>
-                    <tr>
-                        <td>Francis Rivas</td>
-                        <td>Instructor</td>
-                        <td>7:00</td>
-                        <td>--</td>
-                    </tr>
-                    <tr>
-                        <td>Francis Rivas</td>
-                        <td>Instructor</td>
-                        <td>7:00</td>
-                        <td>--</td>
-                    </tr>
-                    <tr>
-                        <td>Francis Rivas</td>
-                        <td>Instructor</td>
-                        <td>7:00</td>
-                        <td>--</td>
-                    </tr>
-                    <tr>
-                        <td>Francis Rivas</td>
-                        <td>Instructor</td>
-                        <td>7:00</td>
-                        <td>--</td>
-                    </tr>
-                    <tr>
-                        <td>Francis Rivas</td>
-                        <td>Instructor</td>
-                        <td>7:00</td>
-                        <td>--</td>
-                    </tr>
-                    <tr>
-                        <td>Francis Rivas</td>
-                        <td>Instructor</td>
-                        <td>7:00</td>
-                        <td>--</td>
-                    </tr>
-                </table>
+                    <table>
+                        <tr>
+                            <th id="nme">Name</th>
+                            <th id="jp">Job Position</th>
+                            <th>In</th>
+                            <th>Out</th>
+                        </tr>
+                        <tbody id="recent-logs-body">  <!-- Dynamic: JS populates up to 7 rows -->
+                            <tr><td colspan="4" style="text-align: center;">Loading recent logs...</td></tr>  <!-- Initial state -->
+                        </tbody>
+                    </table>
+                </div>
                 <div class="card one">
                     <h3>Scanned by mistake?</h3>
                     <ul>
@@ -118,12 +78,7 @@
                     </ul>
                 </div>
                 <div class="buttons-section">
-                    <button class="btn">
-                        <img src="scanner-icons/sync.png" alt="Sync Icon">
-                        Sync Now
-                    </button>
-
-                    <button class="btn export">
+                    <button class="btn export" onclick="window.open('backend/scanner_api.php?action=export', '_blank');">
                         <img src="scanner-icons/share.png" alt="Export Icon">
                         Export Attendance
                     </button>
@@ -133,10 +88,13 @@
         <footer>
             ©ADFC 2025 All rights reserved.
         </footer>
+        <p id="current-datetime"></p>
     </div>
 
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- Scripts: Library first, then custom JS -->
+    <script src="scanner-js/html5-qrcode.min.js"></script>
     <script src="scanner-js/scanner.js"></script>
+    <script src="js/current_time.js"></script>
 </body>
 
 </html>
