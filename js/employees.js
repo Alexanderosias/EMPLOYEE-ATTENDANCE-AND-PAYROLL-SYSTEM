@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const API_BASE = '/EMPLOYEE%20ATTENDANCE%20AND%20PAYROLL%20SYSTEM/views/employees.php';
-  const BASE_PATH = '/EMPLOYEE%20ATTENDANCE%20AND%20PAYROLL%20SYSTEM/';
+  const API_BASE = '/eaaps/views/employees.php'; 
+  const BASE_PATH = '/eaaps/';
 
   function showToast(message, type = 'info') {
     let toast = document.getElementById('toast-notification');
@@ -22,33 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { toast.style.display = 'none'; }, 4000);
   }
 
-  async function checkAndSyncPending() {
-    if (navigator.onLine) {
-      try {
-        const response = await fetch(`${API_BASE}?action=sync_pending`);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        const result = await response.json();
-        if (result.success) {
-          if (result.data.synced > 0) {
-            showToast(result.message, 'success');  
-          }
-        } else {
-          console.warn('Sync pending failed:', result.message);
-        }
-      } catch (error) {
-        console.error('Sync pending error:', error);
-      }
-    }
-  }
+  // Removed: checkAndSyncPending() and related Firebase sync logic
 
   window.addEventListener('online', () => {
-    showToast('Back online – syncing changes...', 'info');
-    checkAndSyncPending();
+    showToast('Back online – ready to save changes.', 'info');
   });
   window.addEventListener('offline', () => {
-    showToast('Offline mode: Changes saved locally', 'info');
+    showToast('Offline mode: Changes may be delayed.', 'info');
   });
 
   function updateDateTime() {
@@ -347,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const matchesSearch = name.includes(searchTerm);
       const matchesDepartment = !departmentFilter || department === departmentFilter;
-      const matchesJobPosition = !jobPositionFilter || jobPosition === jobPositionFilter;
+            const matchesJobPosition = !jobPositionFilter || jobPosition === jobPositionFilter;
 
       if (matchesSearch && matchesDepartment && matchesJobPosition) {
         card.style.display = '';
@@ -533,12 +513,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     if (!validatePhoneFormat(contactNumber)) {
-      showToast('09X XXXX XXXX', 'error');
+      showToast('Contact number must be in format: 09X XXXX XXXX', 'error');
       document.getElementById('contact-number').focus();
       return;
     }
     if (!validatePhoneFormat(emergencyPhone)) {
-      showToast('09X XXXX XXXX', 'error');
+      showToast('Emergency phone must be in format: 09X XXXX XXXX', 'error');
       document.getElementById('emergency-phone').focus();
       return;
     }
@@ -633,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (idInput) {
         updateAvatarPreviewImg.src = 'img/user.jpg';
       }
-      updateAvatarPreviewImg.alt = 'Avatar preview    ';
+      updateAvatarPreviewImg.alt = 'Avatar preview';
     }
   });
 
@@ -669,12 +649,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     if (contactNumber && !validatePhoneFormat(contactNumber)) {
-      showToast('09X XXXX XXXX', 'error');
+      showToast('Contact number must be in format: 09X XXXX XXXX', 'error');
       document.getElementById('update-contact-number').focus();
       return;
     }
     if (emergencyPhone && !validatePhoneFormat(emergencyPhone)) {
-      showToast('09X XXXX XXXX', 'error');
+      showToast('Emergency phone must be in format: 09X XXXX XXXX', 'error');
       document.getElementById('update-emergency-phone').focus();
       return;
     }
@@ -745,5 +725,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadSelectOptions();
   fetchEmployees();
-  checkAndSyncPending();  
 });

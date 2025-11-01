@@ -1,44 +1,26 @@
 <?php
 /**
- * Database Connections for EAAPS Project: MySQL (local) + Firebase Realtime Database (cloud)
- * Returns an array: ['mysqli' => mysqli instance, 'firebase' => Database instance or null]
+ * Database Connection for EAAPS Project: MySQL Only
+ * Returns an array: ['mysqli' => mysqli instance]
  * Usage: 
  *   $db = conn();
- *   $mysqli = $db['mysqli'];  // For MySQL queries (existing code)
- *   if (hasFirebase($db)) { $database = $db['firebase']; $ref = $database->getReference('path'); }  // For Realtime DB
- * Note: Paths adjusted for views/ location (vendor/config at root level, siblings to views/).
+ *   $mysqli = $db['mysqli'];  // For MySQL queries
  */
 
-// MySQL Configuration (your existing setup)
-define('DB_SERVER', 'localhost');
-define('DB_USERNAME', 'root');
-define('DB_PASSWORD', '');
-define('DB_NAME', 'eaaps_db');
-
-// Firebase Realtime Database Configuration (from your JS config)
-define('FIREBASE_CREDENTIALS_PATH', __DIR__ . '/../config/firebase-credentials.json');  // ../ to root/config/
-define('FIREBASE_DATABASE_URI', 'https://eaaps-45d6a-default-rtdb.asia-southeast1.firebasedatabase.app');  // Your databaseURL
-define('FIREBASE_PROJECT_ID', 'eaaps-45d6a');  // Your projectId
-
-// Composer Autoload Path (adjusted for root/vendor/ from views/)
-$autoload_path = __DIR__ . '/../vendor/autoload.php';
-if (!file_exists($autoload_path)) {
-    error_log('EAAPS: Composer autoload not found at ' . $autoload_path . '. Run "composer require kreait/firebase-php" in project root (same level as views/).');
-    // Do NOT require – fallback to MySQL only (prevents fatal error/500)
-} else {
-    require_once $autoload_path;
-}
+// MySQL Configuration (update for Hostinger after upload)
+define('DB_SERVER', 'localhost');  // Hostinger: Use provided MySQL host (e.g., 'mysql.hostinger.com')
+define('DB_USERNAME', 'root');     // Hostinger: Use provided username
+define('DB_PASSWORD', '');         // Hostinger: Use provided password
+define('DB_NAME', 'eaaps_db');     // Hostinger: Use provided database name
 
 /**
- * Establishes and returns database connections (MySQL + Firebase).
- * @return array ['mysqli' => mysqli, 'firebase' => Database instance or null]
+ * Establishes and returns database connection (MySQL only).
+ * @return array ['mysqli' => mysqli instance]
  * @throws Exception If MySQL fails.
  */
 function conn() {
-    static $mysqli = null;  // Static for MySQL reuse (your existing performance optimization)
-    static $firebase = null;  // Static for Firebase reuse (now Database instance)
+    static $mysqli = null;  // Static for reuse
 
-    // MySQL Connection (unchanged from your code)
     if ($mysqli === null) {
         $mysqli = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 
@@ -48,64 +30,29 @@ function conn() {
         }
 
         $mysqli->set_charset('utf8mb4');
-    }
-
-    // Firebase Realtime Database Initialization (lazy/static)
-    if ($firebase === null) {
-        $firebase = null;  // Default to null (fallback)
-        try {
-            // Check if SDK is available (Composer installed and loaded)
-            if (!class_exists('\Kreait\Firebase\Factory')) {
-                throw new Exception("Firebase SDK not installed/loaded. Run 'composer require kreait/firebase-php' in project root.");
-            }
-
-            if (!file_exists(FIREBASE_CREDENTIALS_PATH)) {
-                throw new Exception("Firebase credentials file not found: " . FIREBASE_CREDENTIALS_PATH . ". Download from Firebase Console > Service Accounts and place in root/config/.");
-            }
-
-            // FIXED: Create Firebase factory and get Database instance directly
-            $factory = (new \Kreait\Firebase\Factory())
-                ->withServiceAccount(FIREBASE_CREDENTIALS_PATH)
-                ->withDatabaseUri(FIREBASE_DATABASE_URI)
-                ->withProjectId(FIREBASE_PROJECT_ID);
-
-            $firebase = $factory->createDatabase();  // Returns Database instance (standard for Realtime DB)
-            
-            // Optional: Simple test (get root reference value)
-            $rootRef = $firebase->getReference('/');  // Directly on Database instance
-            $rootRef->getValue();  // Ping; fails if invalid setup
-
-            error_log("EAAPS Firebase Realtime DB initialized successfully for project: " . FIREBASE_PROJECT_ID);
-
-        } catch (Exception $fb_error) {
-            error_log("EAAPS Firebase Realtime DB Initialization Error: " . $fb_error->getMessage());
-            $firebase = null;  // Graceful fallback: Use MySQL only
-        }
+        error_log('EAAPS MySQL connected successfully to ' . DB_NAME);
     }
 
     return [
-        'mysqli' => $mysqli,
-        'firebase' => $firebase  // Database instance or null; check with hasFirebase()
+        'mysqli' => $mysqli
     ];
 }
 
-// Helper: Check if Firebase is available
+// Helper: Firebase not used (always false)
 function hasFirebase($db) {
-    return $db['firebase'] !== null;
+    return false;
 }
 
-// Optional: Test both connections (extended from your ?test param)
+// Test endpoint
 if (isset($_GET['test'])) {
     try {
         $db = conn();
         $mysql_status = $db['mysqli']->ping() ? 'success' : 'error';
-        $firebase_status = hasFirebase($db) ? 'success' : 'error';
         
         echo json_encode([
             'status' => 'success',
             'mysql' => ['connected' => $mysql_status === 'success'],
-            'firebase' => ['connected' => $firebase_status === 'success', 'project_id' => FIREBASE_PROJECT_ID],
-            'message' => 'Connections tested successfully.'
+            'message' => 'MySQL connection tested successfully.'
         ]);
     } catch (Exception $e) {
         http_response_code(500);
