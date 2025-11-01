@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once 'conn.php';
+require_once 'conn.php';  // Adjusted path for views/ location
 
 $qr_lib_path = '../phpqrcode/qrlib.php';
 if (file_exists($qr_lib_path)) {
@@ -37,35 +37,74 @@ try {
 
 function generateQRCode($employee_data, $qr_dir = '../qrcodes/')
 {
-    global $mysqli;
+    // Ensure library and GD are available
     if (!class_exists('QRcode')) {
-        error_log("QR Library not loaded – skipping QR generation");
+        error_log("QR Library not loaded – class QRcode not found");
         return ['path' => null, 'data' => null];
     }
+    if (!extension_loaded('gd') || !function_exists('imagepng')) {
+        error_log("GD extension not available – skipping QR generation");
+        return ['path' => null, 'data' => null];
+    }
+
     try {
+        // Ensure directory exists and is writable
         if (!is_dir($qr_dir)) {
-            mkdir($qr_dir, 0755, true);
+            error_log("Creating QR dir: $qr_dir");
+            if (!mkdir($qr_dir, 0755, true)) {
+                error_log("Failed to create QR dir: $qr_dir");
+                return ['path' => null, 'data' => null];
+            }
         }
-        $id = (int)$employee_data['id'];
-        $first = trim(preg_replace('/[^a-zA-Z]/', '', $employee_data['first_name'] ?? ''));
-        $last = trim(preg_replace('/[^a-zA-Z]/', '', $employee_data['last_name'] ?? ''));
+        if (!is_writable($qr_dir)) {
+            @chmod($qr_dir, 0755);
+            if (!is_writable($qr_dir)) {
+                error_log("QR dir not writable: $qr_dir");
+                return ['path' => null, 'data' => null];
+            }
+        }
+
+        // Build data
+        $id = (int)($employee_data['id'] ?? 0);
+        $first = trim(preg_replace('/[^a-zA-Z0-9]/', '', $employee_data['first_name'] ?? 'EMP'));
+        if ($first === '') $first = 'EMP';
+        $last  = trim(preg_replace('/[^a-zA-Z0-9]/', '', $employee_data['last_name'] ?? ''));
         $pos = trim($employee_data['position_name'] ?? 'N/A');
-        $joined = ($employee_data['date_joined'] === '0000-00-00' || empty($employee_data['date_joined'])) ? 'N/A' : $employee_data['date_joined'];
+        $joined = (!empty($employee_data['date_joined']) && $employee_data['date_joined'] !== '0000-00-00')
+            ? $employee_data['date_joined'] : 'N/A';
 
         $qr_data = "ID:$id|First:$first|Last:$last|Position:$pos|Joined:$joined";
-        $filename = $first . $last . '.png';
+
+        // Unique filename
+        $base = $first . $last;
+        if ($base === '') $base = 'EMP' . $id;
+        $filename = $base . '.png';
+        $dir = rtrim($qr_dir, '/\\') . '/';
         $counter = 1;
-        while (file_exists($qr_dir . $filename)) {
-            $filename = $first . $last . '_' . $id . '_' . $counter . '.png';
+        while (file_exists($dir . $filename)) {
+            $filename = $base . '_' . $id . '_' . $counter . '.png';
             $counter++;
         }
-        $file_path = $qr_dir . $filename;
-        $web_path = 'qrcodes/' . $filename;
+        $file_path = $dir . $filename;
+        $web_path  = 'qrcodes/' . $filename;
 
-        QRcode::png($qr_data, $file_path, QR_ECLEVEL_L, 10, 2);
-        error_log("QR Generated: $web_path for Employee ID $id (Data: $qr_data)");
+        // Prevent accidental output from library breaking JSON
+        $obLevel = ob_get_level();
+        ob_start();
+        $ecc = defined('QR_ECLEVEL_L') ? QR_ECLEVEL_L : 0;
+        QRcode::png($qr_data, $file_path, $ecc, 10, 2);
+        while (ob_get_level() > $obLevel) {
+            ob_end_clean();
+        }
+
+        if (!file_exists($file_path)) {
+            error_log("QR generation reported success but file not found: $file_path");
+            return ['path' => null, 'data' => null];
+        }
+
+        error_log("QR Generated successfully: $web_path");
         return ['path' => $web_path, 'data' => $qr_data];
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         error_log("QR Generation Failed for ID " . ($employee_data['id'] ?? 'unknown') . ": " . $e->getMessage());
         return ['path' => null, 'data' => null];
     }
@@ -97,172 +136,6 @@ function deleteQRCode($mysqli, $employee_id)
     } catch (Exception $e) {
         error_log("QR Delete Failed for ID $employee_id: " . $e->getMessage());
     }
-}
-
-function syncEmployeeToFirebase($db, $mysqli, $employee_id, $employee_data, $operation_type)
-{
-    if (!function_exists('hasFirebase') || !hasFirebase($db)) {
-        error_log("No Firebase – queuing Employee ID: $employee_id, Type: $operation_type");
-        insertPendingOperation($mysqli, $operation_type, $employee_id, $employee_data);
-        return false;
-    }
-
-    try {
-        $database = $db['firebase'];
-        $ref = $database->getReference('employees/' . $employee_id);
-
-        if ($operation_type === 'delete') {
-            $ref->remove();
-            error_log("Firebase: Deleted Employee ID $employee_id");
-            removePendingOperation($mysqli, $operation_type, $employee_id);
-            return true;
-        }
-
-        $sync_data = [
-            'id' => (int)($employee_data['id'] ?? 0),
-            'first_name' => trim($employee_data['first_name'] ?? ''),
-            'last_name' => trim($employee_data['last_name'] ?? ''),
-            'address' => trim($employee_data['address'] ?? ''),
-            'gender' => trim($employee_data['gender'] ?? ''),
-            'marital_status' => trim($employee_data['marital_status'] ?? 'Single'),
-            'status' => trim($employee_data['status'] ?? 'Active'),
-            'email' => trim($employee_data['email'] ?? ''),
-            'contact_number' => cleanPhone($employee_data['contact_number'] ?? ''),
-            'emergency_contact_name' => trim($employee_data['emergency_contact_name'] ?? ''),
-            'emergency_contact_phone' => cleanPhone($employee_data['emergency_contact_phone'] ?? ''),
-            'emergency_contact_relationship' => trim($employee_data['emergency_contact_relationship'] ?? ''),
-            'date_joined' => isset($employee_data['date_joined']) && $employee_data['date_joined'] && $employee_data['date_joined'] !== '0000-00-00' ? date('c', strtotime($employee_data['date_joined'])) : null,
-            'department_id' => (int)($employee_data['department_id'] ?? 0),
-            'job_position_id' => (int)($employee_data['job_position_id'] ?? 0),
-            'job_position_name' => trim($employee_data['position_name'] ?? ''), // Added actual job position name
-            'rate_per_hour' => (float)($employee_data['rate_per_hour'] ?? 0),
-            'annual_paid_leave_days' => (int)($employee_data['annual_paid_leave_days'] ?? 15),
-            'annual_unpaid_leave_days' => (int)($employee_data['annual_unpaid_leave_days'] ?? 5),
-            'annual_sick_leave_days' => (int)($employee_data['annual_sick_leave_days'] ?? 10),
-            'avatar_path' => trim($employee_data['avatar_path'] ?? ''),
-            'created_at' => isset($employee_data['created_at']) && $employee_data['created_at'] ? date('c', strtotime($employee_data['created_at'])) : null,
-            'updated_at' => isset($employee_data['updated_at']) && $employee_data['updated_at'] ? date('c', strtotime($employee_data['updated_at'])) : null
-        ];
-
-        $ref->set($sync_data);
-        error_log("Firebase: Synced Employee ID $employee_id ($operation_type): " . json_encode($sync_data));
-        removePendingOperation($mysqli, $operation_type, $employee_id);
-        return true;
-    } catch (Exception $e) {
-        error_log("Firebase Sync Fail for ID $employee_id ($operation_type): " . $e->getMessage());
-        insertPendingOperation($mysqli, $operation_type, $employee_id, $employee_data);
-        return false;
-    }
-}
-
-function insertPendingOperation($mysqli, $operation_type, $employee_id, $data = null)
-{
-    try {
-        $data_json = $data ? json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null;
-        $stmt = $mysqli->prepare("INSERT INTO pending_operations (operation_type, employee_id, data) VALUES (?, ?, ?)");
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . $mysqli->error);
-        }
-        $stmt->bind_param('sis', $operation_type, $employee_id, $data_json);
-        if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error);
-        }
-        $stmt->close();
-        error_log("Queued: $operation_type for ID $employee_id");
-    } catch (Exception $e) {
-        error_log("Queue Fail: " . $e->getMessage());
-    }
-}
-
-function removePendingOperation($mysqli, $operation_type, $employee_id)
-{
-    try {
-        $stmt = $mysqli->prepare("DELETE FROM pending_operations WHERE operation_type = ? AND employee_id = ? AND synced = 0");
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . $mysqli->error);
-        }
-        $stmt->bind_param('si', $operation_type, $employee_id);
-        if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error);
-        }
-        $stmt->close();
-        error_log("Removed pending: $operation_type for ID $employee_id");
-    } catch (Exception $e) {
-        error_log("Remove Pending Fail: " . $e->getMessage());
-    }
-}
-
-function processPendingSync($db, $mysqli)
-{
-    $synced = 0;
-    $failed = 0;
-    $max_attempts = 5;
-    try {
-        $pending_query = "SELECT * FROM pending_operations WHERE synced = 0 AND attempts < $max_attempts ORDER BY created_at ASC";
-        $result = $mysqli->query($pending_query);
-        if (!$result) {
-            throw new Exception("Query failed: " . $mysqli->error);
-        }
-        $pendings = $result->fetch_all(MYSQLI_ASSOC);
-        $result->free();
-
-        foreach ($pendings as $pending) {
-            $id = $pending['employee_id'];
-            $type = $pending['operation_type'];
-            $data = json_decode($pending['data'], true) ?? [];
-
-            if ($type !== 'delete') {
-                $fetch_query = "
-                    SELECT e.*, d.name AS department_name, jp.name AS position_name, qc.qr_data, qc.qr_image_path
-                    FROM employees e
-                    LEFT JOIN departments d ON e.department_id = d.id
-                    LEFT JOIN job_positions jp ON e.job_position_id = jp.id
-                    LEFT JOIN qr_codes qc ON e.id = qc.employee_id
-                    WHERE e.id = ?
-                ";
-                $fetch_stmt = $mysqli->prepare($fetch_query);
-                if (!$fetch_stmt) {
-                    error_log("Fetch latest prepare failed for ID $id: " . $mysqli->error);
-                    $failed++;
-                    continue;
-                }
-                $fetch_stmt->bind_param('i', $id);
-                $fetch_stmt->execute();
-                $fetch_result = $fetch_stmt->get_result();
-                $latest = $fetch_result ? $fetch_result->fetch_assoc() : null;
-                $fetch_stmt->close();
-                if ($latest) {
-                    $data = $latest;
-                } else {
-                    $failed++;
-                    continue;
-                }
-            }
-
-            $success = syncEmployeeToFirebase($db, $mysqli, $id, $data, $type);
-            $synced_val = $success ? 1 : 0;
-            $update_stmt = $mysqli->prepare("UPDATE pending_operations SET synced = ?, attempts = attempts + 1 WHERE id = ?");
-            if ($update_stmt) {
-                $update_stmt->bind_param('ii', $synced_val, $pending['id']);
-                $update_stmt->execute();
-                $update_stmt->close();
-            }
-
-            if ($success) {
-                $synced++;
-                removePendingOperation($mysqli, $type, $id);
-            } else {
-                $failed++;
-                if (($pending['attempts'] ?? 0) + 1 >= $max_attempts) {
-                    error_log("Max retries reached for ID $id ($type) – manual intervention needed");
-                }
-            }
-        }
-    } catch (Exception $e) {
-        error_log("Pending Sync Error: " . $e->getMessage());
-        $failed = count($pendings ?? []);
-    }
-    return ['synced' => $synced, 'failed' => $failed];
 }
 
 function cleanPhone($phone)
@@ -489,12 +362,12 @@ switch ($action) {
             }
 
             $query = "INSERT INTO employees (
-    first_name, last_name, address, gender, marital_status, status, email,
-    contact_number, emergency_contact_name, emergency_contact_phone,
-    emergency_contact_relationship, date_joined, department_id, job_position_id,
-    rate_per_hour, annual_paid_leave_days, annual_unpaid_leave_days,
-    annual_sick_leave_days, avatar_path
-) VALUES (?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?)";
+                first_name, last_name, address, gender, marital_status, status, email,
+                contact_number, emergency_contact_name, emergency_contact_phone,
+                emergency_contact_relationship, date_joined, department_id, job_position_id,
+                rate_per_hour, annual_paid_leave_days, annual_unpaid_leave_days,
+                annual_sick_leave_days, avatar_path
+            ) VALUES (?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $mysqli->prepare($query);
             if (!$stmt) {
@@ -528,18 +401,17 @@ switch ($action) {
             $new_id = $mysqli->insert_id;
             $stmt->close();
 
-
             if (!$new_id) {
                 throw new Exception('Failed to insert employee.');
             }
 
             $fetch_query = "
-                SELECT e.*, d.name AS department_name, jp.name AS position_name
-                FROM employees e
-                LEFT JOIN departments d ON e.department_id = d.id
-                LEFT JOIN job_positions jp ON e.job_position_id = jp.id
-                WHERE e.id = ?
-            ";
+            SELECT e.*, d.name AS department_name, jp.name AS position_name
+            FROM employees e
+            LEFT JOIN departments d ON e.department_id = d.id
+            LEFT JOIN job_positions jp ON e.job_position_id = jp.id
+            WHERE e.id = ?
+        ";
             $fetch_stmt = $mysqli->prepare($fetch_query);
             if (!$fetch_stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
@@ -554,21 +426,23 @@ switch ($action) {
                 throw new Exception('Failed to fetch new employee data.');
             }
 
-            $qr_result = generateQRCode($new_employee);
-            $qr_path = $qr_result['path'];
-            $qr_data = $qr_result['data'];
-
-            if ($qr_data && $qr_path) {
-                $qr_stmt = $mysqli->prepare("INSERT INTO qr_codes (employee_id, qr_data, qr_image_path) VALUES (?, ?, ?)");
-                if ($qr_stmt) {
-                    $qr_stmt->bind_param('iss', $new_id, $qr_data, $qr_path);
-                    $qr_stmt->execute();
-                    $qr_stmt->close();
-                    error_log("QR Record Inserted for Employee ID $new_id");
+            try {
+                /* $qr_result = generateQRCode($new_employee); */
+                $qr_path = $qr_result['path'];
+                $qr_data = $qr_result['data'];
+                if ($qr_data && $qr_path) {
+                    $qr_stmt = $mysqli->prepare("INSERT INTO qr_codes (employee_id, qr_data, qr_image_path) VALUES (?, ?, ?)");
+                    if ($qr_stmt) {
+                        $qr_stmt->bind_param('iss', $new_id, $qr_data, $qr_path);
+                        $qr_stmt->execute();
+                        $qr_stmt->close();
+                        error_log("QR Record Inserted for Employee ID $new_id");
+                    }
                 }
+            } catch (Exception $e) {
+                error_log("QR Generation Failed for new employee ID $new_id: " . $e->getMessage());
+                // Don't throw here—let the add succeed without QR
             }
-
-            $sync_success = syncEmployeeToFirebase($db, $mysqli, $new_id, $new_employee, 'add');
 
             $msg = 'Employee added successfully';
             if ($avatar_path) {
@@ -576,11 +450,6 @@ switch ($action) {
             }
             if ($qr_path) {
                 $msg .= ' and QR code';
-            }
-            if ($sync_success) {
-                $msg .= ' and synced to cloud';
-            } else {
-                $msg .= ' (queued for sync – will retry on reconnect)';
             }
 
             ob_end_clean();
@@ -767,7 +636,7 @@ switch ($action) {
             }
 
             if ($qr_changed) {
-                deleteQRCode($mysqli,                $id);
+                deleteQRCode($mysqli, $id);
 
                 $updated_query = "
                     SELECT e.*, d.name AS department_name, jp.name AS position_name
@@ -819,19 +688,12 @@ switch ($action) {
             $updated_employee = $result->fetch_assoc();
             $fetch_stmt->close();
 
-            $sync_success = syncEmployeeToFirebase($db, $mysqli, $id, $updated_employee, 'update');
-
             $msg = 'Employee updated successfully';
             if ($avatar_changed) {
                 $msg .= ' with new avatar';
             }
             if ($qr_changed && $qr_path) {
                 $msg .= ' and updated QR code';
-            }
-            if ($sync_success) {
-                $msg .= ' and synced to cloud';
-            } else {
-                $msg .= ' (queued for sync – will retry on reconnect)';
             }
 
             ob_end_clean();
@@ -855,6 +717,7 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Employee ID required']);
             break;
         }
+        error_log("Delete request for Employee ID: $id");
         try {
             $cleanup_query = "
                 SELECT e.avatar_path, qc.qr_image_path
@@ -889,41 +752,17 @@ switch ($action) {
             $stmt->close();
 
             if ($affected === 0) {
+                error_log("Delete failed: No rows affected for ID $id");
                 throw new Exception('Employee not found or already deleted.');
             }
 
-            $sync_success = syncEmployeeToFirebase($db, $mysqli, $id, [], 'delete');
-
-            $msg = 'Employee deleted successfully';
-            if ($sync_success) {
-                $msg .= ' and removed from cloud';
-            } else {
-                $msg .= ' (queued for sync – will retry on reconnect)';
-            }
-
+            error_log("Delete success: $affected rows affected for ID $id");
             ob_end_clean();
-            echo json_encode(['success' => true, 'message' => $msg]);
+            echo json_encode(['success' => true, 'message' => 'Employee deleted successfully']);
         } catch (Exception $e) {
             error_log("Delete Employee Error: " . $e->getMessage());
             ob_end_clean();
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-        }
-        break;
-
-    case 'sync_pending':
-        try {
-            $stats = processPendingSync($db, $mysqli);
-            $msg = 'Pending sync completed: ' . $stats['synced'] . ' synced, ' . $stats['failed'] . ' failed (will retry later)';
-            ob_end_clean();
-            echo json_encode([
-                'success' => true,
-                'message' => $msg,
-                'data' => $stats
-            ], JSON_UNESCAPED_SLASHES);
-        } catch (Exception $e) {
-            error_log("Sync Pending Error: " . $e->getMessage());
-            ob_end_clean();
-            echo json_encode(['success' => false, 'message' => 'Failed to process pending sync: ' . $e->getMessage()]);
         }
         break;
 
