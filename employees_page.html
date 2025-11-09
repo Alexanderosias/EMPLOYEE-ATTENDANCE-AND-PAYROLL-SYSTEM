@@ -211,13 +211,14 @@
 
                 <div class="form-group">
                   <label for="contact-number">Contact Number</label>
-                  <input type="tel" id="contact-number" name="contact_number" required placeholder="Enter contact number (11 digits)" />
+                  <input type="tel" id="contact-number" name="contact_number" required
+                    placeholder="Enter contact number (11 digits)" />
                 </div>
 
                 <div class="form-group">
                   <label for="rate-per-hour">Rate per Hour</label>
-                  <input type="number" id="rate-per-hour" name="rate_per_hour" min="0" step="10" required
-                    placeholder="Enter rate per hour" value="0.00" />
+                  <input type="number" id="rate-per-hour" name="rate_per_hour" min="0" step="10" readonly
+                    placeholder="Auto-filled from job position" value="0.00" />
                 </div>
 
                 <div class="form-group">
@@ -284,7 +285,8 @@
                   Avatar</label>
                 <div class="avatar-preview" aria-live="polite" aria-atomic="true"
                   style="margin: 0 auto 0.5rem; width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 2px solid #ccc; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center;">
-                  <img id="update-avatar-preview-img" src="img/user.jpg" alt="Avatar preview" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;" />
+                  <img id="update-avatar-preview-img" src="img/user.jpg" alt="Avatar preview"
+                    style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;" />
                 </div>
                 <input type="file" id="update-avatar-input" name="avatar" accept="image/*" style="display:none;" />
                 <button type="button" id="update-upload-image-btn" class="btn btn-primary"
@@ -358,8 +360,8 @@
 
                 <div class="form-group">
                   <label for="update-rate-per-hour">Rate per Hour</label>
-                  <input type="number" id="update-rate-per-hour" name="rate_per_hour" min="0" step="10" required
-                    placeholder="Enter rate per hour" value="0.00" />
+                  <input type="number" id="update-rate-per-hour" name="rate_per_hour" min="0" step="10" readonly
+                    placeholder="Auto-filled from job position" value="0.00" />
                 </div>
 
                 <div class="form-group">

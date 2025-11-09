@@ -1,69 +1,42 @@
 <?php
-header('Content-Type: application/json');
-require_once 'conn.php';  // Now returns array: ['mysqli' => ..., 'firebase' => ...]
+ob_start();
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
 
-// UPDATED: Get database connections with extra safety
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+require_once 'conn.php';  // Assumes this returns ['mysqli' => $mysqli]
+
 $db = null;
 $mysqli = null;
 try {
-    $db = conn();  // May throw if MySQL fails
+    $db = conn();
     $mysqli = $db['mysqli'];
     if (!$mysqli || $mysqli->connect_error) {
-        throw new Exception('MySQL connection invalid after init.');
+        throw new Exception('MySQL connection failed: ' . ($mysqli ? $mysqli->connect_error : 'No connection'));
     }
 } catch (Exception $e) {
-    error_log("Departments/Positions Connection Error: " . $e->getMessage());
+    ob_end_clean();
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]);
     exit;
 }
 
-$action = $_GET['action'] ?? ($_POST['action'] ?? null);
+$action = $_GET['action'] ?? $_POST['action'] ?? '';
 
-if (!$action) {
-    throw new Exception('No action specified.');
-}
-
-// Helper: Sync department or position to Firebase Realtime DB (after MySQL success)
-function syncDeptOrPositionToFirebase($db, $type, $id, $data, $action = 'set') {
-    if (!hasFirebase($db)) {
-        error_log("Firebase unavailable – skipping sync for " . $type . " ID: " . $id);
-        return false;
-    }
-
-    try {
-        $database = $db['firebase'];  // Database instance from conn.php
-        $path = ($type === 'department') ? 'departments/' : 'job_positions/';
-        $ref = $database->getReference($path . $id);
-
-        // Prepare data (simple: id + name)
-        $sync_data = [
-            'id' => $id,
-            'name' => $data['name']
-        ];
-
-        // Sync: 'set' (add/edit), 'remove' (delete)
-        if ($action === 'remove') {
-            $ref->remove();
-            error_log($type . " ID " . $id . " removed from Firebase");
-        } else {
-            $ref->set($sync_data);  // Full replace
-            error_log($type . " ID " . $id . " synced to Firebase (" . $action . "): " . json_encode($sync_data));
-        }
-
-        return true;  // Success
-    } catch (Exception $sync_error) {
-        error_log("Firebase Sync Error for " . $type . " ID " . $id . ": " . $sync_error->getMessage());
-        return false;  // Fail silently (MySQL already succeeded)
-    }
-}
-
-try {
-    switch ($action) {
-        case 'list_departments':
-            // Fetch departments with employee count (mysqli version)
+switch ($action) {
+    case 'list_departments':
+        try {
             $query = "
-                SELECT d.id, d.name, COALESCE(COUNT(e.id), 0) as employee_count
+                SELECT d.id, d.name, COALESCE(COUNT(e.id), 0) AS employee_count
                 FROM departments d
                 LEFT JOIN employees e ON d.id = e.department_id
                 GROUP BY d.id, d.name
@@ -74,16 +47,25 @@ try {
                 throw new Exception('Query failed: ' . $mysqli->error);
             }
             $departments = $result->fetch_all(MYSQLI_ASSOC);
-            echo json_encode($departments);
-            break;
+            $result->free();
 
-        case 'list_positions':
-            // Fetch job positions with employee count (mysqli version)
+            ob_end_clean();
+            echo json_encode(['success' => true, 'data' => $departments]);
+        } catch (Exception $e) {
+            error_log("List Departments Error: " . $e->getMessage());
+            ob_end_clean();
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Failed to fetch departments: ' . $e->getMessage()]);
+        }
+        break;
+
+    case 'list_positions':
+        try {
             $query = "
-                SELECT jp.id, jp.name, COALESCE(COUNT(e.id), 0) as employee_count
+                SELECT jp.id, jp.name, jp.rate_per_hour, COALESCE(COUNT(e.id), 0) AS employee_count
                 FROM job_positions jp
                 LEFT JOIN employees e ON jp.id = e.job_position_id
-                GROUP BY jp.id, jp.name
+                GROUP BY jp.id, jp.name, jp.rate_per_hour
                 ORDER BY jp.name
             ";
             $result = $mysqli->query($query);
@@ -91,95 +73,117 @@ try {
                 throw new Exception('Query failed: ' . $mysqli->error);
             }
             $positions = $result->fetch_all(MYSQLI_ASSOC);
-            echo json_encode($positions);
-            break;
+            $result->free();
 
-        case 'add_department':
+            ob_end_clean();
+            echo json_encode(['success' => true, 'data' => $positions]);
+        } catch (Exception $e) {
+            error_log("List Positions Error: " . $e->getMessage());
+            ob_end_clean();
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Failed to fetch job positions: ' . $e->getMessage()]);
+        }
+        break;
+
+    case 'add_department':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            ob_end_clean();
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'POST required']);
+            break;
+        }
+        try {
             $name = trim($_POST['name'] ?? '');
             if (empty($name)) {
                 throw new Exception('Department name is required.');
             }
             // Check for duplicates (case-insensitive)
             $checkStmt = $mysqli->prepare("SELECT id FROM departments WHERE LOWER(name) = LOWER(?)");
-            if (!$checkStmt) {
-                throw new Exception('Prepare failed: ' . $mysqli->error);
-            }
             $checkStmt->bind_param('s', $name);
             $checkStmt->execute();
-            $checkResult = $checkStmt->get_result();
-            if ($checkResult->num_rows > 0) {
+            if ($checkStmt->get_result()->num_rows > 0) {
                 throw new Exception('Department name already exists.');
             }
             $checkStmt->close();
             // Insert
             $stmt = $mysqli->prepare("INSERT INTO departments (name) VALUES (?)");
-            if (!$stmt) {
-                throw new Exception('Prepare failed: ' . $mysqli->error);
-            }
             $stmt->bind_param('s', $name);
-            $stmt->execute();
+            if (!$stmt->execute()) {
+                throw new Exception('Insert failed: ' . $stmt->error);
+            }
             $newId = $mysqli->insert_id;
             $stmt->close();
 
-            // NEW: Sync to Firebase
-            $sync_data = ['name' => $name];
-            $sync_success = syncDeptOrPositionToFirebase($db, 'department', $newId, $sync_data, 'set');
+            ob_end_clean();
+            echo json_encode(['success' => true, 'message' => 'Department added successfully.', 'data' => ['id' => $newId]]);
+        } catch (Exception $e) {
+            error_log("Add Department Error: " . $e->getMessage());
+            ob_end_clean();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
 
-            echo json_encode([
-                'success' => true,
-                'message' => 'Department added successfully' . ($sync_success ? ' and synced to cloud' : ' (cloud sync skipped)'),
-                'id' => $newId
-            ]);
+    case 'add_position':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            ob_end_clean();
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'POST required']);
             break;
-
-        case 'add_position':
+        }
+        try {
             $name = trim($_POST['name'] ?? '');
+            $ratePerHour = floatval($_POST['rate_per_hour'] ?? 0);
             if (empty($name)) {
                 throw new Exception('Job position name is required.');
             }
+            if ($ratePerHour < 0) {
+                throw new Exception('Rate per hour must be a non-negative number.');
+            }
             // Check for duplicates (case-insensitive)
             $checkStmt = $mysqli->prepare("SELECT id FROM job_positions WHERE LOWER(name) = LOWER(?)");
-            if (!$checkStmt) {
-                throw new Exception('Prepare failed: ' . $mysqli->error);
-            }
             $checkStmt->bind_param('s', $name);
             $checkStmt->execute();
-            $checkResult = $checkStmt->get_result();
-            if ($checkResult->num_rows > 0) {
+            if ($checkStmt->get_result()->num_rows > 0) {
                 throw new Exception('Job position name already exists.');
             }
             $checkStmt->close();
             // Insert
-            $stmt = $mysqli->prepare("INSERT INTO job_positions (name) VALUES (?)");
-            if (!$stmt) {
-                throw new Exception('Prepare failed: ' . $mysqli->error);
+            $stmt = $mysqli->prepare("INSERT INTO job_positions (name, rate_per_hour) VALUES (?, ?)");
+            $stmt->bind_param('sd', $name, $ratePerHour);
+            if (!$stmt->execute()) {
+                throw new Exception('Insert failed: ' . $stmt->error);
             }
-            $stmt->bind_param('s', $name);
-            $stmt->execute();
             $newId = $mysqli->insert_id;
             $stmt->close();
 
-            // NEW: Sync to Firebase
-            $sync_data = ['name' => $name];
-            $sync_success = syncDeptOrPositionToFirebase($db, 'position', $newId, $sync_data, 'set');
+            ob_end_clean();
+            echo json_encode(['success' => true, 'message' => 'Job position added successfully.', 'data' => ['id' => $newId]]);
+        } catch (Exception $e) {
+            error_log("Add Position Error: " . $e->getMessage());
+            ob_end_clean();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
 
-            echo json_encode([
-                'success' => true,
-                'message' => 'Job position added successfully' . ($sync_success ? ' and synced to cloud' : ' (cloud sync skipped)'),
-                'id' => $newId
-            ]);
+    case 'delete_department':
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            ob_end_clean();
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'DELETE required']);
             break;
-
-        case 'delete_department':
-            $id = intval($_GET['id'] ?? 0);
-            if ($id <= 0) {
-                throw new Exception('Invalid department ID.');
-            }
-            // FIXED: Pre-check employee count before allowing delete
-            $countStmt = $mysqli->prepare("SELECT COUNT(e.id) as emp_count FROM employees e WHERE e.department_id = ?");
-            if (!$countStmt) {
-                throw new Exception('Prepare failed: ' . $mysqli->error);
-            }
+        }
+        $id = (int)($_GET['id'] ?? 0);
+        if (!$id) {
+            ob_end_clean();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Department ID required']);
+            break;
+        }
+        try {
+            // Check employee count
+            $countStmt = $mysqli->prepare("SELECT COUNT(e.id) AS emp_count FROM employees e WHERE e.department_id = ?");
             $countStmt->bind_param('i', $id);
             $countStmt->execute();
             $countResult = $countStmt->get_result();
@@ -188,41 +192,46 @@ try {
             $countStmt->close();
 
             if ($empCount > 0) {
-                // Prevention: Do not delete; return error
-                throw new Exception("Cannot delete department: {$empCount} employee(s) are assigned to this department. Please reassign them first.");
+                throw new Exception("Cannot delete department: {$empCount} employee(s) are assigned. Reassign them first.");
             }
 
-            // If count === 0, delete directly (no unassign needed)
-            $deleteStmt = $mysqli->prepare("DELETE FROM departments WHERE id = ?");
-            if (!$deleteStmt) {
-                throw new Exception('Prepare failed: ' . $mysqli->error);
-            }
-            $deleteStmt->bind_param('i', $id);
-            $deleteStmt->execute();
-            if ($deleteStmt->affected_rows > 0) {
-                // NEW: Sync delete to Firebase
-                $sync_success = syncDeptOrPositionToFirebase($db, 'department', $id, [], 'remove');
+            $stmt = $mysqli->prepare("DELETE FROM departments WHERE id = ?");
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $affected = $stmt->affected_rows;
+            $stmt->close();
 
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Department deleted successfully' . ($sync_success ? ' and removed from cloud' : ' (cloud removal skipped)')
-                ]);
-            } else {
+            if ($affected === 0) {
                 throw new Exception('Department not found.');
             }
-            $deleteStmt->close();
-            break;
 
-        case 'delete_position':
-            $id = intval($_GET['id'] ?? 0);
-            if ($id <= 0) {
-                throw new Exception('Invalid job position ID.');
-            }
-            // FIXED: Pre-check employee count before allowing delete
-            $countStmt = $mysqli->prepare("SELECT COUNT(e.id) as emp_count FROM employees e WHERE e.job_position_id = ?");
-            if (!$countStmt) {
-                throw new Exception('Prepare failed: ' . $mysqli->error);
-            }
+            ob_end_clean();
+            echo json_encode(['success' => true, 'message' => 'Department deleted successfully.']);
+        } catch (Exception $e) {
+            error_log("Delete Department Error: " . $e->getMessage());
+            ob_end_clean();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
+
+    case 'delete_position':
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            ob_end_clean();
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'DELETE required']);
+            break;
+        }
+        $id = (int)($_GET['id'] ?? 0);
+        if (!$id) {
+            ob_end_clean();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Job position ID required']);
+            break;
+        }
+        try {
+            // Check employee count
+            $countStmt = $mysqli->prepare("SELECT COUNT(e.id) AS emp_count FROM employees e WHERE e.job_position_id = ?");
             $countStmt->bind_param('i', $id);
             $countStmt->execute();
             $countResult = $countStmt->get_result();
@@ -231,42 +240,37 @@ try {
             $countStmt->close();
 
             if ($empCount > 0) {
-                // Prevention: Do not delete; return error
-                throw new Exception("Cannot delete job position: {$empCount} employee(s) are assigned to this job position. Please reassign them first.");
+                throw new Exception("Cannot delete job position: {$empCount} employee(s) are assigned. Reassign them first.");
             }
 
-            // If count === 0, delete directly (no unassign needed)
-            $deleteStmt = $mysqli->prepare("DELETE FROM job_positions WHERE id = ?");
-            if (!$deleteStmt) {
-                throw new Exception('Prepare failed: ' . $mysqli->error);
-            }
-            $deleteStmt->bind_param('i', $id);
-            $deleteStmt->execute();
-            if ($deleteStmt->affected_rows > 0) {
-                // NEW: Sync delete to Firebase
-                $sync_success = syncDeptOrPositionToFirebase($db, 'position', $id, [], 'remove');
+            $stmt = $mysqli->prepare("DELETE FROM job_positions WHERE id = ?");
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $affected = $stmt->affected_rows;
+            $stmt->close();
 
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Job position deleted successfully' . ($sync_success ? ' and removed from cloud' : ' (cloud removal skipped)')
-                ]);
-            } else {
+            if ($affected === 0) {
                 throw new Exception('Job position not found.');
             }
-            $deleteStmt->close();
-            break;
 
-        default:
-            throw new Exception('Invalid action.');
-    }
-} catch (Exception $e) {
-    error_log('Departments/Positions API Error: ' . $e->getMessage());
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            ob_end_clean();
+            echo json_encode(['success' => true, 'message' => 'Job position deleted successfully.']);
+        } catch (Exception $e) {
+            error_log("Delete Position Error: " . $e->getMessage());
+            ob_end_clean();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
+
+    default:
+        ob_end_clean();
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
+        break;
 }
 
-// Close MySQLi connection (good practice)
 if ($mysqli) {
     $mysqli->close();
 }
-?>
+ob_end_flush();

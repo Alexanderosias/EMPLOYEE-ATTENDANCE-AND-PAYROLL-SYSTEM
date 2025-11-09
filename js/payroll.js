@@ -46,10 +46,8 @@
 
         // Mock employees data
         const employees = [
-            { id: 'emp1', name: 'John Doe', monthlySalary: 35000, isSkipped: false },
-            { id: 'emp2', name: 'Jane Smith', monthlySalary: 32000, isSkipped: false },
-            { id: 'emp3', name: 'Peter Jones', monthlySalary: 45000, isSkipped: false },
-            { id: 'emp4', name: 'Mary Garcia', monthlySalary: 30000, isSkipped: false }
+            { id: 'emp1', name: 'Francis Rivas', monthlySalary: 20000, isSkipped: false },
+            { id: 'emp2', name: 'Adela Onlao', monthlySalary: 20000, isSkipped: false }
         ];
 
         // Default tax rates object

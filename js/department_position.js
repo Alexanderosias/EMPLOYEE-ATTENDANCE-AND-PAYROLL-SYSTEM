@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const API_BASE = '/EMPLOYEE ATTENDANCE AND PAYROLL SYSTEM/views/departments_positions.php';  // Backend endpoint
+  const API_BASE = '/eaaps/views/departments_positions.php';  // Backend endpoint
 
   // Modal helper functions
   function openModal(modal) {
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error('Delete error:', error);
-      alert('Failed to delete item.');
+      alert('Failed to delete item. Check console for details.');
     }
     itemToDelete = null;
     itemId = null;
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error('Add department error:', error);
-      alert('Failed to add department.');
+      alert('Failed to add department. Check console for details.');
     }
   });
 
@@ -125,6 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const formData = new FormData(addJobPositionForm);
     formData.append('action', 'add_position');
 
+    // Client-side validation for rate_per_hour
+    const rateInput = document.getElementById('job-position-rate');
+    const rateValue = parseFloat(rateInput.value);
+    if (isNaN(rateValue) || rateValue < 0) {
+      alert('Rate per hour must be a positive number.');
+      rateInput.focus();
+      return;
+    }
+
     try {
       const response = await fetch(API_BASE, {
         method: 'POST',
@@ -140,11 +149,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error('Add position error:', error);
-      alert('Failed to add job position.');
+      alert('Failed to add job position. Check console for details.');
     }
   });
 
-  // UPDATED: Function to create list item with delete button (disabled if employees assigned)
+  // Function to create list item with delete button (disabled if employees assigned)
   function createListItem(id, text, count, type) {
     const li = document.createElement('li');
     li.setAttribute('data-id', id);
@@ -167,13 +176,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     deleteBtn.appendChild(deleteImg);
 
-    // FIXED: Disable delete if employees assigned (prevents interaction)
+    // Disable delete if employees assigned
     const typeName = type === 'department' ? 'department' : 'job position';
     if (count > 0) {
       deleteBtn.disabled = true;
       deleteBtn.setAttribute('aria-disabled', 'true');
       deleteBtn.title = `Cannot delete this ${typeName} because it has ${count} employee(s) assigned. Please reassign employees first.`;
-      // Optional: Add visual style (e.g., opacity: 0.5; cursor: not-allowed;) via CSS class 'disabled-delete'
       deleteBtn.classList.add('disabled-delete');  // Add CSS: .btn-delete.disabled-delete { opacity: 0.5; cursor: not-allowed; }
       // ALTERNATIVE: Hide button entirely - uncomment below
       // itemActions.style.display = 'none';  // Or don't append deleteBtn
@@ -192,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return li;
   }
 
-  // UPDATED: Function to show delete confirmation (only if count === 0)
+  // Function to show delete confirmation (only if count === 0)
   function showDeleteConfirmation(listItem, id, itemName, employeeCount, type) {
     const typeName = type === 'department' ? 'department' : 'job position';
     if (employeeCount > 0) {
@@ -217,8 +225,17 @@ document.addEventListener('DOMContentLoaded', () => {
   async function fetchDepartments() {
     try {
       const response = await fetch(`${API_BASE}?action=list_departments`);
-      const departments = await response.json();
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const result = await response.json();
       departmentsList.innerHTML = '';  // Clear
+      if (!result.success) {
+        alert('Error loading departments: ' + result.message);
+        departmentsList.innerHTML = '<li>Error loading departments.</li>';
+        return;
+      }
+      const departments = result.data;
       if (departments.length === 0) {
         departmentsList.innerHTML = '<li>No departments found.</li>';
       } else {
@@ -229,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error('Error fetching departments:', error);
-      alert('Failed to load departments. Please refresh the page.');
+      alert('Failed to load departments: ' + error.message + '. Check the API path and server logs.');
       departmentsList.innerHTML = '<li>Error loading departments.</li>';
     }
   }
@@ -238,19 +255,30 @@ document.addEventListener('DOMContentLoaded', () => {
   async function fetchPositions() {
     try {
       const response = await fetch(`${API_BASE}?action=list_positions`);
-      const positions = await response.json();
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const result = await response.json();
       jobPositionsList.innerHTML = '';  // Clear
+      if (!result.success) {
+        alert('Error loading job positions: ' + result.message);
+        jobPositionsList.innerHTML = '<li>Error loading job positions.</li>';
+        return;
+      }
+      const positions = result.data;
       if (positions.length === 0) {
         jobPositionsList.innerHTML = '<li>No job positions found.</li>';
       } else {
         positions.forEach(pos => {
-          const li = createListItem(pos.id, pos.name, pos.employee_count, 'position');
+          // Updated: Include rate_per_hour in display text
+          const displayText = `${pos.name} - ₱${parseFloat(pos.rate_per_hour || 0).toFixed(2)}/hr`;
+          const li = createListItem(pos.id, displayText, pos.employee_count, 'position');
           jobPositionsList.appendChild(li);
         });
       }
     } catch (error) {
       console.error('Error fetching positions:', error);
-      alert('Failed to load job positions. Please refresh the page.');
+      alert('Failed to load job positions: ' + error.message + '. Check the API path and server logs.');
       jobPositionsList.innerHTML = '<li>Error loading job positions.</li>';
     }
   }

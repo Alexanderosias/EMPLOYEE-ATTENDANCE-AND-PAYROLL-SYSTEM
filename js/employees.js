@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const API_BASE = '/eaaps/views/employees.php'; 
+  const API_BASE = '/eaaps/views/employees.php';
   const BASE_PATH = '/eaaps/';
 
   function showToast(message, type = 'info') {
@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const filterJobPosition = document.getElementById('filter-job-position');
   let departments = [];
   let jobPositions = [];
+  let positionRateMap = {};  // Map to store position ID to rate_per_hour
 
   function getDetailItemText(card, label) {
     const items = card.querySelectorAll('.detail-item, .expanded-item');
@@ -66,27 +67,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function formatPhoneForDisplay(cleanPhone) {
     if (!cleanPhone || typeof cleanPhone !== 'string') return '';
-    const digits = cleanPhone.replace(/\D/g, '');  
-    if (digits.length !== 11) return cleanPhone;  
+    const digits = cleanPhone.replace(/\D/g, '');
+    if (digits.length !== 11) return cleanPhone;
     return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7, 11)}`;
   }
 
   function cleanPhoneNumber(phone) {
-    return phone.replace(/\D/g, ''); 
+    return phone.replace(/\D/g, '');
   }
 
   function autoFormatPhoneInput(input) {
-    let value = input.value.replace(/\s/g, ''); 
+    let value = input.value.replace(/\s/g, '');
     let cursorPos = input.selectionStart;
 
     if (value.length > 3) {
       value = value.slice(0, 3) + ' ' + value.slice(3);
-      cursorPos++; 
+      cursorPos++;
     }
 
-    if (value.length > 8) { 
+    if (value.length > 8) {
       value = value.slice(0, 8) + ' ' + value.slice(8);
-      if (cursorPos > 8) cursorPos++;  
+      cursorPos++;
     }
 
     const digitsOnly = value.replace(/\D/g, '').slice(0, 11);
@@ -120,6 +121,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!Array.isArray(departments)) departments = [];
       if (!Array.isArray(jobPositions)) jobPositions = [];
 
+      // Build rate map for quick lookup
+      positionRateMap = {};
+      jobPositions.forEach(pos => {
+        positionRateMap[pos.id] = parseFloat(pos.rate_per_hour) || 0;
+      });
+
       filterDepartment.innerHTML = '<option value="">All Departments</option>' + departments.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
       filterJobPosition.innerHTML = '<option value="">All Job Positions</option>' + jobPositions.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
 
@@ -138,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function fetchEmployees() {
-    employeeListContainer.innerHTML = '<p style="text-align: center; color: #666;">Loading employees...</p>'; 
+    employeeListContainer.innerHTML = '<p style="text-align: center; color: #666;">Loading employees...</p>';
 
     try {
       const response = await fetch(`${API_BASE}?action=list_employees`);
@@ -146,20 +153,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
-      const responseData = await response.json(); 
-      console.log('Raw JSON response:', responseData);  
+      const responseData = await response.json();
+      console.log('Raw JSON response:', responseData);
       if (!responseData || typeof responseData !== 'object') {
         throw new Error('Invalid response format: Not an object');
       }
       if (!responseData.success) {
         throw new Error(responseData.message || 'Failed to fetch employees');
       }
-      const employees = responseData.data || [];  
-      console.log('Data type:', typeof employees);  
+      const employees = responseData.data || [];
+      console.log('Data type:', typeof employees);
       console.log('Employees length:', employees.length);
       if (employees.length > 0) {
-        console.log('First employee ID type:', typeof employees[0].id);  
-        console.log('Processing employee:', employees[0]); 
+        console.log('First employee ID type:', typeof employees[0].id);
+        console.log('Processing employee:', employees[0]);
       }
       if (!Array.isArray(employees)) {
         throw new Error('Invalid response format: Data is not an array');
@@ -173,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderEmployeeCards(employees) {
-    employeeListContainer.innerHTML = '';  
+    employeeListContainer.innerHTML = '';
     if (employees.length === 0) {
       employeeListContainer.innerHTML = '<p style="text-align: center; color: #666;">No employees found.</p>';
       return;
@@ -258,11 +265,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('update-address').value = employeeData.address || '';
     document.getElementById('update-email').value = employeeData.email || '';
     document.getElementById('update-contact-number').value = formatPhoneForDisplay(employeeData.contact_number || '') || '';
-    document.getElementById('update-rate-per-hour').value = parseFloat(employeeData.rate_per_hour) || 0.00;
+    // Auto-set rate based on current job position
+    const currentPosId = employeeData.job_position_id;
+    document.getElementById('update-rate-per-hour').value = positionRateMap[currentPosId] || 0.00;
     document.getElementById('update-gender').value = employeeData.gender || '';
     document.getElementById('update-marital-status').value = employeeData.marital_status || 'Single';
     document.getElementById('update-department').value = employeeData.department_id || '';
-    document.getElementById('update-job-position').value = employeeData.job_position_id || '';
+    document.getElementById('update-job-position').value = currentPosId || '';
     document.getElementById('update-annual-paid-leave-days').value = parseInt(employeeData.annual_paid_leave_days, 10) || 15;
     document.getElementById('update-annual-unpaid-leave-days').value = parseInt(employeeData.annual_unpaid_leave_days, 10) || 5;
     document.getElementById('update-annual-sick-leave-days').value = parseInt(employeeData.annual_sick_leave_days, 10) || 10;
@@ -270,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('update-emergency-phone').value = formatPhoneForDisplay(employeeData.emergency_contact_phone || '') || '';
     document.getElementById('update-emergency-relationship').value = employeeData.emergency_contact_relationship || '';
 
-    const previewImg = document.getElementById('update-avatar-preview-img'); 
+    const previewImg = document.getElementById('update-avatar-preview-img');
     if (!previewImg) {
       console.error('Update avatar preview img not found!');
       return;
@@ -278,18 +287,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let avatarSrc;
     if (employeeData.avatar_path && employeeData.avatar_path.trim() !== '') {
-      avatarSrc = employeeData.avatar_path; 
+      avatarSrc = employeeData.avatar_path;
     } else {
-      avatarSrc = 'img/user.jpg'; 
+      avatarSrc = 'img/user.jpg';
     }
 
-    previewImg.src = '';  
+    previewImg.src = '';
     previewImg.alt = 'Loading employee avatar preview...';
 
     setTimeout(() => {
       previewImg.src = avatarSrc;
       previewImg.alt = 'Employee avatar preview';
-    }, 50);  
+    }, 50);
 
     console.log('Update Modal: Setting avatar src to:', avatarSrc);
     console.log('Update Modal: DB avatar_path:', employeeData.avatar_path);
@@ -297,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     previewImg.onerror = function () {
       console.warn('Update avatar preview failed to load (ID:', employeeData.id, '), falling back to default');
-      this.src = 'img/user.jpg'; 
+      this.src = 'img/user.jpg';
       this.alt = 'Default avatar preview';
     };
 
@@ -327,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const matchesSearch = name.includes(searchTerm);
       const matchesDepartment = !departmentFilter || department === departmentFilter;
-            const matchesJobPosition = !jobPositionFilter || jobPosition === jobPositionFilter;
+      const matchesJobPosition = !jobPositionFilter || jobPosition === jobPositionFilter;
 
       if (matchesSearch && matchesDepartment && matchesJobPosition) {
         card.style.display = '';
@@ -417,8 +426,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const result = await response.json();
       if (result.success) {
-        showToast(result.message || 'Employee deleted successfully.', 'success'); 
-        fetchEmployees();  
+        showToast(result.message || 'Employee deleted successfully.', 'success');
+        fetchEmployees();
       } else {
         showToast('Error: ' + (result.message || 'Failed to delete employee'), 'error');
       }
@@ -487,6 +496,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Auto-populate rate on job position change in add modal
+  document.getElementById('job-position').addEventListener('change', (e) => {
+    const selectedId = e.target.value;
+    document.getElementById('rate-per-hour').value = positionRateMap[selectedId] || 0.00;
+  });
+
   addEmployeeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -524,7 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const formData = new FormData(addEmployeeForm);
-    formData.append('action', 'add_employee');  
+    formData.append('action', 'add_employee');
     const cleanedContact = cleanPhoneNumber(contactNumber);
     const cleanedEmergencyPhone = cleanPhoneNumber(emergencyPhone);
     formData.set('contact_number', cleanedContact);
@@ -547,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const result = await response.json();
       if (result.success) {
-        showToast(result.message || 'Employee added successfully.', 'success'); 
+        showToast(result.message || 'Employee added successfully.', 'success');
         addModal.setAttribute('aria-hidden', 'true');
         addEmployeeForm.reset();
         document.getElementById('marital-status').value = 'Single';
@@ -559,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('emergency-phone').value = '';
         document.getElementById('emergency-relationship').value = '';
         addAvatarPreviewImg.src = 'img/user.jpg';
-        fetchEmployees();  
+        fetchEmployees();
       } else {
         showToast('Error: ' + (result.message || 'Failed to add employee'), 'error');
       }
@@ -617,6 +632,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Auto-populate rate on job position change in update modal
+  document.getElementById('update-job-position').addEventListener('change', (e) => {
+    const selectedId = e.target.value;
+    document.getElementById('update-rate-per-hour').value = positionRateMap[selectedId] || 0.00;
+  });
+
   updateEmployeeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -661,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const formData = new FormData(updateEmployeeForm);
     formData.append('action', 'edit_employee');
-    formData.append('id', id);  
+    formData.append('id', id);
 
     const cleanedContact = contactNumber ? cleanPhoneNumber(contactNumber) : '';
     const cleanedEmergencyPhone = emergencyPhone ? cleanPhoneNumber(emergencyPhone) : '';
@@ -687,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const result = await response.json();
       if (result.success) {
-        showToast(result.message || 'Employee updated successfully.', 'success');  
+        showToast(result.message || 'Employee updated successfully.', 'success');
         updateModal.setAttribute('aria-hidden', 'true');
         updateEmployeeForm.reset();
         document.getElementById('update-marital-status').value = 'Single';
@@ -699,7 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('update-emergency-phone').value = '';
         document.getElementById('update-emergency-relationship').value = '';
         updateAvatarPreviewImg.src = 'img/user.jpg';
-        fetchEmployees();  
+        fetchEmployees();
       } else {
         showToast('Error: ' + (result.message || 'Failed to update employee'), 'error');
       }
