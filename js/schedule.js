@@ -1,3 +1,25 @@
+const API_BASE = '/eaaps/views/schedules.php';  // Backend endpoint
+
+function showToast(message, type = 'info') {
+  let toast = document.getElementById('toast-notification');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast-notification';
+    toast.style.cssText = `
+      position: fixed; top: 20px; right: 20px; padding: 12px 20px; 
+      background: #333; color: white; border-radius: 4px; z-index: 1000; 
+      display: none; min-width: 300px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      font-size: 14px; text-align: center;
+    `;
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = message;
+  toast.style.background = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#333';
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 4000);
+}
+
 const employeeSelect = document.getElementById('employee-select');
 const weeklyScheduleContainer = document.getElementById('weekly-schedule-container');
 const scheduleModal = document.getElementById('schedule-modal');
@@ -16,33 +38,10 @@ const searchBtn = document.getElementById('employee-search-btn');
 const filterJobPosition = document.getElementById('filter-job-position');
 const filterDepartment = document.getElementById('filter-department');
 
-// --- Mock Data ---
-let employees = [
-  { id: 'emp_01', name: 'Francis Rivas (Instructor)', jobPosition: 'Instructor', department: 'Math' },
-  { id: 'emp_02', name: 'Adela Onlao (Instructor)', jobPosition: 'Instructor', department: 'Physics' },
-  { id: 'emp_03', name: 'John Smith', jobPosition: 'Developer', department: 'IT' },
-  { id: 'emp_04', name: 'Jane Doe', jobPosition: 'Designer', department: 'Marketing' }
-];
-
-let weeklySchedule = {
-  'emp_01': {
-    3: [{ id: 'shift_01', employeeId: 'emp_01', dayOfWeek: 3, start: '09:00', end: '11:00', details: 'Math' }],
-    4: [{ id: 'shift_02', employeeId: 'emp_01', dayOfWeek: 4, start: '13:00', end: '15:00', details: 'Physics' }],
-  },
-  'emp_02': {
-    1: [{ id: 'shift_03', employeeId: 'emp_02', dayOfWeek: 1, start: '10:00', end: '14:00', details: 'Register Duty' }],
-  },
-  'emp_03': {
-    2: [{ id: 'shift_04', employeeId: 'emp_03', dayOfWeek: 2, start: '09:00', end: '17:00', details: 'Development' }],
-  },
-  'emp_04': {
-    5: [{ id: 'shift_05', employeeId: 'emp_04', dayOfWeek: 5, start: '11:00', end: '16:00', details: 'Design Work' }],
-  }
-};
-
+let employees = [];
+let weeklySchedule = {};  // Will be populated from API
 let selectedDayOfWeek = null;
 let selectedShiftId = null;
-let nextShiftId = 6;
 
 const COLORS = [
   'bg-blue-500', 'bg-green-500', 'bg-purple-500',
@@ -78,6 +77,53 @@ function populateFilters() {
     option.textContent = dep;
     filterDepartment.appendChild(option);
   });
+}
+
+// --- Fetch Employees ---
+async function fetchEmployees() {
+  try {
+    const response = await fetch(`${API_BASE}?action=list_employees`);
+    if (!response.ok) throw new Error('Failed to fetch employees');
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message || 'Error fetching employees');
+    employees = data.data.map(emp => ({
+      id: emp.id,
+      name: `${emp.first_name} ${emp.last_name} (${emp.position_name})`,
+      jobPosition: emp.position_name,
+      department: emp.department_name
+    }));
+    populateFilters();
+    renderEmployeeOptions();
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    showToast('Failed to load employees.', 'error');
+  }
+}
+
+// --- Fetch Schedules for Employee ---
+async function fetchSchedules(employeeId) {
+  try {
+    const response = await fetch(`${API_BASE}?action=list_schedules&employee_id=${employeeId}`);
+    if (!response.ok) throw new Error('Failed to fetch schedules');
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message || 'Error fetching schedules');
+    weeklySchedule[employeeId] = {};
+    data.data.forEach(schedule => {
+      const day = schedule.day_of_week;
+      if (!weeklySchedule[employeeId][day]) weeklySchedule[employeeId][day] = [];
+      weeklySchedule[employeeId][day].push({
+        id: schedule.id,
+        employeeId: schedule.employee_id,
+        dayOfWeek: day,
+        start: schedule.start_time,
+        end: schedule.end_time,
+        details: schedule.shift_name
+      });
+    });
+  } catch (error) {
+    console.error('Error fetching schedules:', error);
+    showToast('Failed to load schedules.', 'error');
+  }
 }
 
 // --- Render Employee Options ---
@@ -119,6 +165,12 @@ function renderWeeklySchedule() {
   const selectedEmployeeId = employeeSelect.value;
   if (!selectedEmployeeId) return;
 
+  // Fetch schedules if not already loaded
+  if (!weeklySchedule[selectedEmployeeId]) {
+    fetchSchedules(selectedEmployeeId).then(() => renderWeeklySchedule());
+    return;
+  }
+
   const employeeSchedule = weeklySchedule[selectedEmployeeId] || {};
 
   for (let day = 0; day < 7; day++) {
@@ -142,7 +194,7 @@ function renderWeeklySchedule() {
       deleteBtn.innerHTML = '&times;';
       deleteBtn.onclick = e => {
         e.stopPropagation();
-        deleteWeeklyTemplate(shift.id, selectedEmployeeId);
+        deleteSchedule(shift.id, selectedEmployeeId);
       };
       shiftBadge.appendChild(deleteBtn);
       dayCard.appendChild(shiftBadge);
@@ -161,38 +213,62 @@ function renderWeeklySchedule() {
 }
 
 // --- CRUD Functions ---
-function saveWeeklyTemplate(templateData) {
-  const { employeeId, dayOfWeek } = templateData;
+async function saveSchedule(scheduleData) {
+  try {
+    const action = selectedShiftId ? 'update_schedule' : 'add_schedule';
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('employee_id', scheduleData.employeeId);
+    formData.append('day_of_week', scheduleData.dayOfWeek);
+    formData.append('shift_name', scheduleData.details);
+    formData.append('start_time', scheduleData.start);
+    formData.append('end_time', scheduleData.end);
+    if (selectedShiftId) formData.append('id', selectedShiftId);
 
-  if (!weeklySchedule[employeeId]) weeklySchedule[employeeId] = {};
-  if (!weeklySchedule[employeeId][dayOfWeek]) weeklySchedule[employeeId][dayOfWeek] = [];
-
-  if (selectedShiftId) {
-    const shiftIndex = weeklySchedule[employeeId][dayOfWeek].findIndex(s => s.id === selectedShiftId);
-    if (shiftIndex !== -1) {
-      weeklySchedule[employeeId][dayOfWeek][shiftIndex] = { ...templateData, id: selectedShiftId };
+    const response = await fetch(API_BASE, { method: 'POST', body: formData });
+    let errorMessage = 'Failed to save schedule.';
+    if (!response.ok) {
+      try {
+        const data = await response.json();
+        errorMessage = data.message || errorMessage;
+      } catch (e) {
+        // If not JSON, keep generic message
+      }
+      throw new Error(errorMessage);
     }
-  } else {
-    const newShift = { ...templateData, id: `shift_${nextShiftId++}` };
-    weeklySchedule[employeeId][dayOfWeek].push(newShift);
-  }
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message || 'Error saving schedule');
 
-  renderWeeklySchedule();
-  closeModal();
+    showToast('Schedule saved successfully.', 'success');
+    // Refresh schedules for the employee
+    await fetchSchedules(scheduleData.employeeId);
+    renderWeeklySchedule();
+    closeModal();
+  } catch (error) {
+    console.error('Error saving schedule:', error);
+    showToast(error.message, 'error');  // Now shows the specific backend error
+  }
 }
 
-function deleteWeeklyTemplate(shiftId, employeeId) {
-  const employeeSchedule = weeklySchedule[employeeId];
-  if (employeeSchedule) {
-    for (const day in employeeSchedule) {
-      const shifts = employeeSchedule[day];
-      const index = shifts.findIndex(s => s.id === shiftId);
-      if (index !== -1) {
-        shifts.splice(index, 1);
-        break;
-      }
-    }
+
+async function deleteSchedule(shiftId, employeeId) {
+  try {
+    const formData = new FormData();
+    formData.append('action', 'delete_schedule');
+    formData.append('id', shiftId);
+
+    const response = await fetch(API_BASE, { method: 'POST', body: formData });
+    if (!response.ok) throw new Error('Failed to delete schedule');
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message || 'Error deleting schedule');
+
+    showToast('Schedule deleted successfully.', 'success');
+    // Refresh schedules
+    await fetchSchedules(employeeId);
     renderWeeklySchedule();
+  } catch (error) {
+    console.error('Error deleting schedule:', error);
+    showToast('Failed to delete schedule.', 'error');
   }
 }
 
@@ -230,31 +306,43 @@ function closeModal() {
 
 // --- Event Listeners ---
 document.addEventListener('DOMContentLoaded', () => {
-  populateFilters();
-  renderEmployeeOptions();
+  fetchEmployees();
 });
 
 employeeSelect.addEventListener('change', renderWeeklySchedule);
 closeModalBtn.addEventListener('click', closeModal);
 
 saveShiftBtn.addEventListener('click', () => {
-  const templateData = {
+  const details = modalShiftDetailsInput.value.trim();
+  const start = modalShiftStartInput.value;
+  const end = modalShiftEndInput.value;
+
+  if (!details) {
+    showToast('Please enter the shift/class name.', 'error');
+    modalShiftDetailsInput.focus();
+    return;
+  }
+  if (!start || !end) {
+    showToast('Please enter start and end times.', 'error');
+    if (!start) modalShiftStartInput.focus();
+    else modalShiftEndInput.focus();
+    return;
+  }
+
+  const scheduleData = {
     employeeId: employeeSelect.value,
     dayOfWeek: selectedDayOfWeek,
-    start: modalShiftStartInput.value,
-    end: modalShiftEndInput.value,
-    details: modalShiftDetailsInput.value,
+    start: start,
+    end: end,
+    details: details,
   };
-  if (templateData.start && templateData.end) {
-    saveWeeklyTemplate(templateData);
-  } else {
-    alert('Please enter start and end times.');
-  }
+  saveSchedule(scheduleData);
 });
+
 
 deleteShiftBtn.addEventListener('click', () => {
   if (selectedShiftId) {
-    deleteWeeklyTemplate(selectedShiftId, employeeSelect.value);
+    deleteSchedule(selectedShiftId, employeeSelect.value);
     closeModal();
   }
 });

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 13, 2025 at 03:26 AM
+-- Generation Time: Nov 08, 2025 at 09:22 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -38,6 +38,8 @@ CREATE TABLE `attendance_logs` (
   `partial_absence_hours` decimal(5,2) DEFAULT 0.00,
   `status` enum('Present','Absent','Late','On Leave','Undertime') DEFAULT 'Present',
   `snapshot_path` varchar(500) DEFAULT NULL,
+  `check_type` enum('in','out') DEFAULT 'in',
+  `is_synced` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -75,8 +77,8 @@ CREATE TABLE `departments` (
 --
 
 INSERT INTO `departments` (`id`, `name`, `created_at`, `updated_at`) VALUES
-(1, 'Computer Engineering', '2025-09-25 15:13:02', '2025-09-25 15:13:02'),
-(4, 'IT', '2025-09-25 15:13:02', '2025-09-25 15:13:02');
+(7, 'Computer Engineering', '2025-11-08 04:44:38', '2025-11-08 04:44:38'),
+(8, 'Education', '2025-11-08 04:45:06', '2025-11-08 04:45:06');
 
 -- --------------------------------------------------------
 
@@ -108,14 +110,6 @@ CREATE TABLE `employees` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `employees`
---
-
-INSERT INTO `employees` (`id`, `first_name`, `last_name`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`) VALUES
-(15, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexandersias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'brother', '2025-09-28', 1, 7, 123.00, 15, 5, 10, 'uploads/avatars/emp_15_1759069867.jpg', '2025-09-28 14:30:49', '2025-10-04 14:00:19'),
-(16, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexander123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'brother', '2025-10-01', 1, 1, 100.00, 15, 5, 10, 'uploads/avatars/emp_1759276204_68dc6cac9d4a0.png', '2025-09-30 23:50:04', '2025-10-05 03:29:06');
 
 -- --------------------------------------------------------
 
@@ -182,22 +176,6 @@ CREATE TABLE `payroll` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `pending_operations`
---
-
-CREATE TABLE `pending_operations` (
-  `id` int(11) NOT NULL,
-  `operation_type` enum('add','update','delete') NOT NULL,
-  `employee_id` int(11) NOT NULL,
-  `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`data`)),
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `synced` tinyint(4) DEFAULT 0,
-  `attempts` int(11) DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `qr_codes`
 --
 
@@ -208,14 +186,6 @@ CREATE TABLE `qr_codes` (
   `qr_image_path` varchar(500) NOT NULL,
   `generated_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `qr_codes`
---
-
-INSERT INTO `qr_codes` (`id`, `employee_id`, `qr_data`, `qr_image_path`, `generated_at`) VALUES
-(11, 15, 'ID:15|First:Alexander|Last:Osias|Position:Cashier|Joined:2025-09-28', 'qrcodes/AlexanderOsias.png', '2025-10-04 14:00:20'),
-(13, 16, 'ID:16|First:Alexander|Last:Osias|Position:Instructor|Joined:2025-10-01', 'qrcodes/AlexanderOsias_16_1.png', '2025-10-05 03:29:06');
 
 -- --------------------------------------------------------
 
@@ -396,14 +366,6 @@ ALTER TABLE `payroll`
   ADD KEY `idx_paid_status` (`paid_status`);
 
 --
--- Indexes for table `pending_operations`
---
-ALTER TABLE `pending_operations`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_type_synced` (`operation_type`,`synced`),
-  ADD KEY `idx_employee` (`employee_id`);
-
---
 -- Indexes for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
@@ -480,7 +442,7 @@ ALTER TABLE `departments`
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `job_positions`
@@ -501,16 +463,10 @@ ALTER TABLE `payroll`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `pending_operations`
---
-ALTER TABLE `pending_operations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
-
---
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `schedules`
@@ -556,50 +512,50 @@ ALTER TABLE `users`
 -- Constraints for table `attendance_logs`
 --
 ALTER TABLE `attendance_logs`
-  ADD CONSTRAINT `attendance_logs_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_attendance_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `employees`
 --
 ALTER TABLE `employees`
-  ADD CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`),
-  ADD CONSTRAINT `employees_ibfk_2` FOREIGN KEY (`job_position_id`) REFERENCES `job_positions` (`id`);
+  ADD CONSTRAINT `fk_employees_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_employees_jobposition` FOREIGN KEY (`job_position_id`) REFERENCES `job_positions` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `password_resets`
 --
 ALTER TABLE `password_resets`
-  ADD CONSTRAINT `password_resets_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_passwordresets_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `payroll`
 --
 ALTER TABLE `payroll`
-  ADD CONSTRAINT `payroll_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_payroll_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  ADD CONSTRAINT `qr_codes_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_qrcodes_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `schedules`
 --
 ALTER TABLE `schedules`
-  ADD CONSTRAINT `schedules_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_schedules_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `snapshots`
 --
 ALTER TABLE `snapshots`
-  ADD CONSTRAINT `snapshots_ibfk_1` FOREIGN KEY (`attendance_log_id`) REFERENCES `attendance_logs` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_snapshots_attendance` FOREIGN KEY (`attendance_log_id`) REFERENCES `attendance_logs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `users`
 --
 ALTER TABLE `users`
-  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL;
+  ADD CONSTRAINT `fk_users_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

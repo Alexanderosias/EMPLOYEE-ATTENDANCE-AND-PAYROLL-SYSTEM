@@ -1,233 +1,206 @@
-const employeesData = [
-      {
-        id: "E001",
-        name: "Francis Rivas",
-        qrCodes: ["QR Code 1"],
-        snapshots: [
-          { date: "2025-09-15", time: "08:00 AM", image: "Snapshot 1" },
-          { date: "2025-09-16", time: "09:30 AM", image: "Snapshot 2" },
-          { date: "2025-09-17", time: "10:00 AM", image: "Snapshot 3" },
-          { date: "2025-09-18", time: "11:00 AM", image: "Snapshot 4" },
-          { date: "2025-09-19", time: "12:00 PM", image: "Snapshot 5" },
-        ],
-      },
-      {
-        id: "E002",
-        name: "Adela Onlao",
-        qrCodes: ["QR Code 1"],
-        snapshots: [
-          { date: "2025-09-15", time: "08:15 AM", image: "Snapshot 1" },
-          { date: "2025-09-16", time: "11:00 AM", image: "Snapshot 2" },
-          { date: "2025-09-17", time: "12:30 PM", image: "Snapshot 3" },
-          { date: "2025-09-18", time: "01:00 PM", image: "Snapshot 4" },
-        ],
-      },
-      {
-        id: "E002",
-        name: "Ciala Dismaya",
-        qrCodes: ["QR Code 1"],
-        snapshots: [
-          { date: "2025-09-15", time: "08:15 AM", image: "Snapshot 1" },
-          { date: "2025-09-16", time: "11:00 AM", image: "Snapshot 2" },
-          { date: "2025-09-17", time: "12:30 PM", image: "Snapshot 3" },
-          { date: "2025-09-18", time: "01:00 PM", image: "Snapshot 4" },
-        ],
-      },
-    ];
+const API_BASE = '/eaaps/views/qr_snapshots.php';  // Backend endpoint
 
-    const employeesContainer = document.getElementById("employees-container");
-    const modal = document.getElementById("snapshot-modal");
-    const modalCloseBtn = document.getElementById("modal-close-btn");
-    const modalEmployeeName = document.getElementById("modal-employee-name");
-    const modalSnapshotsContainer = document.getElementById("modal-snapshots-container");
-    const fullscreenOverlay = document.getElementById("fullscreen-overlay");
-    const fullscreenImage = fullscreenOverlay.querySelector("img");
+let employeesData = [];  // Will be populated from API
 
-    function createEmployeeCard(employee) {
-      const card = document.createElement("div");
-      card.className = "employee-card";
+const employeesContainer = document.getElementById("employees-container");
+const modal = document.getElementById("snapshot-modal");
+const modalCloseBtn = document.getElementById("modal-close-btn");
+const modalEmployeeName = document.getElementById("modal-employee-name");
+const modalSnapshotsContainer = document.getElementById("modal-snapshots-container");
+const fullscreenOverlay = document.getElementById("fullscreen-overlay");
+const fullscreenImage = fullscreenOverlay.querySelector("img");
 
-      // Employee header
-      const header = document.createElement("h3");
-      header.className = "text-lg font-semibold";
-      header.textContent = `${employee.name} (${employee.id})`;
-      card.appendChild(header);
+async function fetchEmployeesData() {
+  try {
+    const response = await fetch(`${API_BASE}?action=list_employees_qr_snapshots`);
+    if (!response.ok) throw new Error('Failed to fetch data');
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+    employeesData = result.data || [];
+    renderEmployees();
+  } catch (error) {
+    console.error('Error fetching employees data:', error);
+    employeesContainer.innerHTML = '<p class="text-red-500">Failed to load data. Please try again.</p>';
+  }
+}
 
-      // QR and snapshot preview row
-      const row = document.createElement("div");
-      row.className = "qr-snapshot-row";
+function createEmployeeCard(employee) {
+  const card = document.createElement("div");
+  card.className = "employee-card";
 
-      // QR Codes container (show all QR codes horizontally)
-      const qrContainer = document.createElement("div");
-      qrContainer.className = "qr-code";
+  // Employee header
+  const header = document.createElement("h3");
+  header.className = "text-lg font-semibold";
+  header.textContent = `${employee.first_name} ${employee.last_name} (${employee.id})`;
+  card.appendChild(header);
 
-      employee.qrCodes.forEach((qr) => {
-        const qrText = document.createElement("div");
-        qrText.textContent = qr;
-        qrContainer.appendChild(qrText);
-      });
+  // QR and snapshot preview row
+  const row = document.createElement("div");
+  row.className = "qr-snapshot-row";
+
+  // QR Codes container
+  const qrContainer = document.createElement("div");
+  qrContainer.className = "qr-code";
+
+  if (employee.qr_image_path) {
+    const qrImg = document.createElement("img");
+    qrImg.src = `${employee.qr_image_path}`;  // Adjusted path
+    qrImg.alt = "QR Code";
+    qrImg.style.width = "100px";
+    qrImg.style.height = "100px";
+    qrImg.onerror = () => qrContainer.textContent = "QR Image not found";
+    qrContainer.appendChild(qrImg);
+
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "save-qr-btn";
+    saveBtn.textContent = "Save QR";
+    saveBtn.addEventListener("click", () => {
+      const link = document.createElement('a');
+      link.href = `${employee.qr_image_path}`;
+      link.download = `qr_${employee.id}.png`;
+      link.click();
+    });
+    qrContainer.appendChild(saveBtn);
+  } else {
+    qrContainer.textContent = "No QR Code";
+  }
+
+  row.appendChild(qrContainer);
+
+  // Snapshot preview (show first snapshot or placeholder)
+  const preview = document.createElement("div");
+  preview.className = "snapshot-preview";
+  if (employee.snapshots && employee.snapshots.length > 0 && employee.snapshots[0] && employee.snapshots[0].image_path) {
+    const firstSnap = employee.snapshots[0];
+    const img = document.createElement("img");
+    img.src = `${firstSnap.image_path}`;  // Adjusted to match QR fix
+    img.alt = "Snapshot Preview";
+    img.style.width = "100px";
+    img.style.height = "100px";
+    img.style.objectFit = "cover";
+    img.onerror = () => preview.textContent = "Snapshot not found";
+    preview.appendChild(img);
+  } else {
+    preview.textContent = "No snapshots";
+  }
+  preview.title = "Click to enlarge preview";
+  preview.style.userSelect = "none";
+
+  // Clicking preview opens fullscreen of first snapshot if exists
+  preview.addEventListener("click", () => {
+    if (employee.snapshots && employee.snapshots.length > 0 && employee.snapshots[0] && employee.snapshots[0].image_path) {
+      openFullscreen(`${employee.snapshots[0].image_path}`);
+    }
+  });
+
+  row.appendChild(preview);
+
+  card.appendChild(row);
+
+  // View All Snapshots button
+  const viewAllBtn = document.createElement("button");
+  viewAllBtn.className = "view-all-btn";
+  const snapCount = employee.snapshots ? employee.snapshots.length : 0;
+  viewAllBtn.textContent = `View All Snapshots (${snapCount})`;
+  viewAllBtn.disabled = snapCount === 0;
+
+  viewAllBtn.addEventListener("click", () => openModal(employee));
+
+  card.appendChild(viewAllBtn);
+
+  return card;
+}
+
+function openModal(employee) {
+  modalEmployeeName.textContent = `${employee.first_name} ${employee.last_name} (${employee.id})`;
+  modalSnapshotsContainer.innerHTML = "";
+
+  if (!employee.snapshots || employee.snapshots.length === 0) {
+    modalSnapshotsContainer.innerHTML = "<p>No snapshots available.</p>";
+  } else {
+    // Sort snapshots by captured_at descending
+    const sortedSnapshots = [...employee.snapshots].sort((a, b) => new Date(b.captured_at) - new Date(a.captured_at));
+
+    sortedSnapshots.forEach((snap) => {
+      if (!snap || !snap.image_path) return;  // Skip null snapshots
+      const snapCard = document.createElement("div");
+      snapCard.className = "modal-snapshot-card";
+
+      const snapImg = document.createElement("img");
+      snapImg.src = `/snapshots/${snap.image_path}`;  // Adjusted
+      snapImg.alt = "Snapshot";
+      snapImg.className = "modal-snapshot-img";
+      snapImg.style.width = "150px";
+      snapImg.style.height = "150px";
+      snapImg.style.objectFit = "cover";
+      snapImg.onerror = () => snapCard.innerHTML = "<p>Snapshot not found</p>";
+      snapCard.appendChild(snapImg);
+
+      const snapInfo = document.createElement("div");
+      snapInfo.className = "modal-snapshot-info";
+      snapInfo.innerHTML = `Captured: ${new Date(snap.captured_at).toLocaleString()}`;
+      snapCard.appendChild(snapInfo);
+
+      const btns = document.createElement("div");
+      btns.className = "modal-btns";
 
       const saveBtn = document.createElement("button");
-      saveBtn.className = "save-qr-btn";
-      saveBtn.textContent = "Save QR";
-      saveBtn.addEventListener("click", () => {
-        alert(`Save QR code for ${employee.name}`);
-        // Implement actual save logic here
+      saveBtn.className = "save-snapshot-btn";
+      saveBtn.textContent = "Save";
+      saveBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const link = document.createElement('a');
+        link.href = `/snapshots/${snap.image_path}`;
+        link.download = `snapshot_${employee.id}_${new Date(snap.captured_at).getTime()}.png`;
+        link.click();
       });
-      qrContainer.appendChild(saveBtn);
+      btns.appendChild(saveBtn);
 
-      row.appendChild(qrContainer);
+      snapCard.appendChild(btns);
 
-      // Snapshot preview (show first snapshot or placeholder)
-      const preview = document.createElement("div");
-      preview.className = "snapshot-preview";
-      preview.textContent = employee.snapshots.length > 0 ? employee.snapshots[0].image : "No snapshots";
-      preview.title = "Click to enlarge preview";
-      preview.style.userSelect = "none";
-
-      // Clicking preview opens fullscreen of first snapshot if exists
-      preview.addEventListener("click", () => {
-        if (employee.snapshots.length > 0) {
-          openFullscreen(employee.snapshots[0].image);
-        }
+      // Clicking snapshot opens fullscreen
+      snapCard.addEventListener("click", () => {
+        openFullscreen(`/snapshots/${snap.image_path}`);
       });
 
-      row.appendChild(preview);
-
-      card.appendChild(row);
-
-      // View All Snapshots button
-      const viewAllBtn = document.createElement("button");
-      viewAllBtn.className = "view-all-btn";
-      viewAllBtn.textContent = `View All Snapshots (${employee.snapshots.length})`;
-      viewAllBtn.disabled = employee.snapshots.length === 0;
-
-      viewAllBtn.addEventListener("click", () => openModal(employee));
-
-      card.appendChild(viewAllBtn);
-
-      return card;
-    }
-
-    function openModal(employee) {
-      modalEmployeeName.textContent = `${employee.name} (${employee.id})`;
-      modalSnapshotsContainer.innerHTML = "";
-
-      // Sort snapshots by date/time ascending
-      const sortedSnapshots = [...employee.snapshots].sort((a, b) => {
-        const dateA = new Date(`${a.date} ${a.time}`);
-        const dateB = new Date(`${b.date} ${b.time}`);
-        return dateA - dateB;
-      });
-
-      sortedSnapshots.forEach((snap) => {
-        const snapCard = document.createElement("div");
-        snapCard.className = "modal-snapshot-card";
-
-        const snapImg = document.createElement("div");
-        snapImg.className = "modal-snapshot-img";
-        snapImg.textContent = snap.image;
-        snapCard.appendChild(snapImg);
-
-        const snapInfo = document.createElement("div");
-        snapInfo.className = "modal-snapshot-info";
-        snapInfo.innerHTML = `Date: ${snap.date}<br>Time: ${snap.time}`;
-        snapCard.appendChild(snapInfo);
-
-        const btns = document.createElement("div");
-        btns.className = "modal-btns";
-
-        const saveBtn = document.createElement("button");
-        saveBtn.className = "save-snapshot-btn";
-        saveBtn.textContent = "Save";
-        saveBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          alert(`Save snapshot for ${employee.name} on ${snap.date} at ${snap.time}`);
-          // Implement actual save logic here
-        });
-        btns.appendChild(saveBtn);
-
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "delete-snapshot-btn";
-        deleteBtn.textContent = "Delete";
-        deleteBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          if (confirm(`Delete snapshot for ${employee.name} on ${snap.date} at ${snap.time}?`)) {
-            // Remove from employee data
-            employee.snapshots.splice(employee.snapshots.indexOf(snap), 1);
-            // Remove from modal UI
-            snapCard.remove();
-            // Update preview and button on main card
-            updateEmployeeCard(employee);
-          }
-        });
-        btns.appendChild(deleteBtn);
-
-        snapCard.appendChild(btns);
-
-        // Clicking snapshot card image opens fullscreen
-        snapCard.addEventListener("click", () => {
-          openFullscreen(snap.image);
-        });
-
-        modalSnapshotsContainer.appendChild(snapCard);
-      });
-
-      modal.classList.add("flex");
-      modal.classList.remove("hidden");
-    }
-
-    function closeModal() {
-      modal.classList.remove("flex");
-      modal.classList.add("hidden");
-    }
-
-    modalCloseBtn.addEventListener("click", closeModal);
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal();
+      modalSnapshotsContainer.appendChild(snapCard);
     });
+  }
 
-    // Fullscreen overlay open
-    function openFullscreen(imageText) {
-      fullscreenImage.textContent = imageText;
-      fullscreenOverlay.style.display = "flex";
-    }
+  modal.classList.add("flex");
+  modal.classList.remove("hidden");
+}
 
-    // Fullscreen overlay close
-    fullscreenOverlay.addEventListener("click", () => {
-      fullscreenOverlay.style.display = "none";
-      fullscreenImage.src = "";
-      fullscreenImage.textContent = "";
-    });
+function closeModal() {
+  modal.classList.remove("flex");
+  modal.classList.add("hidden");
+}
 
-    // Render all employees initially
-    function renderEmployees() {
-      employeesContainer.innerHTML = "";
-      employeesData.forEach(emp => {
-        const card = createEmployeeCard(emp);
-        employeesContainer.appendChild(card);
-      });
-    }
+modalCloseBtn.addEventListener("click", closeModal);
+modal.addEventListener("click", (e) => {
+  if (e.target === modal) closeModal();
+});
 
-    // Update employee card preview and button after snapshot deletion
-    function updateEmployeeCard(employee) {
-      // Find the card in DOM by employee id
-      const cards = [...employeesContainer.children];
-      const card = cards.find(c => c.querySelector("h3").textContent.includes(employee.id));
-      if (!card) return;
+// In openFullscreen
+function openFullscreen(imageSrc) {
+  fullscreenImage.src = imageSrc;
+  fullscreenOverlay.style.display = "flex";
+}
 
-      // Update snapshot preview
-      const preview = card.querySelector(".snapshot-preview");
-      if (employee.snapshots.length > 0) {
-        preview.textContent = employee.snapshots[0].image;
-      } else {
-        preview.textContent = "No snapshots";
-      }
+// Fullscreen overlay close
+fullscreenOverlay.addEventListener("click", () => {
+  fullscreenOverlay.style.display = "none";
+  fullscreenImage.src = "";
+});
 
-      // Update view all button
-      const viewAllBtn = card.querySelector(".view-all-btn");
-      viewAllBtn.textContent = `View All Snapshots (${employee.snapshots.length})`;
-      viewAllBtn.disabled = employee.snapshots.length === 0;
-    }
+// Render all employees
+function renderEmployees() {
+  employeesContainer.innerHTML = "";
+  employeesData.forEach(emp => {
+    const card = createEmployeeCard(emp);
+    employeesContainer.appendChild(card);
+  });
+}
 
-    renderEmployees();
+// Initialize
+document.addEventListener('DOMContentLoaded', fetchEmployeesData);

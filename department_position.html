@@ -119,7 +119,7 @@
         <section class="section-box" aria-labelledby="job-positions-title">
           <h3 id="job-positions-title">Job Positions</h3>
           <ul id="job-positions-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
-            <!-- Dynamic items inserted by JS -->
+            <!-- Dynamic items inserted by JS, e.g., <li>Instructor - $15.50/hr <button>Edit</button> <button>Delete</button></li> -->
           </ul>
           <button id="add-job-position-btn" class="btn-add" aria-haspopup="dialog"
             aria-controls="add-job-position-modal">
@@ -164,6 +164,9 @@
               <label for="job-position-name">Job Position Name</label>
               <input type="text" id="job-position-name" name="name" required
                 placeholder="Enter job position name" />
+              <label for="job-position-rate">Rate per Hour</label>
+              <input type="number" id="job-position-rate" name="rate_per_hour" step="0.01" min="0" required
+                placeholder="Enter rate per hour (e.g., 15.50)" />
             </div>
             <footer class="modal-footer">
               <button type="submit" class="btn btn-primary">Add Job Position</button>
