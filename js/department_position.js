@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const API_BASE = '/eaaps/views/departments_positions.php';  // Backend endpoint
+
+  const BASE_PATH = ''; // Change to '' for localhost:8000, or '/newpath' for Hostinger
+
+  const API_BASE = BASE_PATH + '/views/departments_positions.php'; // Backend endpoint
 
   // Modal helper functions
   function openModal(modal) {

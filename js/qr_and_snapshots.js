@@ -1,5 +1,5 @@
-const API_BASE = '/eaaps/views/qr_snapshots.php';  // Backend endpoint
-const BASE_PATH = '/eaaps';
+const BASE_PATH = ''; // Change to '' for localhost:8000, or '/newpath' for Hostinger
+const API_BASE = BASE_PATH + '/views/qr_snapshots.php';
 
 let employeesData = [];  // Will be populated from API
 let filteredEmployeesData = [];  // To store filtered results
@@ -48,7 +48,7 @@ function createEmployeeCard(employee) {
 
   if (employee.qr_image_path) {
     const qrImg = document.createElement("img");
-    qrImg.src = `/eaaps/${employee.qr_image_path}`;
+    qrImg.src = `${BASE_PATH}/${employee.qr_image_path}`;
     qrImg.alt = "QR Code";
     qrImg.style.width = "100px";
     qrImg.style.height = "100px";
@@ -60,7 +60,7 @@ function createEmployeeCard(employee) {
     saveBtn.textContent = "Save QR";
     saveBtn.addEventListener("click", () => {
       const link = document.createElement('a');
-      link.href = `/eaaps/${employee.qr_image_path}`;
+      link.href = `${BASE_PATH}/${employee.qr_image_path}`;
       link.download = `${employee.first_name}_${employee.last_name}.png`;  // Employee name
       link.click();
     });
@@ -87,7 +87,7 @@ function createEmployeeCard(employee) {
 
   if (hasValidSnapshots && previewSrc) {
     const img = document.createElement("img");
-    img.src = `/eaaps/${previewSrc}`;
+    img.src = `${BASE_PATH}/${previewSrc}`;
     img.alt = "Snapshot Preview";
     img.style.width = "100px";
     img.style.height = "100px";
@@ -106,7 +106,7 @@ function createEmployeeCard(employee) {
   // Clicking preview opens fullscreen (only if there's a valid image)
   preview.addEventListener("click", () => {
     if (hasValidSnapshots && previewSrc) {
-      openFullscreen(`/eaaps/${previewSrc}`);
+      openFullscreen(`${BASE_PATH}/${previewSrc}`);
     }
   });
 
@@ -146,7 +146,7 @@ function openModal(employee) {
         snapCard.className = "modal-snapshot-card";
 
         const snapImg = document.createElement("img");
-        snapImg.src = `/eaaps/${snap.image_path}`;
+        snapImg.src = `${BASE_PATH}/${snap.image_path}`;
         snapImg.alt = "Snapshot";
         snapImg.className = "modal-snapshot-img";
         snapImg.style.width = "150px";
@@ -169,7 +169,7 @@ function openModal(employee) {
         saveBtn.addEventListener("click", (e) => {
           e.stopPropagation();
           const link = document.createElement('a');
-          link.href = `/eaaps/${snap.image_path}`;
+          link.href = `${BASE_PATH}/${snap.image_path}`;
           link.download = `snapshot_${employee.first_name}_${employee.last_name}_${new Date(snap.captured_at).getTime()}.png`;
           link.click();
         });
@@ -205,7 +205,7 @@ function openModal(employee) {
 
         // Clicking snapshot opens fullscreen
         snapCard.addEventListener("click", () => {
-          openFullscreen(`/eaaps/${snap.image_path}`);  // Pass full path
+          openFullscreen(`${BASE_PATH}/${snap.image_path}`);  // Pass full path
         });
 
         modalSnapshotsContainer.appendChild(snapCard);

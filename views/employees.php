@@ -8,6 +8,8 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+define('BASE_PATH', ''); // Change to '' for localhost:8000, or '/newpath' for Hostinger
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -15,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'conn.php';  // Adjusted path for views/ location
 
-$qr_lib_path = '../phpqrcode/qrlib.php';
+$qr_lib_path = BASE_PATH . '/phpqrcode/qrlib.php';
 if (file_exists($qr_lib_path)) {
     require_once $qr_lib_path;
 } else {
@@ -35,7 +37,7 @@ try {
     die(json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]));
 }
 
-function generateQRCode($employee_data, $qr_dir = '../qrcodes/')
+function generateQRCode($employee_data, $qr_dir = BASE_PATH . '/qrcodes/')
 {
     // Ensure library and GD are available
     if (!class_exists('QRcode')) {
@@ -349,7 +351,7 @@ switch ($action) {
 
             $avatar_path = null;
             if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-                $upload_dir = '../uploads/avatars/';
+                $upload_dir = BASE_PATH . '/uploads/avatars/';
                 if (!is_dir($upload_dir)) {
                     mkdir($upload_dir, 0755, true);
                 }

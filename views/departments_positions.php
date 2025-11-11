@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'conn.php';  // Assumes this returns ['mysqli' => $mysqli]
 
+define('BASE_PATH', ''); // Change to '' for localhost:8000, or '/newpath' for Hostinger
+
 $db = null;
 $mysqli = null;
 try {

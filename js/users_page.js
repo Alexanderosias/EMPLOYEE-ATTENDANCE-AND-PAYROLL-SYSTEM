@@ -1,5 +1,7 @@
-const API_BASE = '/eaaps/views/users_handler.php';
+const BASE_PATH = ''; // Change to '' for localhost:8000, or '/newpath' for Hostinger
+const API_BASE = BASE_PATH + '/views/users_handler.php';
 
+// FETCH USERS
 async function fetchUsers() {
   try {
     const response = await fetch(`${API_BASE}?action=list_users`);
@@ -9,10 +11,12 @@ async function fetchUsers() {
     renderUsersTable(result.data);
   } catch (error) {
     console.error('Error fetching users:', error);
-    document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="9" class="text-red-500">Failed to load users. Please try again.</td></tr>';
+    document.getElementById('usersTableBody').innerHTML =
+      '<tr><td colspan="9" class="text-red-500">Failed to load users. Please try again.</td></tr>';
   }
 }
 
+// RENDER USERS TABLE
 function renderUsersTable(users) {
   const tbody = document.getElementById('usersTableBody');
   tbody.innerHTML = '';
@@ -23,6 +27,7 @@ function renderUsersTable(users) {
   }
 
   users.forEach(user => {
+    const isActive = Number(user.is_active) === 1;
     const row = document.createElement('tr');
     row.className = 'hover:bg-gray-50';
     row.innerHTML = `
@@ -32,7 +37,9 @@ function renderUsersTable(users) {
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.phone_number || 'N/A'}</td>
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.department_name || 'N/A'}</td>
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.role}</td>
-      <td class="px-6 py-3 whitespace-nowrap text-sm font-semibold ${user.is_active ? 'text-green-600' : 'text-red-600'}">${user.is_active ? 'Active' : 'Inactive'}</td>
+      <td class="px-6 py-3 whitespace-nowrap text-sm font-semibold ${isActive ? 'text-green-600' : 'text-red-600'}">
+        ${isActive ? 'Active' : 'Inactive'}
+      </td>
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${new Date(user.created_at).toLocaleDateString()}</td>
       <td class="px-6 py-3 whitespace-nowrap text-center text-sm">
         <button class="text-blue-600 hover:text-blue-800 mr-2" onclick="editUser(${user.id})">Edit</button>
@@ -43,128 +50,27 @@ function renderUsersTable(users) {
   });
 }
 
-// Modal elements for edit
+// MODAL ELEMENTS
 const editUserModal = document.getElementById('edit-user-modal-overlay');
 const editUserForm = document.getElementById('edit-user-form');
 const editUserCancelBtn = document.getElementById('edit-user-cancel-btn');
 const editDepartmentSelect = document.getElementById('edit-department');
 
-async function editUser(id) {
-  try {
-    const response = await fetch(`${API_BASE}?action=get_user&id=${id}`);
-    const result = await response.json();
-    if (result.success) {
-      const user = result.data;
-      // Populate form
-      document.getElementById('edit-first-name').value = user.first_name;
-      document.getElementById('edit-last-name').value = user.last_name;
-      document.getElementById('edit-email').value = user.email;
-      document.getElementById('edit-phone').value = user.phone_number || '';
-      document.getElementById('edit-address').value = user.address || '';
-      document.getElementById('edit-role').value = user.role;
-      // Set department
-      await fetchDepartmentsForEdit();
-      document.getElementById('edit-department').value = user.department_id || '';
-      // Store ID for update
-      editUserForm.dataset.userId = id;
-      editUserModal.classList.add('active');
-    } else {
-      alert('Failed to load user data: ' + result.message);
-    }
-  } catch (error) {
-    console.error('Error loading user:', error);
-    alert('An error occurred while loading user data.');
-  }
-}
-
-async function fetchDepartmentsForEdit() {
-  try {
-    const response = await fetch('/eaaps/views/departments_handler.php?action=list_departments');
-    const result = await response.json();
-    if (result.success) {
-      editDepartmentSelect.innerHTML = '<option value="">Select Department</option>';
-      result.data.forEach(dept => {
-        editDepartmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
-      });
-    }
-  } catch (error) {
-    console.error('Error fetching departments for edit:', error);
-  }
-}
-
-// Close edit modal
-editUserCancelBtn.addEventListener('click', () => {
-  editUserModal.classList.remove('active');
-  editUserForm.reset();
-});
-
-editUserModal.addEventListener('click', (e) => {
-  if (e.target === editUserModal) {
-    editUserModal.classList.remove('active');
-    editUserForm.reset();
-  }
-});
-
-// Submit edit form
-editUserForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const userId = editUserForm.dataset.userId;
-  const formData = new FormData(editUserForm);
-
-  try {
-    const response = await fetch(`${API_BASE}?action=update_user&id=${userId}`, {
-      method: 'POST',
-      body: formData
-    });
-    const result = await response.json();
-    if (result.success) {
-      alert('User updated successfully!');
-      editUserModal.classList.remove('active');
-      editUserForm.reset();
-      fetchUsers();  // Refresh table
-    } else {
-      alert('Failed to update user: ' + result.message);
-    }
-  } catch (error) {
-    console.error('Error updating user:', error);
-    alert('An error occurred while updating the user.');
-  }
-});
-
-async function deleteUser(id) {
-  if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-    try {
-      const response = await fetch(`${API_BASE}?action=delete_user&id=${id}`, { method: 'DELETE' });
-      const result = await response.json();
-      if (result.success) {
-        alert('User deleted successfully.');
-        fetchUsers();  // Refresh table
-      } else {
-        alert('Failed to delete user: ' + result.message);
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      alert('An error occurred while deleting the user.');
-    }
-  }
-}
-
-// Modal elements
 const addUserModal = document.getElementById('add-user-modal-overlay');
 const addUserForm = document.getElementById('add-user-form');
 const addUserBtn = document.getElementById('addUserBtn');
 const addUserCancelBtn = document.getElementById('add-user-cancel-btn');
 const departmentSelect = document.getElementById('department');
 
-// Fetch departments for the dropdown
-async function fetchDepartments() {
+// FETCH DEPARTMENTS
+async function fetchDepartments(selectElement) {
   try {
-    const response = await fetch('/eaaps/views/departments_handler.php?action=list_departments');  // Create this PHP file if needed
+    const response = await fetch(BASE_PATH + '/views/departments_handler.php?action=list_departments');
     const result = await response.json();
     if (result.success) {
-      departmentSelect.innerHTML = '<option value="">Select Department</option>';
+      selectElement.innerHTML = '<option value="">Select Department</option>';
       result.data.forEach(dept => {
-        departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+        selectElement.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
       });
     }
   } catch (error) {
@@ -172,49 +78,130 @@ async function fetchDepartments() {
   }
 }
 
-// Open modal
-addUserBtn.addEventListener('click', () => {
-  fetchDepartments();  // Populate departments
-  addUserModal.classList.add('active');
-});
+// EDIT USER
+async function editUser(id) {
+  try {
+    const response = await fetch(`${API_BASE}?action=get_user&id=${id}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
 
-// Close modal
-addUserCancelBtn.addEventListener('click', () => {
-  addUserModal.classList.remove('active');
-  addUserForm.reset();
-});
+    const user = result.data;
+    document.getElementById('edit-first-name').value = user.first_name;
+    document.getElementById('edit-last-name').value = user.last_name;
+    document.getElementById('edit-email').value = user.email;
+    document.getElementById('edit-phone').value = user.phone_number || '';
+    document.getElementById('edit-address').value = user.address || '';
+    document.getElementById('edit-role').value = user.role;
 
-addUserModal.addEventListener('click', (e) => {
-  if (e.target === addUserModal) {
-    addUserModal.classList.remove('active');
-    addUserForm.reset();
+    const editCheckbox = document.getElementById('edit-is-active');
+    const editDisplayInput = document.getElementById('edit-is-active-display');
+    const isActive = Number(user.is_active) === 1;
+    editCheckbox.checked = isActive;
+    editDisplayInput.value = isActive ? 'Active' : 'Inactive';
+    editCheckbox.onchange = () => {
+      editDisplayInput.value = editCheckbox.checked ? 'Active' : 'Inactive';
+    };
+
+    await fetchDepartments(editDepartmentSelect);
+    editDepartmentSelect.value = user.department_id || '';
+
+    editUserForm.dataset.userId = id;
+    editUserModal.classList.add('active');
+  } catch (error) {
+    console.error('Error loading user:', error);
+    alert('Failed to load user data.');
   }
+}
+
+// DELETE USER
+async function deleteUser(id) {
+  if (!confirm('Are you sure you want to delete this user?')) return;
+  try {
+    const response = await fetch(`${API_BASE}?action=delete_user&id=${id}`, { method: 'DELETE' });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+    fetchUsers();
+  } catch (error) {
+    console.error(error);
+    alert('Failed to delete user.');
+  }
+}
+
+// ADD USER MODAL
+addUserBtn.onclick = async () => {
+  await fetchDepartments(departmentSelect);
+  const addCheckbox = document.getElementById('add-is-active');
+  const addDisplayInput = document.getElementById('add-is-active-display');
+  addCheckbox.checked = true;
+  addDisplayInput.value = 'Active';
+  addCheckbox.onchange = () => {
+    addDisplayInput.value = addCheckbox.checked ? 'Active' : 'Inactive';
+  };
+  addUserModal.classList.add('active');
+};
+
+// CLOSE MODALS
+[editUserCancelBtn, addUserCancelBtn].forEach(btn => {
+  btn.onclick = () => {
+    editUserModal.classList.remove('active');
+    addUserModal.classList.remove('active');
+    editUserForm.reset();
+    addUserForm.reset();
+  };
 });
 
-// Submit form
-addUserForm.addEventListener('submit', async (e) => {
+[editUserModal, addUserModal].forEach(modal => {
+  modal.onclick = e => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+      editUserForm.reset();
+      addUserForm.reset();
+    }
+  };
+});
+
+// SUBMIT ADD USER
+addUserForm.onsubmit = async e => {
   e.preventDefault();
   const formData = new FormData(addUserForm);
+  const addCheckbox = document.getElementById('add-is-active');
+  formData.set('isActive', addCheckbox.checked ? 1 : 0);
 
   try {
-    const response = await fetch(`${API_BASE}?action=add_user`, {
-      method: 'POST',
-      body: formData
-    });
+    const response = await fetch(`${API_BASE}?action=add_user`, { method: 'POST', body: formData });
     const result = await response.json();
-    if (result.success) {
-      alert('User added successfully!');
-      addUserModal.classList.remove('active');
-      addUserForm.reset();
-      fetchUsers();  // Refresh table
-    } else {
-      alert('Failed to add user: ' + result.message);
-    }
+    if (!result.success) throw new Error(result.message);
+    alert('User added successfully');
+    addUserModal.classList.remove('active');
+    addUserForm.reset();
+    fetchUsers();
   } catch (error) {
-    console.error('Error adding user:', error);
-    alert('An error occurred while adding the user.');
+    console.error(error);
+    alert('Failed to add user.');
   }
-});
+};
 
-// Initialize
+// SUBMIT EDIT USER
+editUserForm.onsubmit = async e => {
+  e.preventDefault();
+  const userId = editUserForm.dataset.userId;
+  const formData = new FormData(editUserForm);
+  const editCheckbox = document.getElementById('edit-is-active');
+  formData.set('isActive', editCheckbox.checked ? 1 : 0);
+
+  try {
+    const response = await fetch(`${API_BASE}?action=update_user&id=${userId}`, { method: 'POST', body: formData });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+    alert('User updated successfully');
+    editUserModal.classList.remove('active');
+    editUserForm.reset();
+    fetchUsers();
+  } catch (error) {
+    console.error(error);
+    alert('Failed to update user.');
+  }
+};
+
+// INIT
 document.addEventListener('DOMContentLoaded', fetchUsers);

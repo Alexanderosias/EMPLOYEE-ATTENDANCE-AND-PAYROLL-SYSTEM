@@ -56,6 +56,18 @@
   box-sizing: border-box;
 }
 
+.modal input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.modal label[for="edit-is-active"] {
+  display: inline-block;
+  margin-bottom: 1rem;
+  vertical-align: middle;
+}
+
 .modal textarea {
   resize: vertical;
   min-height: 60px;
@@ -68,7 +80,7 @@
   margin-bottom: 1rem;
 }
 
-.modal .name-fields > div {
+.modal .name-fields>div {
   flex: 1;
 }
 
@@ -118,7 +130,8 @@
   margin-top: 20px;
 }
 
-.data-table th, .data-table td {
+.data-table th,
+.data-table td {
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #ddd;
@@ -137,4 +150,14 @@
     flex-direction: column;
     gap: 0;
   }
+}
+
+.role-active-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.role-active-row>div {
+  flex: 1;
 }

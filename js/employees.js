@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const API_BASE = '/eaaps/views/employees.php';
-  const BASE_PATH = '/eaaps/';
+  const BASE_PATH = ''; // Change to '' for localhost:8000, or '/newpath' for Hostinger
+  
+  const API_BASE = BASE_PATH + '/views/employees.php';
 
   function showToast(message, type = 'info') {
     let toast = document.getElementById('toast-notification');
@@ -213,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('div');
       card.className = 'employee-card minimized';
       card.setAttribute('data-id', id);
-      const avatarSrc = emp.avatar_path ? BASE_PATH + emp.avatar_path : BASE_PATH + 'img/user.jpg';
+      const avatarSrc = emp.avatar_path ? BASE_PATH + '/' + emp.avatar_path : BASE_PATH + '/img/user.jpg';
       card.innerHTML = `
         <div class="card-index">${index + 1}</div>
         <div class="image-container employee-avatar">

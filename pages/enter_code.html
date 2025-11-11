@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verify Code</title>
+    <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
     <link rel="stylesheet" href="src/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,9 +22,11 @@
             0% {
                 background-position: 0% 50%;
             }
+
             50% {
                 background-position: 100% 50%;
             }
+
             100% {
                 background-position: 0% 50%;
             }
@@ -35,7 +38,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
-        
+
         .code-input-container {
             display: flex;
             justify-content: center;
@@ -60,7 +63,7 @@
             outline: none;
             border-bottom: 2px solid #87CEEB;
         }
-        
+
         .spinner {
             border: 2px solid #f0f8ff;
             border-top: 2px solid #4169E1;
@@ -71,8 +74,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
@@ -85,15 +93,22 @@
         <p class="text-white text-lg font-semibold mb-6">admin@example.com</p>
         <form id="verifyCodeForm" class="space-y-6">
             <div class="code-input-container">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-1" autocomplete="off">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-2" autocomplete="off">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-3" autocomplete="off">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-4" autocomplete="off">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-5" autocomplete="off">
-                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-6" autocomplete="off">
+                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-1"
+                    autocomplete="off">
+                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-2"
+                    autocomplete="off">
+                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-3"
+                    autocomplete="off">
+                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-4"
+                    autocomplete="off">
+                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-5"
+                    autocomplete="off">
+                <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-6"
+                    autocomplete="off">
             </div>
 
-            <p id="codeError" class="text-rose-400 text-sm mt-1 text-center hidden">Please enter a valid 6-digit code.</p>
+            <p id="codeError" class="text-rose-400 text-sm mt-1 text-center hidden">Please enter a valid 6-digit code.
+            </p>
 
             <!-- Verify Button -->
             <div class="mt-8">
@@ -107,7 +122,7 @@
                 Didn't receive a code? <a href="#" class="text-sky-400 hover:underline">Resend Code</a>
             </p>
             <p class="text-center text-sm text-gray-400 mt-2">
-                <a href="../login.html" class="text-sky-400 hover:underline">Return to Login</a>
+                <a href="../index.html" class="text-sky-400 hover:underline">Return to Login</a>
             </p>
         </form>
     </div>
@@ -126,7 +141,7 @@
                     input.addEventListener('input', (e) => {
                         // NEW: Immediately strip any non-digit characters
                         e.target.value = e.target.value.replace(/\D/g, '');
-                        
+
                         const value = e.target.value;
                         // Move to the next input if a digit is entered and it's not the last one
                         if (value.length === 1 && index < codeInputs.length - 1) {
@@ -164,7 +179,7 @@
 
                 let fullCode = '';
                 let isValid = true;
-                
+
                 // Concatenate the values from all inputs and validate
                 codeInputs.forEach(input => {
                     const value = input.value.trim();
@@ -184,14 +199,14 @@
                         // Reset the button and form after a successful "login"
                         verifyButton.disabled = false;
                         verifyButton.innerHTML = `Verify Code`;
-                        
+
                         // In a real app, this would redirect to the password reset page
                         // For now, we'll just show a success message
                         const message = document.createElement('p');
                         message.textContent = 'Code verified! You can now reset your password.';
                         message.classList.add('text-green-400', 'text-sm', 'mt-4');
                         verifyCodeForm.parentNode.insertBefore(message, verifyCodeForm.nextSibling);
-                        
+
                         // Hide the form on success
                         verifyCodeForm.classList.add('hidden');
                     }, 2000);

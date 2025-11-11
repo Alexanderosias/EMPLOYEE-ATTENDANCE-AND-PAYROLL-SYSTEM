@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'conn.php';
 
+define('BASE_PATH', ''); // Change to '' for localhost:8000, or '/newpath' for Hostinger
+
 $db = null;
 $mysqli = null;
 try {
@@ -124,9 +126,7 @@ switch ($action) {
   case 'update_user':
     try {
       $id = $_GET['id'] ?? null;
-      if (!$id || !is_numeric($id)) {
-        throw new Exception('Invalid user ID');
-      }
+      if (!$id || !is_numeric($id)) throw new Exception('Invalid user ID');
 
       $firstName = $_POST['firstName'] ?? '';
       $lastName = $_POST['lastName'] ?? '';
@@ -135,19 +135,26 @@ switch ($action) {
       $address = $_POST['address'] ?? '';
       $departmentId = $_POST['departmentId'] ?? null;
       $role = $_POST['role'] ?? 'admin';
-      $isActive = isset($_POST['isActive']) ? 1 : 0;
+      $isActive = isset($_POST['isActive']) ? (int)$_POST['isActive'] : 0;
 
-      $stmt = $mysqli->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, phone_number = ?, address = ?, department_id = ?, role = ? WHERE id = ?");
-      $stmt->bind_param("sssssisi", $firstName, $lastName, $email, $phone, $address, $departmentId, $role, $id);
+      if ($departmentId !== null) {
+        $departmentId = (int)$departmentId;
+        $checkStmt = $mysqli->prepare("SELECT id FROM departments WHERE id = ?");
+        $checkStmt->bind_param("i", $departmentId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        if ($checkResult->num_rows === 0) $departmentId = null;
+        $checkStmt->close();
+      }
+
+      // bind_param: s = string, i = integer
+      $stmt = $mysqli->prepare("UPDATE users SET first_name=?, last_name=?, email=?, phone_number=?, address=?, department_id=?, role=?, is_active=? WHERE id=?");
+      $stmt->bind_param("sssssissi", $firstName, $lastName, $email, $phone, $address, $departmentId, $role, $isActive, $id);
       $stmt->execute();
       $stmt->close();
 
-      ob_end_clean();
       echo json_encode(['success' => true, 'message' => 'User updated']);
     } catch (Exception $e) {
-      error_log("Update User Error: " . $e->getMessage());
-      ob_end_clean();
-      http_response_code(500);
       echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     break;
