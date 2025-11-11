@@ -1,4 +1,6 @@
-const API_BASE = '/eaaps/views/schedules.php';  // Backend endpoint
+const BASE_PATH = ''; // Change to '' for localhost:8000, or '/newpath' for Hostinger
+
+const API_BASE = BASE_PATH + '/views/schedules.php';  // Backend endpoint
 
 function showToast(message, type = 'info') {
   let toast = document.getElementById('toast-notification');

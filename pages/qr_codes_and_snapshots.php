@@ -1,3 +1,7 @@
+<?php
+require_once '../views/auth.php'; // path relative to the page
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,6 +9,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>QR Codes & Snapshots Page</title>
+  <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <link rel="stylesheet" href="css/qr_and_snapshots.css">
@@ -23,37 +28,37 @@
       <nav class="sidebar-nav">
         <ul>
           <li>
-            <a href="dashboard.html">
+            <a href="dashboard.php">
               <img src="icons/home.png" alt="Dashboard" class="icon" />
               Dashboard
             </a>
           </li>
           <li>
-            <a href="employees_page.html">
+            <a href="employees_page.php">
               <img src="icons/group.png" alt="Employees" class="icon" />
               Employees
             </a>
           </li>
           <li>
-            <a href="schedule_page.html">
+            <a href="schedule_page.php">
               <img src="icons/calendar-deadline-date.png" alt="Schedules" class="icon" />
               Schedules
             </a>
           </li>
           <li>
-            <a href="department_position.html">
+            <a href="department_position.php">
               <img src="icons/networking.png" alt="departments&Positions" class="icon" />
               Departments and Positions
             </a>
           </li>
           <li>
-            <a href="attendance_logs_page.html">
+            <a href="attendance_logs_page.php">
               <img src="icons/clock.png" alt="Attendance Logs" class="icon" />
               Attendance Logs
             </a>
           </li>
           <li>
-            <a href="payroll_page.html">
+            <a href="payroll_page.php">
               <img src="icons/cash.png" alt="Payroll" class="icon" />
               Payroll
             </a>
@@ -65,25 +70,27 @@
             </a>
           </li>
           <li>
-            <a href="reports_page.html">
+            <a href="reports_page.php">
               <img src="icons/clipboard.png" alt="Reports" class="icon" />
               Reports
             </a>
           </li>
           <li>
-            <a href="profile_details_page.html">
+            <a href="profile_details_page.php">
               <img src="icons/user.png" alt="Profile" class="icon" />
               Profile
             </a>
           </li>
+          <?php if ($_SESSION['role'] === 'head_admin'): ?>
+            <li>
+              <a href="user_page.php">
+                <img src="icons/add-user.png" alt="Users" class="icon" />
+                Users
+              </a>
+            </li>
+          <?php endif; ?>
           <li>
-            <a href="user_page.html">
-              <img src="icons/add-user.png" alt="Settings" class="icon" />
-              Users
-            </a>
-          </li>
-          <li>
-            <a href="settings_page.html">
+            <a href="settings_page.php">
               <img src="icons/coghweel.png" alt="Settings" class="icon" />
               Settings
             </a>
@@ -91,7 +98,7 @@
         </ul>
       </nav>
 
-      <a class="logout-btn" href="../login.html">
+      <a class="logout-btn" href="../index.html">
         <img src="icons/sign-out-option.png" alt="Logout" class="logout-icon" />
         Logout
       </a>

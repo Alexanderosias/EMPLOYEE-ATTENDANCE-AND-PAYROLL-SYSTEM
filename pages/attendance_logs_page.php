@@ -1,3 +1,7 @@
+<?php
+require_once '../views/auth.php'; // path relative to the page
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,6 +9,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Attendance Logs Page</title>
+  <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <link rel="stylesheet" href="src/styles.css" />
@@ -170,25 +175,25 @@
       <nav class="sidebar-nav">
         <ul>
           <li>
-            <a href="dashboard.html">
+            <a href="dashboard.php">
               <img src="icons/home.png" alt="Dashboard" class="icon" />
               Dashboard
             </a>
           </li>
           <li>
-            <a href="employees_page.html">
+            <a href="employees_page.php">
               <img src="icons/group.png" alt="Employees" class="icon" />
               Employees
             </a>
           </li>
           <li>
-            <a href="schedule_page.html">
+            <a href="schedule_page.php">
               <img src="icons/calendar-deadline-date.png" alt="Schedules" class="icon" />
               Schedules
             </a>
           </li>
           <li>
-            <a href="department_position.html">
+            <a href="department_position.php">
               <img src="icons/networking.png" alt="departments&Positions" class="icon" />
               Departments and Positions
             </a>
@@ -200,37 +205,39 @@
             </a>
           </li>
           <li>
-            <a href="payroll_page.html">
+            <a href="payroll_page.php">
               <img src="icons/cash.png" alt="Payroll" class="icon" />
               Payroll
             </a>
           </li>
           <li>
-            <a href="qr_codes_and_snapshots.html">
+            <a href="qr_codes_and_snapshots.php">
               <img src="icons/snapshot.png" alt="Qr&Snapshots" class="icon" />
               QR and Snapshots
             </a>
           </li>
           <li>
-            <a href="reports_page.html">
+            <a href="reports_page.php">
               <img src="icons/clipboard.png" alt="Reports" class="icon" />
               Reports
             </a>
           </li>
           <li>
-            <a href="profile_details_page.html">
+            <a href="profile_details_page.php">
               <img src="icons/user.png" alt="Profile" class="icon" />
               Profile
             </a>
           </li>
+          <?php if ($_SESSION['role'] === 'head_admin'): ?>
+            <li>
+              <a href="user_page.php">
+                <img src="icons/add-user.png" alt="Users" class="icon" />
+                Users
+              </a>
+            </li>
+          <?php endif; ?>
           <li>
-            <a href="user_page.html">
-              <img src="icons/add-user.png" alt="Settings" class="icon" />
-              Users
-            </a>
-          </li>
-          <li>
-            <a href="settings_page.html">
+            <a href="settings_page.php">
               <img src="icons/coghweel.png" alt="Settings" class="icon" />
               Settings
             </a>
@@ -238,7 +245,7 @@
         </ul>
       </nav>
 
-      <a class="logout-btn" href="../login.html">
+      <a class="logout-btn" href="../index.html">
         <img src="icons/sign-out-option.png" alt="Logout" class="logout-icon" />
         Logout
       </a>
@@ -360,8 +367,7 @@
 
   <script>
     // Sample attendance data with single timeIn, timeOut, and partialAbsenceHours
-    const attendanceData = [
-      {
+    const attendanceData = [{
         id: 'E001',
         name: 'Francis Rivas',
         date: '2025-09-15',
@@ -601,7 +607,9 @@
         r.id === record.id && r.date === record.date
       );
       if (originalIndex !== -1) {
-        attendanceData[originalIndex] = { ...record };
+        attendanceData[originalIndex] = {
+          ...record
+        };
       }
 
       renderTablePage(currentPage);

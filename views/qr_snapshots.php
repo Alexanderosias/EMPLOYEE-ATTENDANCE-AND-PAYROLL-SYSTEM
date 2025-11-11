@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'conn.php';
 
+define('BASE_PATH', ''); // Change to '' for localhost:8000, or '/newpath' for Hostinger
+
 $db = null;
 $mysqli = null;
 try {
@@ -99,7 +101,7 @@ switch ($action) {
             }
 
             // Build the file path (matches your working test script)
-            $filePath = $_SERVER['DOCUMENT_ROOT'] . '/eaaps/' . $snapshot['image_path'];
+            $filePath = $_SERVER['DOCUMENT_ROOT'] . BASE_PATH . '/' . $snapshot['image_path'];
 
             // Log for debugging (optional, remove after testing)
             error_log("DOCUMENT_ROOT: " . $_SERVER['DOCUMENT_ROOT']);
