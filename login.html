@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sleek Login</title>
-  <link rel="stylesheet" href="src/styles.css">
+  <link rel="stylesheet" href="pages/src/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -16,34 +17,59 @@
       background-size: 400% 400%;
       animation: gradient-animation 15s ease infinite;
     }
+
     @keyframes gradient-animation {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
     }
+
     .glass-card {
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
-    .form-input:placeholder-shown + .form-label {
+
+    .form-input:placeholder-shown+.form-label {
       transform: translate(1rem, -50%);
       color: #d1d5db;
     }
-    .form-input:focus + .form-label,
-    .form-input:not(:placeholder-shown) + .form-label {
+
+    .form-input:focus+.form-label,
+    .form-input:not(:placeholder-shown)+.form-label {
       transform: translate(1rem, -2.5rem) scale(0.75);
       color: #87CEEB;
     }
+
     .form-input:focus {
       outline: none;
       border-bottom: 2px solid #87CEEB;
     }
+
     .form-input {
       border-bottom: 2px solid #374151;
       transition: all 0.3s ease-in-out;
     }
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
+      -webkit-text-fill-color: #ffffff !important;
+      transition: background-color 5000s ease-in-out 0s;
+      background-clip: text;
+    }
+
     .spinner {
       border: 2px solid #f0f8ff;
       border-top: 2px solid #4169E1;
@@ -52,9 +78,15 @@
       height: 1rem;
       animation: spin 1s linear infinite;
     }
+
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
 
     /* New CSS for the animated message box */
@@ -68,14 +100,17 @@
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
+
     #animatedMessageBox.visible {
       transform: translateX(-50%) translateY(0);
     }
   </style>
 </head>
+
 <body class="min-h-screen flex items-center justify-center p-4 text-gray-100">
-  
-  <div id="animatedMessageBox" class="hidden px-6 py-3 rounded-lg text-center font-semibold text-white shadow-lg max-w-sm w-full">
+
+  <div id="animatedMessageBox"
+    class="hidden px-6 py-3 rounded-lg text-center font-semibold text-white shadow-lg max-w-sm w-full">
     <p id="messageText"></p>
   </div>
 
@@ -85,30 +120,38 @@
 
     <form id="loginForm" class="space-y-6">
       <div class="relative">
-        <input id="email" type="email" name="email" placeholder=" " class="form-input peer w-full bg-transparent text-white py-3 px-4 transition-all duration-300">
-        <label for="email" class="form-label absolute left-0 cursor-text text-lg text-gray-400 transition-all duration-300 transform -translate-y-1/2 top-1/2">Email</label>
+        <input id="email" type="email" name="email" placeholder=" "
+          class="form-input peer w-full bg-transparent text-white py-3 px-4 transition-all duration-300">
+        <label for="email"
+          class="form-label absolute left-0 cursor-text text-lg text-gray-400 transition-all duration-300 transform -translate-y-1/2 top-1/2">Email</label>
       </div>
 
       <div class="relative">
-        <input id="password" type="password" name="password" placeholder=" " class="form-input peer w-full bg-transparent text-white py-3 px-4 transition-all duration-300">
-        <label for="password" class="form-label absolute left-0 cursor-text text-lg text-gray-400 transition-all duration-300 transform -translate-y-1/2 top-1/2">Password</label>
-        <button type="button" id="passwordToggle" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-sky-400 transition-colors duration-300">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.575 3.01 9.963 7.173a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" />
+        <input id="password" type="password" name="password" placeholder=" "
+          class="form-input peer w-full bg-transparent text-white py-3 px-4 transition-all duration-300">
+        <label for="password"
+          class="form-label absolute left-0 cursor-text text-lg text-gray-400 transition-all duration-300 transform -translate-y-1/2 top-1/2">Password</label>
+        <button type="button" id="passwordToggle"
+          class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-sky-400 transition-colors duration-300">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.575 3.01 9.963 7.173a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </button>
       </div>
 
       <div class="mt-8">
-        <button type="submit" id="loginButton" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-rose-400 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-opacity-50 flex items-center justify-center">
+        <button type="submit" id="loginButton"
+          class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-rose-400 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-opacity-50 flex items-center justify-center">
           <span id="buttonText">Sign In</span>
           <span id="buttonSpinner" class="hidden spinner ml-2"></span>
         </button>
       </div>
 
       <p class="text-center text-sm text-gray-400 mt-4">
-        <a href="send_code.html" class="text-sky-400 hover:underline">Forgot your password?</a>
+        <a href="pages/send_code.html" class="text-sky-400 hover:underline">Forgot your password?</a>
       </p>
     </form>
   </div>
@@ -138,9 +181,9 @@
         setTimeout(() => {
           animatedMessageBox.classList.remove('visible');
           animatedMessageBox.addEventListener('transitionend', () => {
-              if (!animatedMessageBox.classList.contains('visible')) {
-                  animatedMessageBox.classList.add('hidden');
-              }
+            if (!animatedMessageBox.classList.contains('visible')) {
+              animatedMessageBox.classList.add('hidden');
+            }
           }, { once: true });
         }, 5000);
       };
@@ -150,11 +193,11 @@
         buttonText.textContent = isLoading ? 'Signing In...' : 'Sign In';
         buttonSpinner.classList.toggle('hidden', !isLoading);
       };
-      
+
       passwordToggle.addEventListener('click', () => {
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordInput.setAttribute('type', type);
-        
+
         // Corrected SVG for the eye icon toggle
         const eyeOpen = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.575 3.01 9.963 7.173a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
         const eyeClosed = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.988 5.623a1.012 1.012 0 01-.063-.035C2.56 5.861 1.5 7.575 1.5 9.75c0 1.25.46 2.455 1.284 3.407a11.166 11.166 0 0017.432 0C22.04 12.205 22.5 11 22.5 9.75c0-2.175-1.06-3.889-2.425-4.502a1.012 1.012 0 01-.063-.035M12 4.5v15" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
@@ -196,7 +239,7 @@
           } else {
             showMessage(result.message);
           }
-          
+
         } catch (error) {
           // Display the specific error message to the user
           showMessage(`Login failed: ${error.message}`);
@@ -208,4 +251,5 @@
     });
   </script>
 </body>
+
 </html>
