@@ -38,7 +38,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
-        
+
         /* Spinner animation for the button loading state */
         .spinner {
             border: 2px solid #f0f8ff;
@@ -50,8 +50,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Custom styles for the floating label effect */
@@ -76,6 +81,16 @@
             transition: all 0.3s ease-in-out;
         }
 
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
+            -webkit-text-fill-color: #ffffff !important;
+            transition: background-color 5000s ease-in-out 0s;
+            background-clip: text;
+        }
+
         /* Styles for the animated message box */
         #animatedMessageBox {
             position: absolute;
@@ -84,9 +99,10 @@
             transform: translateX(-50%) translateY(-100%);
             transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
             opacity: 0;
-            z-index: 50; /* Ensure it's on top of other content */
+            z-index: 50;
+            /* Ensure it's on top of other content */
         }
-        
+
         #animatedMessageBox.visible {
             transform: translateX(-50%) translateY(1rem);
             opacity: 1;
@@ -97,7 +113,8 @@
 <body class="min-h-screen flex items-center justify-center p-4 text-gray-100 relative">
 
     <!-- Animated Message Box -->
-    <div id="animatedMessageBox" class="hidden px-6 py-3 rounded-lg text-center font-semibold text-white shadow-lg max-w-sm w-full">
+    <div id="animatedMessageBox"
+        class="hidden px-6 py-3 rounded-lg text-center font-semibold text-white shadow-lg max-w-sm w-full">
         <p id="messageText"></p>
     </div>
 
@@ -110,8 +127,10 @@
         <form id="forgotPasswordForm" class="space-y-6">
             <!-- Email Field Container -->
             <div class="relative mb-6">
-                <input id="userEmail" type="email" name="email" placeholder=" " class="form-input peer w-full bg-transparent text-white py-3 transition-all duration-300 px-4">
-                <label for="userEmail" class="form-label absolute left-0 cursor-text text-lg text-gray-400 transition-all duration-300 transform -translate-y-1/2 top-1/2">
+                <input id="userEmail" type="email" name="email" placeholder=" "
+                    class="form-input peer w-full bg-transparent text-white py-3 transition-all duration-300 px-4">
+                <label for="userEmail"
+                    class="form-label absolute left-0 cursor-text text-lg text-gray-400 transition-all duration-300 transform -translate-y-1/2 top-1/2">
                     Email
                 </label>
             </div>
@@ -125,7 +144,7 @@
             </div>
 
             <p class="text-center text-sm text-gray-400 mt-2">
-                <a href="login.html" class="text-sky-400 hover:underline">Return to Login</a>
+                <a href="../login.html" class="text-sky-400 hover:underline">Return to Login</a>
             </p>
         </form>
     </div>
@@ -143,7 +162,7 @@
             const displayMessage = (message, isError = true) => {
                 messageText.textContent = message;
                 animatedMessageBox.classList.remove('hidden', 'bg-red-500', 'bg-green-500');
-                
+
                 if (isError) {
                     animatedMessageBox.classList.add('bg-red-500');
                 } else {
@@ -171,7 +190,7 @@
 
                 const userEmail = userEmailInput.value.trim();
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                
+
                 if (emailRegex.test(userEmail)) {
                     // Simulate a loading state
                     sendButton.disabled = true;
@@ -194,4 +213,5 @@
         });
     </script>
 </body>
+
 </html>

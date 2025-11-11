@@ -77,6 +77,12 @@
             </a>
           </li>
           <li>
+            <a href="user_page.html">
+              <img src="icons/add-user.png" alt="Settings" class="icon" />
+              Users
+            </a>
+          </li>
+          <li>
             <a href="settings_page.html">
               <img src="icons/coghweel.png" alt="Settings" class="icon" />
               Settings
@@ -85,7 +91,7 @@
         </ul>
       </nav>
 
-      <a class="logout-btn" href="login.html">
+      <a class="logout-btn" href="../login.html">
         <img src="icons/sign-out-option.png" alt="Logout" class="logout-icon" />
         Logout
       </a>
@@ -140,8 +146,7 @@
           <form id="add-department-form" novalidate>
             <div class="modal-body">
               <label for="department-name">Department Name</label>
-              <input type="text" id="department-name" name="name" required
-                placeholder="Enter department name" />
+              <input type="text" id="department-name" name="name" required placeholder="Enter department name" />
             </div>
             <footer class="modal-footer">
               <button type="submit" class="btn btn-primary">Add Department</button>
@@ -162,8 +167,7 @@
           <form id="add-job-position-form" novalidate>
             <div class="modal-body">
               <label for="job-position-name">Job Position Name</label>
-              <input type="text" id="job-position-name" name="name" required
-                placeholder="Enter job position name" />
+              <input type="text" id="job-position-name" name="name" required placeholder="Enter job position name" />
               <label for="job-position-rate">Rate per Hour</label>
               <input type="number" id="job-position-rate" name="rate_per_hour" step="0.01" min="0" required
                 placeholder="Enter rate per hour (e.g., 15.50)" />
@@ -197,9 +201,9 @@
     </main>
   </div>
 
-  <script src="js/dashboard.js"></script>
-  <script src="js/current_time.js"></script>
-  <script src="js/department_position.js"></script>
+  <script src="../js/dashboard.js"></script>
+  <script src="../js/current_time.js"></script>
+  <script src="../js/department_position.js"></script>
 </body>
 
 </html>
