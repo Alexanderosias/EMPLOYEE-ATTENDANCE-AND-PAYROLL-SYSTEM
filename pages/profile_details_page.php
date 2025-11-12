@@ -8,7 +8,7 @@ require_once '../views/auth.php'; // path relative to the page
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile Page</title>
+  <title>EAAPS Profile Page</title>
   <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/profile_details.css">

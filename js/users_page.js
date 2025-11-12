@@ -20,18 +20,20 @@ async function fetchUsers() {
 function renderUsersTable(users) {
   const tbody = document.getElementById('usersTableBody');
   tbody.innerHTML = '';
-
   if (users.length === 0) {
     tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-3 text-center text-gray-500">No users found.</td></tr>';
     return;
   }
-
   users.forEach(user => {
     const isActive = Number(user.is_active) === 1;
+    const avatarSrc = user.avatar_path ? '/' + user.avatar_path : 'img/user.jpg';
     const row = document.createElement('tr');
     row.className = 'hover:bg-gray-50';
     row.innerHTML = `
-      <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.id}</td>
+      <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+        <img src="${avatarSrc}" alt="Avatar" class="avatar-square" onerror="this.src='img/user.jpg'" />
+      </td>
+      <!-- Removed: <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.id}</td> -->
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.first_name} ${user.last_name}</td>
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.email}</td>
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.phone_number || 'N/A'}</td>
@@ -62,6 +64,50 @@ const addUserBtn = document.getElementById('addUserBtn');
 const addUserCancelBtn = document.getElementById('add-user-cancel-btn');
 const departmentSelect = document.getElementById('department');
 
+// Avatar handling for Add Modal
+const addAvatarInput = document.getElementById('add-avatar-input');
+const addAvatarPreview = document.getElementById('add-avatar-preview');
+const addUploadAvatarBtn = document.getElementById('add-upload-avatar-btn');
+
+addUploadAvatarBtn.addEventListener('click', () => {
+  addAvatarInput.click();
+});
+
+addAvatarInput.addEventListener('change', () => {
+  const file = addAvatarInput.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      addAvatarPreview.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    addAvatarPreview.src = 'img/user.jpg';
+  }
+});
+
+// Avatar handling for Edit Modal
+const editAvatarInput = document.getElementById('edit-avatar-input');
+const editAvatarPreview = document.getElementById('edit-avatar-preview');
+const editUploadAvatarBtn = document.getElementById('edit-upload-avatar-btn');
+
+editUploadAvatarBtn.addEventListener('click', () => {
+  editAvatarInput.click();
+});
+
+editAvatarInput.addEventListener('change', () => {
+  const file = editAvatarInput.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      editAvatarPreview.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    editAvatarPreview.src = 'img/user.jpg';
+  }
+});
+
 // FETCH DEPARTMENTS
 async function fetchDepartments(selectElement) {
   try {
@@ -84,7 +130,6 @@ async function editUser(id) {
     const response = await fetch(`${API_BASE}?action=get_user&id=${id}`);
     const result = await response.json();
     if (!result.success) throw new Error(result.message);
-
     const user = result.data;
     document.getElementById('edit-first-name').value = user.first_name;
     document.getElementById('edit-last-name').value = user.last_name;
@@ -104,6 +149,10 @@ async function editUser(id) {
 
     await fetchDepartments(editDepartmentSelect);
     editDepartmentSelect.value = user.department_id || '';
+
+    // Set avatar
+    const avatarSrc = user.avatar_path ? BASE_PATH + '/' + user.avatar_path : 'img/user.jpg';
+    editAvatarPreview.src = avatarSrc;
 
     editUserForm.dataset.userId = id;
     editUserModal.classList.add('active');
@@ -137,6 +186,7 @@ addUserBtn.onclick = async () => {
   addCheckbox.onchange = () => {
     addDisplayInput.value = addCheckbox.checked ? 'Active' : 'Inactive';
   };
+  addAvatarPreview.src = 'img/user.jpg';
   addUserModal.classList.add('active');
 };
 
@@ -147,6 +197,8 @@ addUserBtn.onclick = async () => {
     addUserModal.classList.remove('active');
     editUserForm.reset();
     addUserForm.reset();
+    addAvatarPreview.src = 'img/user.jpg';
+    editAvatarPreview.src = 'img/user.jpg';
   };
 });
 
@@ -156,6 +208,8 @@ addUserBtn.onclick = async () => {
       modal.classList.remove('active');
       editUserForm.reset();
       addUserForm.reset();
+      addAvatarPreview.src = 'img/user.jpg';
+      editAvatarPreview.src = 'img/user.jpg';
     }
   };
 });
@@ -196,10 +250,10 @@ editUserForm.onsubmit = async e => {
     alert('User updated successfully');
     editUserModal.classList.remove('active');
     editUserForm.reset();
-    fetchUsers();
+    fetchUsers();  // Refresh table to show updated avatar
   } catch (error) {
-    console.error(error);
-    alert('Failed to update user.');
+    console.error('Update error:', error);
+    alert('Failed to update user: ' + error.message);
   }
 };
 
