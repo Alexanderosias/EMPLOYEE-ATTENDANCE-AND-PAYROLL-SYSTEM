@@ -39,7 +39,7 @@ switch ($action) {
     try {
       $query = "
                 SELECT u.id, u.first_name, u.last_name, u.email, u.phone_number, u.address,
-                       d.name AS department_name, u.role, u.is_active, u.created_at
+                       d.name AS department_name, u.role, u.is_active, u.created_at, u.avatar_path
                 FROM users u
                 LEFT JOIN departments d ON u.department_id = d.id
                 ORDER BY u.created_at DESC
@@ -80,8 +80,32 @@ switch ($action) {
       // Hash password
       $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-      $stmt = $mysqli->prepare("INSERT INTO users (first_name, last_name, email, phone_number, address, department_id, role, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-      $stmt->bind_param("sssssisss", $firstName, $lastName, $email, $phone, $address, $departmentId, $role, $passwordHash, $isActive);
+      // === Handle avatar upload ===
+      $uploadDir = realpath(__DIR__ . '/../uploads/avatars/');
+      if (!$uploadDir) {
+        $uploadDir = __DIR__ . '/../uploads/avatars/';
+      }
+
+      if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+      }
+
+      $avatarPath = null;
+
+      if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+        $fileExt = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
+        $filename = 'user_' . time() . '_' . uniqid() . '.' . $fileExt;
+        $targetPath = $uploadDir . '/' . $filename;
+
+        if (move_uploaded_file($_FILES['avatar']['tmp_name'], $targetPath)) {
+          $avatarPath = 'uploads/avatars/' . $filename;
+        } else {
+          throw new Exception('Failed to upload avatar.');
+        }
+      }
+
+      $stmt = $mysqli->prepare("INSERT INTO users (first_name, last_name, email, phone_number, address, department_id, role, password_hash, is_active, avatar_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+      $stmt->bind_param("sssssissss", $firstName, $lastName, $email, $phone, $address, $departmentId, $role, $passwordHash, $isActive, $avatarPath);
       $stmt->execute();
       $stmt->close();
 
@@ -102,7 +126,7 @@ switch ($action) {
         throw new Exception('Invalid user ID');
       }
 
-      $stmt = $mysqli->prepare("SELECT * FROM users WHERE id = ?");
+      $stmt = $mysqli->prepare("SELECT *, avatar_path FROM users WHERE id = ?");
       $stmt->bind_param("i", $id);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -137,6 +161,26 @@ switch ($action) {
       $role = $_POST['role'] ?? 'admin';
       $isActive = isset($_POST['isActive']) ? (int)$_POST['isActive'] : 0;
 
+      // Check if trying to demote the last head admin
+      $currentRoleStmt = $mysqli->prepare("SELECT role FROM users WHERE id = ?");
+      $currentRoleStmt->bind_param("i", $id);
+      $currentRoleStmt->execute();
+      $currentRoleResult = $currentRoleStmt->get_result();
+      $currentUser = $currentRoleResult->fetch_assoc();
+      $currentRoleStmt->close();
+
+      if ($currentUser['role'] === 'head_admin' && $role === 'admin') {
+        // Count active head admins
+        $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users WHERE role = 'head_admin' AND is_active = 1");
+        $countStmt->execute();
+        $countResult = $countStmt->get_result();
+        $headAdminCount = $countResult->fetch_assoc()['count'];
+        $countStmt->close();
+        if ($headAdminCount <= 1) {
+          throw new Exception('Unable to update role: At least one head administrator must remain active.');
+        }
+      }
+
       if ($departmentId !== null) {
         $departmentId = (int)$departmentId;
         $checkStmt = $mysqli->prepare("SELECT id FROM departments WHERE id = ?");
@@ -147,9 +191,52 @@ switch ($action) {
         $checkStmt->close();
       }
 
+      $currentAvatar = null;
+      $stmt = $mysqli->prepare("SELECT avatar_path FROM users WHERE id = ?");
+      $stmt->bind_param("i", $id);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $currentAvatar = $row['avatar_path'];
+      }
+      $stmt->close();
+
+      // === Handle avatar upload ===
+      $uploadDir = realpath(__DIR__ . '/../uploads/avatars/');
+      if (!$uploadDir) {
+        $uploadDir = __DIR__ . '/../uploads/avatars/';
+      }
+
+      if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+      }
+
+      $avatarPath = $currentAvatar;
+
+      if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+        // Delete old avatar if exists
+        if ($currentAvatar) {
+          $oldPath = realpath(__DIR__ . '/../' . $currentAvatar);
+          if ($oldPath && file_exists($oldPath)) {
+            unlink($oldPath);
+          }
+        }
+
+        $fileExt = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
+        $filename = 'user_' . $id . '_' . time() . '.' . $fileExt;
+        $targetPath = $uploadDir . '/' . $filename;
+
+        if (move_uploaded_file($_FILES['avatar']['tmp_name'], $targetPath)) {
+          $avatarPath = 'uploads/avatars/' . $filename;
+        } else {
+          throw new Exception('Failed to upload new avatar.');
+        }
+      }
+
       // bind_param: s = string, i = integer
-      $stmt = $mysqli->prepare("UPDATE users SET first_name=?, last_name=?, email=?, phone_number=?, address=?, department_id=?, role=?, is_active=? WHERE id=?");
-      $stmt->bind_param("sssssissi", $firstName, $lastName, $email, $phone, $address, $departmentId, $role, $isActive, $id);
+      $stmt = $mysqli->prepare("UPDATE users SET first_name=?, last_name=?, email=?, phone_number=?, address=?, department_id=?, role=?, is_active=?, avatar_path=? WHERE id=?");
+      $stmt->bind_param("sssssisisi", $firstName, $lastName, $email, $phone, $address, $departmentId, $role, $isActive, $avatarPath, $id);
       $stmt->execute();
       $stmt->close();
 
@@ -165,6 +252,22 @@ switch ($action) {
       if (!$id || !is_numeric($id)) {
         throw new Exception('Invalid user ID');
       }
+
+      // Delete avatar file before deleting user
+      $stmt = $mysqli->prepare("SELECT avatar_path FROM users WHERE id = ?");
+      $stmt->bind_param("i", $id);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        if ($row['avatar_path']) {
+          $filePath = realpath(__DIR__ . '/../' . $row['avatar_path']);
+          if ($filePath && file_exists($filePath)) {
+            unlink($filePath);
+          }
+        }
+      }
+      $stmt->close();
 
       $stmt = $mysqli->prepare("DELETE FROM users WHERE id = ?");
       $stmt->bind_param("i", $id);

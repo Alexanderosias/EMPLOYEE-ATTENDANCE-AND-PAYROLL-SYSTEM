@@ -8,18 +8,19 @@ require_once '../views/auth.php'; // path relative to the page
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manage Users</title>
+  <title>EAAPS Manage Users</title>
   <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="src/styles.css">
   <link rel="stylesheet" href="css/users.css">
+  <link rel="stylesheet" href="css/status-message.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
-  <div id="successMessageBox" style="display: none;">
-    Login successful!
-  </div>
+  <!-- Status Message (for feedback) -->
+  <div id="status-message" class="status-message"></div>
+
   <div class="dashboard-container">
     <aside class="sidebar">
       <a class="sidebar-header" href="#">
@@ -127,8 +128,7 @@ require_once '../views/auth.php'; // path relative to the page
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-200">
               <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avatar</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -160,6 +160,15 @@ require_once '../views/auth.php'; // path relative to the page
         <div class="modal">
           <h3 id="add-user-modal-title">Add New User</h3>
           <form id="add-user-form">
+            <!-- Avatar Upload Section -->
+            <div class="avatar-upload-section">
+              <div class="avatar-preview">
+                <img id="add-avatar-preview" src="img/user.jpg" alt="Avatar Preview" class="avatar-circle" />
+              </div>
+              <button type="button" id="add-upload-avatar-btn" class="upload-avatar-btn">Upload Avatar</button>
+              <input type="file" id="add-avatar-input" name="avatar" accept="image/*" style="display: none;" />
+            </div>
+
             <div style="display: flex; gap: 1rem;">
               <div style="flex: 1;">
                 <label for="first-name">First Name</label>
@@ -218,6 +227,14 @@ require_once '../views/auth.php'; // path relative to the page
         <div class="modal">
           <h3 id="edit-user-modal-title">Edit User</h3>
           <form id="edit-user-form">
+            <!-- Avatar Upload Section -->
+            <div class="avatar-upload-section">
+              <div class="avatar-preview">
+                <img id="edit-avatar-preview" src="img/user.jpg" alt="Avatar Preview" class="avatar-circle" />
+              </div>
+              <button type="button" id="edit-upload-avatar-btn" class="upload-avatar-btn">Upload Avatar</button>
+              <input type="file" id="edit-avatar-input" name="avatar" accept="image/*" style="display: none;" />
+            </div>
             <div class="name-fields">
               <div>
                 <label for="edit-first-name">First Name</label>
