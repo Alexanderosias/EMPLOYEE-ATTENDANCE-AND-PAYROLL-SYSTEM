@@ -13,13 +13,14 @@ require_once '../views/auth.php'; // path relative to the page
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="src/styles.css">
   <link rel="stylesheet" href="css/users.css">
+  <link rel="stylesheet" href="css/status-message.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
-  <div id="successMessageBox" style="display: none;">
-    Login successful!
-  </div>
+  <!-- Status Message (for feedback) -->
+  <div id="status-message" class="status-message"></div>
+
   <div class="dashboard-container">
     <aside class="sidebar">
       <a class="sidebar-header" href="#">

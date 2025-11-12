@@ -1,5 +1,5 @@
 <?php
-require_once '../views/auth.php'; // path relative to the page
+require_once '../views/auth.php'; // Ensure user is logged in
 ?>
 
 <!DOCTYPE html>
@@ -20,6 +20,7 @@ require_once '../views/auth.php'; // path relative to the page
   <!-- Status Message (for feedback) -->
   <div id="status-message" class="status-message"></div>
   <div class="dashboard-container">
+
     <aside class="sidebar">
       <a class="sidebar-header" href="#">
         <img src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="Logo" class="logo" />
@@ -33,7 +34,7 @@ require_once '../views/auth.php'; // path relative to the page
               Dashboard
             </a>
           </li>
-          <li class="active">
+          <li>
             <a href="employees_page.php">
               <img src="icons/group.png" alt="Employees" class="icon" />
               Employees
@@ -114,7 +115,7 @@ require_once '../views/auth.php'; // path relative to the page
         </div>
       </header>
 
-      <!-- NEW: Profile Main Content -->
+      <!-- Profile Main Content -->
       <div class="profile-container">
         <!-- Profile Overview Card -->
         <div class="profile-card" id="profileCard">
@@ -122,14 +123,12 @@ require_once '../views/auth.php'; // path relative to the page
             <div class="upload-overlay" onclick="triggerImageUpload()">
               <img src="icons/camera.png" alt="Upload Photo" class="overlay-icon" />
             </div>
-            <!-- UPDATED: Dynamic image avatar with fixed positioning -->
             <img id="profileImage" class="profile-avatar" src="icons/profile-picture.png" alt="Profile Picture"
               onclick="triggerImageUpload()" />
-            <!-- NEW: Hidden file input for image upload -->
             <input type="file" id="imageUpload" accept="image/*" />
             <div class="profile-info">
-              <h3>Juan Dela Cruz</h3>
-              <p>System Administrator</p>
+              <h3 id="fullName">Loading...</h3>
+              <p id="roleDisplay">Loading...</p>
             </div>
           </div>
 
@@ -142,26 +141,26 @@ require_once '../views/auth.php'; // path relative to the page
             <div class="form-row">
               <div class="form-group">
                 <label for="firstName">First Name</label>
-                <input type="text" id="firstName" value="Juan" readonly />
+                <input type="text" id="firstName" readonly />
               </div>
               <div class="form-group">
                 <label for="lastName">Last Name</label>
-                <input type="text" id="lastName" value="Dela Cruz" readonly />
+                <input type="text" id="lastName" readonly />
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" value="juandelacruz@gmail.com" readonly />
+                <input type="email" id="email" readonly />
               </div>
               <div class="form-group">
                 <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" value="09743895783" readonly />
+                <input type="tel" id="phone" readonly />
               </div>
             </div>
             <div class="form-group">
               <label for="address">Address</label>
-              <textarea id="address" rows="3" readonly>House No., Street Name, Barangay, City/Municipality, Province</textarea>
+              <textarea id="address" rows="3" readonly></textarea>
             </div>
           </div>
 
@@ -174,25 +173,14 @@ require_once '../views/auth.php'; // path relative to the page
             <div class="form-row">
               <div class="form-group">
                 <label for="joinDate">Date Joined</label>
-                <input type="date" id="joinDate" value="2023-01-15" readonly />
+                <input type="date" id="joinDate" readonly />
               </div>
               <div class="form-group">
                 <label for="department">Department</label>
                 <select id="department" disabled>
-                  <option value="it">Engineering</option>
-                  <option value="hr">HM</option>
-                  <option value="finance">Education</option>
+                  <!-- Options populated by JS -->
                 </select>
               </div>
-            </div>
-            <!-- UPDATED: Date Joined always readonly -->
-            <div class="form-group">
-              <label for="role">Role</label>
-              <!-- UPDATED: Only 2 role options -->
-              <select id="role" disabled>
-                <option value="administrator" selected>Administrator</option>
-                <option value="head-administrator">Head Administrator</option>
-              </select>
             </div>
           </div>
 
@@ -211,10 +199,8 @@ require_once '../views/auth.php'; // path relative to the page
 
         <!-- Security Card -->
         <div class="profile-card">
-          <h4
-            style="color: var(--royal-blue); font-size: 1.25rem; margin-bottom: 1rem; font-weight: 600; display: flex; align-items: center;">
-            <img src="icons/computer-security-shield.png" alt="Security" class="section-icon"
-              style="margin-right: 0.5rem;" />
+          <h4 style="color: var(--royal-blue); font-size: 1.25rem; margin-bottom: 1rem; font-weight: 600; display: flex; align-items: center;">
+            <img src="icons/computer-security-shield.png" alt="Security" class="section-icon" style="margin-right: 0.5rem;" />
             Security & Password
           </h4>
           <div class="form-group">

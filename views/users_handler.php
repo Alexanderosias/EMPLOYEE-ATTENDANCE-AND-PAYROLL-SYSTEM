@@ -161,6 +161,26 @@ switch ($action) {
       $role = $_POST['role'] ?? 'admin';
       $isActive = isset($_POST['isActive']) ? (int)$_POST['isActive'] : 0;
 
+      // Check if trying to demote the last head admin
+      $currentRoleStmt = $mysqli->prepare("SELECT role FROM users WHERE id = ?");
+      $currentRoleStmt->bind_param("i", $id);
+      $currentRoleStmt->execute();
+      $currentRoleResult = $currentRoleStmt->get_result();
+      $currentUser = $currentRoleResult->fetch_assoc();
+      $currentRoleStmt->close();
+
+      if ($currentUser['role'] === 'head_admin' && $role === 'admin') {
+        // Count active head admins
+        $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users WHERE role = 'head_admin' AND is_active = 1");
+        $countStmt->execute();
+        $countResult = $countStmt->get_result();
+        $headAdminCount = $countResult->fetch_assoc()['count'];
+        $countStmt->close();
+        if ($headAdminCount <= 1) {
+          throw new Exception('Unable to update role: At least one head administrator must remain active.');
+        }
+      }
+
       if ($departmentId !== null) {
         $departmentId = (int)$departmentId;
         $checkStmt = $mysqli->prepare("SELECT id FROM departments WHERE id = ?");

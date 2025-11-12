@@ -33,7 +33,6 @@ function renderUsersTable(users) {
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
         <img src="${avatarSrc}" alt="Avatar" class="avatar-square" onerror="this.src='img/user.jpg'" />
       </td>
-      <!-- Removed: <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.id}</td> -->
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.first_name} ${user.last_name}</td>
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.email}</td>
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${user.phone_number || 'N/A'}</td>
@@ -158,7 +157,7 @@ async function editUser(id) {
     editUserModal.classList.add('active');
   } catch (error) {
     console.error('Error loading user:', error);
-    alert('Failed to load user data.');
+    showStatus('Failed to load user data.', 'error');
   }
 }
 
@@ -170,9 +169,10 @@ async function deleteUser(id) {
     const result = await response.json();
     if (!result.success) throw new Error(result.message);
     fetchUsers();
+    showStatus('User deleted successfully.', 'success');
   } catch (error) {
     console.error(error);
-    alert('Failed to delete user.');
+    showStatus('Failed to delete user.', 'error');
   }
 }
 
@@ -225,13 +225,13 @@ addUserForm.onsubmit = async e => {
     const response = await fetch(`${API_BASE}?action=add_user`, { method: 'POST', body: formData });
     const result = await response.json();
     if (!result.success) throw new Error(result.message);
-    alert('User added successfully');
+    showStatus('User added successfully.', 'success');
     addUserModal.classList.remove('active');
     addUserForm.reset();
     fetchUsers();
   } catch (error) {
     console.error(error);
-    alert('Failed to add user.');
+    showStatus('Failed to add user.', 'error');
   }
 };
 
@@ -247,15 +247,27 @@ editUserForm.onsubmit = async e => {
     const response = await fetch(`${API_BASE}?action=update_user&id=${userId}`, { method: 'POST', body: formData });
     const result = await response.json();
     if (!result.success) throw new Error(result.message);
-    alert('User updated successfully');
+    showStatus('User updated successfully.', 'success');
     editUserModal.classList.remove('active');
     editUserForm.reset();
     fetchUsers();  // Refresh table to show updated avatar
   } catch (error) {
     console.error('Update error:', error);
-    alert('Failed to update user: ' + error.message);
+    showStatus('Failed to update user: ' + error.message, 'error');
   }
 };
+
+// SHOW STATUS MESSAGE
+function showStatus(message, type) {
+  const statusDiv = document.getElementById('status-message');
+  statusDiv.textContent = message;
+  statusDiv.className = `status-message ${type}`;
+  statusDiv.style.display = 'block';
+  setTimeout(() => {
+    statusDiv.style.display = 'none';
+    statusDiv.className = 'status-message';
+  }, 5000);
+}
 
 // INIT
 document.addEventListener('DOMContentLoaded', fetchUsers);
