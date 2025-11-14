@@ -211,8 +211,21 @@ require_once '../views/auth.php'; // path relative to the page
               </div>
             </div>
 
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required />
+            <!-- Password Field -->
+            <div class="password-row">
+              <label for="add-password" class="form-label">Password</label>
+              <input id="add-password" type="password" name="password" placeholder=" " required>
+              <!-- Password Toggle Icon -->
+              <button type="button" id="add-password-toggle"
+                class="eye-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                  stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.575 3.01 9.963 7.173a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+            </div>
 
             <div class="modal-buttons">
               <button type="button" class="cancel-btn" id="add-user-cancel-btn">Cancel</button>

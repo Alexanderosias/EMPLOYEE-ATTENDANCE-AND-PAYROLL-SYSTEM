@@ -7,90 +7,26 @@
     <title>Verify Code</title>
     <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
     <link rel="stylesheet" href="src/styles.css">
+    <link rel="stylesheet" href="css/enter_code.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(-45deg, #000080, #191970, #4169E1, #000080);
-            background-size: 400% 400%;
-            animation: gradient-animation 15s ease infinite;
-        }
-
-        @keyframes gradient-animation {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .code-input-container {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .code-input {
-            width: 3rem;
-            height: 3rem;
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #fff;
-            background-color: transparent;
-            border: 2px solid transparent;
-            border-bottom: 2px solid #374151;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .code-input:focus {
-            outline: none;
-            border-bottom: 2px solid #87CEEB;
-        }
-
-        .spinner {
-            border: 2px solid #f0f8ff;
-            border-top: 2px solid #4169E1;
-            border-radius: 50%;
-            width: 1rem;
-            height: 1rem;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-4 text-gray-100">
 
+    <!-- Animated Message Box -->
+    <div id="animatedMessageBox"
+        class="hidden px-6 py-3 rounded-lg text-center font-semibold text-white shadow-lg max-w-sm w-full">
+        <p id="messageText"></p>
+    </div>
+
     <div class="w-full max-w-md p-8 rounded-2xl glass-card text-center">
         <h2 class="text-4xl font-extrabold text-white mb-2">Verify Code</h2>
         <p class="text-gray-300 mb-6">A 6-digit code has been sent to</p>
-        <p class="text-white text-lg font-semibold mb-6">admin@example.com</p>
+        <p class="text-white text-lg font-semibold mb-6" id="emailDisplay">Loading...</p>
+        <p class="text-gray-400 text-sm mb-4" id="countdown">Resend available in 60 seconds</p>
+
         <form id="verifyCodeForm" class="space-y-6">
             <div class="code-input-container">
                 <input class="code-input rounded-md" type="text" inputmode="numeric" maxlength="1" id="code-input-1"
@@ -119,7 +55,7 @@
             </div>
 
             <p class="text-center text-sm text-gray-400 mt-4">
-                Didn't receive a code? <a href="#" class="text-sky-400 hover:underline">Resend Code</a>
+                Didn't receive a code? <a href="#" id="resendLink" class="text-sky-400 hover:underline">Resend Code</a>
             </p>
             <p class="text-center text-sm text-gray-400 mt-2">
                 <a href="../index.html" class="text-sky-400 hover:underline">Return to Login</a>
@@ -127,95 +63,7 @@
         </form>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const verifyCodeForm = document.getElementById('verifyCodeForm');
-            const codeInputs = document.querySelectorAll('.code-input');
-            const verifyButton = document.getElementById('verifyButton');
-            const codeError = document.getElementById('codeError');
-
-            // --- Function to set up the sequential input logic ---
-            function setupSequentialInputs() {
-                // Add event listeners for sequential typing
-                codeInputs.forEach((input, index) => {
-                    input.addEventListener('input', (e) => {
-                        // NEW: Immediately strip any non-digit characters
-                        e.target.value = e.target.value.replace(/\D/g, '');
-
-                        const value = e.target.value;
-                        // Move to the next input if a digit is entered and it's not the last one
-                        if (value.length === 1 && index < codeInputs.length - 1) {
-                            codeInputs[index + 1].focus();
-                        }
-                    });
-
-                    // Handle backspace to move to the previous input
-                    input.addEventListener('keydown', (e) => {
-                        // Check if the key is 'Backspace' and the current input is empty
-                        if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
-                            codeInputs[index - 1].focus();
-                        }
-                    });
-
-                    // This is the new part to enforce sequential typing and prevent jumping ahead
-                    input.addEventListener('focus', () => {
-                        const firstEmptyIndex = Array.from(codeInputs).findIndex(i => i.value === '');
-                        if (index > firstEmptyIndex && firstEmptyIndex !== -1) {
-                            codeInputs[firstEmptyIndex].focus();
-                        }
-                    });
-                });
-            }
-
-            // Call the setup function when the page loads
-            setupSequentialInputs();
-
-            // --- Form Submission and Validation ---
-            verifyCodeForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-
-                // Clear previous errors
-                codeError.classList.add('hidden');
-
-                let fullCode = '';
-                let isValid = true;
-
-                // Concatenate the values from all inputs and validate
-                codeInputs.forEach(input => {
-                    const value = input.value.trim();
-                    if (value.length !== 1 || !/^\d$/.test(value)) {
-                        isValid = false;
-                    }
-                    fullCode += value;
-                });
-
-                if (isValid && fullCode.length === 6) {
-                    // Simulate a loading state
-                    verifyButton.disabled = true;
-                    verifyButton.innerHTML = `<div class="spinner"></div><span class="ml-2">Verifying...</span>`;
-
-                    // Simulate an async operation (e.g., API call)
-                    setTimeout(() => {
-                        // Reset the button and form after a successful "login"
-                        verifyButton.disabled = false;
-                        verifyButton.innerHTML = `Verify Code`;
-
-                        // In a real app, this would redirect to the password reset page
-                        // For now, we'll just show a success message
-                        const message = document.createElement('p');
-                        message.textContent = 'Code verified! You can now reset your password.';
-                        message.classList.add('text-green-400', 'text-sm', 'mt-4');
-                        verifyCodeForm.parentNode.insertBefore(message, verifyCodeForm.nextSibling);
-
-                        // Hide the form on success
-                        verifyCodeForm.classList.add('hidden');
-                    }, 2000);
-                } else {
-                    codeError.classList.remove('hidden');
-                }
-            });
-        });
-    </script>
+    <script src="../js/enter_code.js"></script>
 </body>
 
 </html>
