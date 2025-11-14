@@ -1,0 +1,97 @@
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(-45deg, #000080, #191970, #4169E1, #000080);
+  background-size: 400% 400%;
+  animation: gradient-animation 15s ease infinite;
+}
+
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Glassmorphism effect for the login card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Spinner animation for the button loading state */
+.spinner {
+  border: 2px solid #f0f8ff;
+  border-top: 2px solid #4169E1;
+  border-radius: 50%;
+  width: 1rem;
+  height: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Custom styles for the floating label effect */
+.form-input:placeholder-shown+.form-label {
+  transform: translate(1rem, -50%);
+  color: #d1d5db;
+}
+
+.form-input:focus+.form-label,
+.form-input:not(:placeholder-shown)+.form-label {
+  transform: translate(1rem, -2.5rem) scale(0.75);
+  color: #87CEEB;
+}
+
+.form-input:focus {
+  outline: none;
+  border-bottom: 2px solid #87CEEB;
+}
+
+.form-input {
+  border-bottom: 2px solid #374151;
+  transition: all 0.3s ease-in-out;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  background-clip: text;
+}
+
+/* Styles for the animated message box */
+#animatedMessageBox {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  opacity: 0;
+  z-index: 50;
+  /* Ensure it's on top of other content */
+}
+
+#animatedMessageBox.visible {
+  transform: translateX(-50%) translateY(1rem);
+  opacity: 1;
+}

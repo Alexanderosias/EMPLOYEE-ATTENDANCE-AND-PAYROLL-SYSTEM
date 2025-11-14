@@ -196,3 +196,18 @@
   object-fit: cover;
   border-radius: 4px;
 }
+
+.password-row {
+  transform: translateY(-20px);
+}
+
+.eye-icon {
+  position: absolute;
+  transform: translateX(-33px);
+  margin-top: 7px;
+  color: #2b2b2b;
+}
+
+.eye-icon:hover {
+  color: rgba(11, 114, 248, 0.979);
+}

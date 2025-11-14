@@ -163,7 +163,26 @@ document.getElementById('imageUpload').addEventListener('change', function (even
   }
 });
 
-// Change password
+// Password toggles
+const confirmPasswordToggle = document.getElementById('confirmPasswordToggle');
+const currentPasswordToggle = document.getElementById('currentPasswordToggle');
+const newPasswordToggle = document.getElementById('newPasswordToggle');
+
+function togglePasswordVisibility(input, toggle) {
+  const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+  input.setAttribute('type', type);
+
+  const eyeOpen = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.575 3.01 9.963 7.173a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
+  const eyeClosed = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.988 5.623a.9 4 4 0 010 .769 9.877 9.877 0 000 6.046c.381 2.385 1.503 4.266 3.048 5.485C9.37 19.262 10.9 19.5 12.067 19.5c1.167 0 2.697-.238 4.23-.782l.968-.34c.73-.243 1.408-.544 2.046-.902a1.012 1.012 0 00-.063-.035c-.158-.09-.313-.19-.462-.296l-1.07-1.1c-.26-.26-.54-.488-.83-.687a1.012 1.012 0 010-.639C16.64 10.51 16.64 12.49 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
+
+  toggle.innerHTML = type === 'password' ? eyeOpen : eyeClosed;
+}
+
+confirmPasswordToggle.addEventListener('click', () => togglePasswordVisibility(document.getElementById('confirmPassword'), confirmPasswordToggle));
+currentPasswordToggle.addEventListener('click', () => togglePasswordVisibility(document.getElementById('currentPassword'), currentPasswordToggle));
+newPasswordToggle.addEventListener('click', () => togglePasswordVisibility(document.getElementById('newPassword'), newPasswordToggle));
+
+// Change password with validation
 async function changePassword() {
   const currentPassword = document.getElementById('confirmPassword').value;
   const newPassword = document.getElementById('currentPassword').value;
@@ -175,6 +194,18 @@ async function changePassword() {
   }
   if (newPassword !== confirmPassword) {
     showStatus('New passwords do not match.', 'error');
+    return;
+  }
+  if (newPassword.length < 8) {
+    showStatus('Password must be at least 8 characters long.', 'error');
+    return;
+  }
+  if (!/\d/.test(newPassword)) {
+    showStatus('Password must contain at least one number.', 'error');
+    return;
+  }
+  if (/[^a-zA-Z0-9]/.test(newPassword)) {
+    showStatus('Password cannot contain special characters.', 'error');
     return;
   }
 

@@ -7,108 +7,10 @@
     <title>Forgot Password</title>
     <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
     <link rel="stylesheet" href="src/styles.css">
+    <link rel="stylesheet" href="css/send_code.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(-45deg, #000080, #191970, #4169E1, #000080);
-            background-size: 400% 400%;
-            animation: gradient-animation 15s ease infinite;
-        }
-
-        @keyframes gradient-animation {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
-        }
-
-        /* Glassmorphism effect for the login card */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Spinner animation for the button loading state */
-        .spinner {
-            border: 2px solid #f0f8ff;
-            border-top: 2px solid #4169E1;
-            border-radius: 50%;
-            width: 1rem;
-            height: 1rem;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Custom styles for the floating label effect */
-        .form-input:placeholder-shown+.form-label {
-            transform: translate(1rem, -50%);
-            color: #d1d5db;
-        }
-
-        .form-input:focus+.form-label,
-        .form-input:not(:placeholder-shown)+.form-label {
-            transform: translate(1rem, -2.5rem) scale(0.75);
-            color: #87CEEB;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-bottom: 2px solid #87CEEB;
-        }
-
-        .form-input {
-            border-bottom: 2px solid #374151;
-            transition: all 0.3s ease-in-out;
-        }
-
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        input:-webkit-autofill:active {
-            -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
-            -webkit-text-fill-color: #ffffff !important;
-            transition: background-color 5000s ease-in-out 0s;
-            background-clip: text;
-        }
-
-        /* Styles for the animated message box */
-        #animatedMessageBox {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%) translateY(-100%);
-            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
-            opacity: 0;
-            z-index: 50;
-            /* Ensure it's on top of other content */
-        }
-
-        #animatedMessageBox.visible {
-            transform: translateX(-50%) translateY(1rem);
-            opacity: 1;
-        }
-    </style>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-4 text-gray-100 relative">
@@ -150,69 +52,7 @@
         </form>
     </div>
 
-    <!-- JavaScript for button states and interactions -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const forgotPasswordForm = document.getElementById('forgotPasswordForm');
-            const userEmailInput = document.getElementById('userEmail');
-            const sendButton = document.getElementById('sendButton');
-            const animatedMessageBox = document.getElementById('animatedMessageBox');
-            const messageText = document.getElementById('messageText');
-
-            // Function to display and hide the animated message box
-            const displayMessage = (message, isError = true) => {
-                messageText.textContent = message;
-                animatedMessageBox.classList.remove('hidden', 'bg-red-500', 'bg-green-500');
-
-                if (isError) {
-                    animatedMessageBox.classList.add('bg-red-500');
-                } else {
-                    animatedMessageBox.classList.add('bg-green-500');
-                }
-
-                // Show the message box with a transition
-                setTimeout(() => {
-                    animatedMessageBox.classList.add('visible');
-                }, 10);
-
-                // Hide the message box after 5 seconds
-                setTimeout(() => {
-                    animatedMessageBox.classList.remove('visible');
-                    // Add the 'hidden' class after the transition is complete
-                    setTimeout(() => {
-                        animatedMessageBox.classList.add('hidden');
-                    }, 500); // Matches the CSS transition duration
-                }, 5000); // 5 seconds
-            };
-
-            // --- Form Submission and Validation ---
-            forgotPasswordForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-
-                const userEmail = userEmailInput.value.trim();
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-                if (emailRegex.test(userEmail)) {
-                    // Simulate a loading state
-                    sendButton.disabled = true;
-                    sendButton.innerHTML = `<div class="spinner"></div><span class="ml-2">Sending...</span>`;
-
-                    // Simulate a successful async operation (e.g., API call)
-                    setTimeout(() => {
-                        // Display a success message
-                        displayMessage('Verification code sent successfully.', false);
-
-                        // Redirect to the enter code page after a short delay
-                        setTimeout(() => {
-                            window.location.href = `enter_code.html?email=${encodeURIComponent(userEmail)}`;
-                        }, 2000);
-                    }, 2000);
-                } else {
-                    displayMessage('Please enter a valid email address.');
-                }
-            });
-        });
-    </script>
+    <script src="../js/send_code.js"></script>
 </body>
 
 </html>
