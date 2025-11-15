@@ -85,13 +85,13 @@ require_once '../views/auth.php'; // path relative to the page
                 Users
               </a>
             </li>
+            <li>
+              <a href="settings_page.php">
+                <img src="icons/coghweel.png" alt="Settings" class="icon" />
+                Settings
+              </a>
+            </li>
           <?php endif; ?>
-          <li>
-            <a href="settings_page.php">
-              <img src="icons/coghweel.png" alt="Settings" class="icon" />
-              Settings
-            </a>
-          </li>
         </ul>
       </nav>
 
@@ -112,28 +112,37 @@ require_once '../views/auth.php'; // path relative to the page
       </header>
 
       <div class="search-add-bar">
-        <div class="search-input-group">
-          <input type="text" id="search-input" class="search-input" placeholder="Search employee name" />
-          <button id="search-btn" class="search-btn" aria-label="Search">
-            <img src="icons/search.png" alt="Search" />
+        <div class="filter-add-group">
+          <div class="search-input-group">
+            <input type="text" id="search-input" class="search-input" placeholder="Search employee name" />
+            <button id="search-btn" class="search-btn" aria-label="Search">
+              <img src="icons/search.png" alt="Search" />
+            </button>
+          </div>
+
+          <div class="filter-group">
+            <select id="filter-department" class="filter-select" aria-label="Filter by Department">
+              <option value="">All Departments</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <select id="filter-job-position" class="filter-select" aria-label="Filter by Job Position">
+              <option value="">All Job Positions</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="buttons-group">
+          <button id="import-employee-btn" class="import-employee-btn" aria-label="Import Employees" title="Import">
+            <img src="icons/import.png" alt="Import" />
+          </button>
+
+          <button id="add-employee-btn" class="add-employee-btn" aria-label="Add Employee">
+            Add Employee <img src="icons/add-emp.png" alt="Add Employee" />
           </button>
         </div>
 
-        <div class="filter-group">
-          <select id="filter-department" class="filter-select" aria-label="Filter by Department">
-            <option value="">All Departments</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <select id="filter-job-position" class="filter-select" aria-label="Filter by Job Position">
-            <option value="">All Job Positions</option>
-          </select>
-        </div>
-
-        <button id="add-employee-btn" class="add-employee-btn" aria-label="Add Employee">
-          Add Employee <img src="icons/add-emp.png" alt="Add Employee" />
-        </button>
       </div>
 
       <div class="employee-list" id="employee-list-container">

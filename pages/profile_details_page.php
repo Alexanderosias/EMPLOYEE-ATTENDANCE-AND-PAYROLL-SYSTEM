@@ -89,13 +89,13 @@ require_once '../views/auth.php'; // Ensure user is logged in
                 Users
               </a>
             </li>
+            <li>
+              <a href="settings_page.php">
+                <img src="icons/coghweel.png" alt="Settings" class="icon" />
+                Settings
+              </a>
+            </li>
           <?php endif; ?>
-          <li>
-            <a href="settings_page.php">
-              <img src="icons/coghweel.png" alt="Settings" class="icon" />
-              Settings
-            </a>
-          </li>
         </ul>
       </nav>
 

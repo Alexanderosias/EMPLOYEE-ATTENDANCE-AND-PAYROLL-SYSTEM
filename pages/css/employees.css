@@ -30,7 +30,6 @@
   background-color: rgb(240, 242, 245, 0.8);
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
-  gap: 1rem;
   margin-bottom: 2rem;
   flex-wrap: wrap;
   align-items: center;
@@ -38,12 +37,26 @@
   z-index: 100;
 }
 
+.filter-add-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 70%;
+}
+
+.buttons-group {
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  gap: 20px;
+  width: 30%;
+}
+
 .search-input-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-grow: 1;
-  max-width: 400px;
+  max-width: 300px;
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 0.25rem 0.5rem;
@@ -51,7 +64,6 @@
 }
 
 .search-input {
-  flex-grow: 1;
   border: none;
   outline: none;
   font-size: 1rem;
@@ -554,10 +566,9 @@
 
 
 .filter-group {
-  margin-left: -40px;
   margin-top: 16px;
   display: flex;
-  align-items: start;
+  align-items: center;
 }
 
 .filter-select {
@@ -592,40 +603,67 @@
 }
 
 .emergency-contact-section {
-  grid-column: 1 / -1;  
+  grid-column: 1 / -1;
   border: 1px solid #ddd;
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
-  background-color: #f9f9f9; 
+  background-color: #f9f9f9;
 }
 
-.emergency-contact-section > label {  
+.emergency-contact-section>label {
   display: block;
   font-weight: bold;
-  margin-bottom: 0.75rem;  
+  margin-bottom: 0.75rem;
   color: #333;
-  font-size: 1.1rem;  
-  border-bottom: 1px solid #eee;  
+  font-size: 1.1rem;
+  border-bottom: 1px solid #eee;
   padding-bottom: 0.25rem;
 }
 
 .emergency-contact-section .form-group {
-  flex: 1;  
-  min-width: 200px; 
-  margin-bottom: 0;  
+  flex: 1;
+  min-width: 200px;
+  margin-bottom: 0;
 }
 
 .emergency-contact-section .form-group label {
   margin-top: 15px;
 }
 
-.emergency-contact-section > div { 
+.emergency-contact-section>div {
   display: flex;
   flex-wrap: wrap;
 }
 
 .emergency-contact-section .form-group input {
-  width: 100%; 
+  width: 100%;
   box-sizing: border-box;
+}
+
+.import-employee-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: royalblue;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1rem;
+  box-shadow: 0 3px 4px rgba(0, 0, 0, 0.5);
+  transform: translateY(0);
+  transition: background-color 0.2s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.import-employee-btn:hover {
+  background-color: #4169E1;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  transform: translateY(2px);
+}
+
+.import-employee-btn img {
+  width: 18px;
+  height: 18px;
 }
