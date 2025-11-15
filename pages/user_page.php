@@ -200,6 +200,7 @@ require_once '../views/auth.php'; // path relative to the page
                 <select id="role" name="role" required>
                   <option value="admin">Admin</option>
                   <option value="head_admin">Head Admin</option>
+                  <option value="admin">Employee</option>
                 </select>
               </div>
               <div>

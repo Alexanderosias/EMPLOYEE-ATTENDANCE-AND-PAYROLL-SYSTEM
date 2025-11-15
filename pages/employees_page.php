@@ -134,10 +134,9 @@ require_once '../views/auth.php'; // path relative to the page
         </div>
 
         <div class="buttons-group">
-          <button id="import-employee-btn" class="import-employee-btn" aria-label="Import Employees" title="Import">
+          <!-- <button id="import-employee-btn" class="import-employee-btn" aria-label="Import Employees" title="Import">
             <img src="icons/import.png" alt="Import" />
-          </button>
-
+          </button> -->
           <button id="add-employee-btn" class="add-employee-btn" aria-label="Add Employee">
             Add Employee <img src="icons/add-emp.png" alt="Add Employee" />
           </button>
