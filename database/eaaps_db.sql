@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 08, 2025 at 09:22 AM
+-- Generation Time: Nov 16, 2025 at 03:30 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -43,6 +43,13 @@ CREATE TABLE `attendance_logs` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `attendance_logs`
+--
+
+INSERT INTO `attendance_logs` (`id`, `employee_id`, `date`, `time_in`, `time_out`, `expected_start_time`, `expected_end_time`, `partial_absence_hours`, `status`, `snapshot_path`, `check_type`, `is_synced`, `created_at`, `updated_at`) VALUES
+(18, 16, '2025-11-10', '2025-11-10 21:02:39', '2025-11-10 21:30:25', '07:00:00', '08:30:00', 0.00, 'Present', 'uploads/snapshots/snapshot_18_1762781425.png', 'in', 0, '2025-11-10 13:02:39', '2025-11-10 13:30:25');
 
 -- --------------------------------------------------------
 
@@ -88,6 +95,7 @@ INSERT INTO `departments` (`id`, `name`, `created_at`, `updated_at`) VALUES
 
 CREATE TABLE `employees` (
   `id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
   `first_name` varchar(100) NOT NULL,
   `last_name` varchar(100) NOT NULL,
   `address` text NOT NULL,
@@ -111,6 +119,13 @@ CREATE TABLE `employees` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `employees`
+--
+
+INSERT INTO `employees` (`id`, `user_id`, `first_name`, `last_name`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`) VALUES
+(16, NULL, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Annaliza Osias', '09432487398', 'Mother', '2025-11-10', 7, 13, 100.00, 15, 5, 10, 'uploads/avatars/emp_16_1762879611.png', '2025-11-10 12:57:16', '2025-11-11 16:46:51');
+
 -- --------------------------------------------------------
 
 --
@@ -120,6 +135,7 @@ CREATE TABLE `employees` (
 CREATE TABLE `job_positions` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
+  `rate_per_hour` decimal(10,2) DEFAULT 0.00,
   `payroll_frequency` enum('daily','weekly','bi-weekly','monthly') DEFAULT 'bi-weekly',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -129,10 +145,30 @@ CREATE TABLE `job_positions` (
 -- Dumping data for table `job_positions`
 --
 
-INSERT INTO `job_positions` (`id`, `name`, `payroll_frequency`, `created_at`, `updated_at`) VALUES
-(1, 'Instructor', 'bi-weekly', '2025-09-25 15:13:02', '2025-09-25 15:13:02'),
-(7, 'Cashier', 'bi-weekly', '2025-09-25 15:51:04', '2025-09-25 15:51:04'),
-(8, 'Dean', 'bi-weekly', '2025-09-25 15:51:34', '2025-09-25 15:51:34');
+INSERT INTO `job_positions` (`id`, `name`, `rate_per_hour`, `payroll_frequency`, `created_at`, `updated_at`) VALUES
+(11, 'Cashier', 120.00, 'bi-weekly', '2025-11-08 09:48:47', '2025-11-08 09:48:47'),
+(12, 'Dean', 150.00, 'bi-weekly', '2025-11-10 05:24:52', '2025-11-10 05:24:52'),
+(13, 'Instructor', 100.00, 'bi-weekly', '2025-11-10 12:56:32', '2025-11-10 12:56:32');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `leave_requests`
+--
+
+CREATE TABLE `leave_requests` (
+  `id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL,
+  `leave_type` enum('Sick','Vacation','Unpaid') NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `days` int(11) NOT NULL,
+  `reason` text DEFAULT NULL,
+  `status` enum('Pending','Approved','Rejected') DEFAULT 'Pending',
+  `submitted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `approved_at` timestamp NULL DEFAULT NULL,
+  `approved_by` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -142,10 +178,9 @@ INSERT INTO `job_positions` (`id`, `name`, `payroll_frequency`, `created_at`, `u
 
 CREATE TABLE `password_resets` (
   `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `reset_code` varchar(255) NOT NULL,
-  `expires_at` datetime NOT NULL,
-  `used` tinyint(1) DEFAULT 0,
+  `email` varchar(255) NOT NULL,
+  `code` varchar(6) NOT NULL,
+  `expires_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -187,6 +222,13 @@ CREATE TABLE `qr_codes` (
   `generated_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `qr_codes`
+--
+
+INSERT INTO `qr_codes` (`id`, `employee_id`, `qr_data`, `qr_image_path`, `generated_at`) VALUES
+(13, 16, 'ID:16|First:Alexander|Last:Osias|Position:Instructor|Joined:2025-11-10', 'qrcodes/AlexanderOsias.png', '2025-11-10 12:57:16');
+
 -- --------------------------------------------------------
 
 --
@@ -203,6 +245,13 @@ CREATE TABLE `schedules` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `schedules`
+--
+
+INSERT INTO `schedules` (`id`, `employee_id`, `day_of_week`, `shift_name`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
+(26, 16, 'Monday', 'ITP 101 - Lab 3', '07:00:00', '08:30:00', '2025-11-10 12:58:33', '2025-11-10 12:58:33');
 
 -- --------------------------------------------------------
 
@@ -235,6 +284,13 @@ CREATE TABLE `snapshots` (
   `image_path` varchar(500) NOT NULL,
   `captured_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `snapshots`
+--
+
+INSERT INTO `snapshots` (`id`, `attendance_log_id`, `image_path`, `captured_at`) VALUES
+(25, 18, 'uploads/snapshots/snapshot_18_1762781425.png', '2025-11-10 13:30:25');
 
 -- --------------------------------------------------------
 
@@ -293,12 +349,20 @@ CREATE TABLE `users` (
   `phone_number` varchar(20) DEFAULT NULL,
   `address` text DEFAULT NULL,
   `department_id` int(11) DEFAULT NULL,
-  `role` enum('head_admin','admin') NOT NULL DEFAULT 'admin',
+  `role` enum('head_admin','admin','employee') NOT NULL DEFAULT 'admin',
   `password_hash` varchar(255) NOT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `avatar_path` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `phone_number`, `address`, `department_id`, `role`, `password_hash`, `is_active`, `created_at`, `updated_at`, `avatar_path`) VALUES
+(37, 'Giyu', 'Tomioka', 'alexanderosias123@gmail.com', '09305909175', 'So. Bugho\r\nBarangay Dampigan', 7, 'head_admin', '$2y$10$DMz2nEUAfALg7PsLcUDcZ.GMp9G8nTV6jckqQ0fj7GwJINtmD99HG', 1, '2025-11-16 07:15:52', '2025-11-16 08:04:52', NULL);
 
 --
 -- Indexes for dumped tables
@@ -338,7 +402,8 @@ ALTER TABLE `employees`
   ADD KEY `idx_email` (`email`),
   ADD KEY `idx_date_joined` (`date_joined`),
   ADD KEY `idx_marital_status` (`marital_status`),
-  ADD KEY `idx_emergency_contact` (`emergency_contact_phone`);
+  ADD KEY `idx_emergency_contact` (`emergency_contact_phone`),
+  ADD KEY `fk_employees_user` (`user_id`);
 
 --
 -- Indexes for table `job_positions`
@@ -349,12 +414,20 @@ ALTER TABLE `job_positions`
   ADD KEY `idx_name` (`name`);
 
 --
+-- Indexes for table `leave_requests`
+--
+ALTER TABLE `leave_requests`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `employee_id` (`employee_id`),
+  ADD KEY `approved_by` (`approved_by`);
+
+--
 -- Indexes for table `password_resets`
 --
 ALTER TABLE `password_resets`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_code` (`reset_code`),
-  ADD KEY `idx_user` (`user_id`);
+  ADD KEY `idx_email` (`email`),
+  ADD KEY `idx_expires` (`expires_at`);
 
 --
 -- Indexes for table `payroll`
@@ -424,7 +497,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `attendance_logs`
 --
 ALTER TABLE `attendance_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `backup_restore_settings`
@@ -436,25 +509,31 @@ ALTER TABLE `backup_restore_settings`
 -- AUTO_INCREMENT for table `departments`
 --
 ALTER TABLE `departments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT for table `job_positions`
 --
 ALTER TABLE `job_positions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+
+--
+-- AUTO_INCREMENT for table `leave_requests`
+--
+ALTER TABLE `leave_requests`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
 --
 ALTER TABLE `password_resets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT for table `payroll`
@@ -466,13 +545,13 @@ ALTER TABLE `payroll`
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `school_settings`
@@ -484,7 +563,7 @@ ALTER TABLE `school_settings`
 -- AUTO_INCREMENT for table `snapshots`
 --
 ALTER TABLE `snapshots`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `tax_deduction_settings`
@@ -502,7 +581,7 @@ ALTER TABLE `time_date_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- Constraints for dumped tables
@@ -519,13 +598,15 @@ ALTER TABLE `attendance_logs`
 --
 ALTER TABLE `employees`
   ADD CONSTRAINT `fk_employees_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_employees_jobposition` FOREIGN KEY (`job_position_id`) REFERENCES `job_positions` (`id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_employees_jobposition` FOREIGN KEY (`job_position_id`) REFERENCES `job_positions` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_employees_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `password_resets`
+-- Constraints for table `leave_requests`
 --
-ALTER TABLE `password_resets`
-  ADD CONSTRAINT `fk_passwordresets_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `leave_requests`
+  ADD CONSTRAINT `leave_requests_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `leave_requests_ibfk_2` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `payroll`

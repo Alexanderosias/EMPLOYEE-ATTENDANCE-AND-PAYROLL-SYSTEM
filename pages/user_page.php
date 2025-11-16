@@ -200,7 +200,7 @@ require_once '../views/auth.php'; // path relative to the page
                 <select id="role" name="role" required>
                   <option value="admin">Admin</option>
                   <option value="head_admin">Head Admin</option>
-                  <option value="admin">Employee</option>
+                  <option value="employee">Employee</option>
                 </select>
               </div>
               <div>
@@ -275,6 +275,7 @@ require_once '../views/auth.php'; // path relative to the page
                 <select id="edit-role" name="role" aria-placeholder="Select role" required>
                   <option value="admin">Admin</option>
                   <option value="head_admin">Head Admin</option>
+                  <option value="employee">Employee</option>
                 </select>
               </div>
               <div>
@@ -298,6 +299,9 @@ require_once '../views/auth.php'; // path relative to the page
 
   <script src="../js/dashboard.js"></script>
   <script src="../js/current_time.js"></script>
+  <script>
+    const currentUserId = <?php echo json_encode($_SESSION['user_id'] ?? 0); ?>;
+  </script>
   <script src="../js/users_page.js"></script>
 
 </body>

@@ -163,7 +163,12 @@ async function editUser(id) {
 
 // DELETE USER
 async function deleteUser(id) {
-  if (!confirm('Are you sure you want to delete this user?')) return;
+  if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+
+  if (id == currentUserId) {
+    if (!confirm('You are attempting to delete your own account. Are you certain you want to continue?')) return;
+  }
+
   try {
     const response = await fetch(`${API_BASE}?action=delete_user&id=${id}`, { method: 'DELETE' });
     const result = await response.json();
@@ -172,9 +177,10 @@ async function deleteUser(id) {
     showStatus('User deleted successfully.', 'success');
   } catch (error) {
     console.error(error);
-    showStatus('Failed to delete user.', 'error');
+    showStatus('Failed to delete user: ' + error.message, 'error');
   }
 }
+
 
 // ADD USER MODAL
 addUserBtn.onclick = async () => {
