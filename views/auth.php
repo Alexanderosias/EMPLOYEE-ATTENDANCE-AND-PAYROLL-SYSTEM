@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
 // Role-based page access
 $restrictedPages = [
     'user_page.php' => ['head_admin'], // Only head_admin can access
-    // Add more: 'settings_page.php' => ['head_admin'],
+    'settings_page.php' => ['head_admin'],
 ];
 
 // Get current page name

@@ -38,19 +38,20 @@ switch ($action) {
   case 'list_users':
     try {
       $query = "
-                SELECT u.id, u.first_name, u.last_name, u.email, u.phone_number, u.address,
-                       d.name AS department_name, u.role, u.is_active, u.created_at, u.avatar_path
-                FROM users u
-                LEFT JOIN departments d ON u.department_id = d.id
-                ORDER BY u.created_at DESC
-            ";
+        SELECT u.id, u.first_name, u.last_name, u.email, u.phone_number, u.address,
+               d.name AS department_name, u.role, u.is_active, u.created_at,
+               CASE WHEN u.role = 'employee' THEN e.avatar_path ELSE u.avatar_path END AS avatar_path
+        FROM users u
+        LEFT JOIN departments d ON u.department_id = d.id
+        LEFT JOIN employees e ON u.id = e.user_id
+        ORDER BY u.created_at DESC
+      ";
       $result = $mysqli->query($query);
       if (!$result) {
         throw new Exception('Query failed: ' . $mysqli->error);
       }
       $users = $result->fetch_all(MYSQLI_ASSOC);
       $result->free();
-
       ob_end_clean();
       echo json_encode(['success' => true, 'data' => $users]);
     } catch (Exception $e) {
@@ -125,14 +126,17 @@ switch ($action) {
       if (!$id || !is_numeric($id)) {
         throw new Exception('Invalid user ID');
       }
-
-      $stmt = $mysqli->prepare("SELECT *, avatar_path FROM users WHERE id = ?");
+      $stmt = $mysqli->prepare("
+        SELECT u.*, CASE WHEN u.role = 'employee' THEN e.avatar_path ELSE u.avatar_path END AS avatar_path
+        FROM users u
+        LEFT JOIN employees e ON u.id = e.user_id
+        WHERE u.id = ?
+      ");
       $stmt->bind_param("i", $id);
       $stmt->execute();
       $result = $stmt->get_result();
       $user = $result->fetch_assoc();
       $stmt->close();
-
       if (!$user) {
         throw new Exception('User not found');
       }
@@ -161,7 +165,31 @@ switch ($action) {
       $role = $_POST['role'] ?? 'admin';
       $isActive = isset($_POST['isActive']) ? (int)$_POST['isActive'] : 0;
 
-      // Check if trying to demote the last head admin
+      $current_user_id = $_SESSION['user_id'] ?? 0;
+
+      // Check if trying to deactivate the last head admin (including self)
+      if ($isActive === 0) {
+        $stmt = $mysqli->prepare("SELECT role FROM users WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
+
+        if ($user['role'] === 'head_admin') {
+          $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users WHERE role = 'head_admin' AND is_active = 1 AND id != ?");
+          $countStmt->bind_param("i", $id);
+          $countStmt->execute();
+          $countResult = $countStmt->get_result();
+          $otherHeadAdminCount = $countResult->fetch_assoc()['count'];
+          $countStmt->close();
+          if ($otherHeadAdminCount === 0) {
+            throw new Exception('Cannot deactivate the last active head administrator.');
+          }
+        }
+      }
+
+      // Check if trying to change role away from head_admin for the last head admin
       $currentRoleStmt = $mysqli->prepare("SELECT role FROM users WHERE id = ?");
       $currentRoleStmt->bind_param("i", $id);
       $currentRoleStmt->execute();
@@ -169,8 +197,7 @@ switch ($action) {
       $currentUser = $currentRoleResult->fetch_assoc();
       $currentRoleStmt->close();
 
-      if ($currentUser['role'] === 'head_admin' && $role === 'admin') {
-        // Count active head admins
+      if ($currentUser['role'] === 'head_admin' && $role !== 'head_admin') {
         $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users WHERE role = 'head_admin' AND is_active = 1");
         $countStmt->execute();
         $countResult = $countStmt->get_result();
@@ -224,7 +251,7 @@ switch ($action) {
         }
 
         $fileExt = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
-        $filename = 'user_' . $id . '_' . time() . '.' . $fileExt;
+        $filename = 'user_' . $id . '_' . time() . '.' . $file_ext;
         $targetPath = $uploadDir . '/' . $filename;
 
         if (move_uploaded_file($_FILES['avatar']['tmp_name'], $targetPath)) {
@@ -240,8 +267,12 @@ switch ($action) {
       $stmt->execute();
       $stmt->close();
 
+      ob_end_clean();
       echo json_encode(['success' => true, 'message' => 'User updated']);
     } catch (Exception $e) {
+      error_log("Update User Error: " . $e->getMessage());
+      ob_end_clean();
+      http_response_code(500);
       echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     break;
@@ -252,9 +283,32 @@ switch ($action) {
       if (!$id || !is_numeric($id)) {
         throw new Exception('Invalid user ID');
       }
+      $current_user_id = $_SESSION['user_id'] ?? 0;
+      // Check if trying to delete the last head_admin
+      $stmt = $mysqli->prepare("SELECT role FROM users WHERE id = ?");
+      $stmt->bind_param("i", $id);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $user = $result->fetch_assoc();
+      $stmt->close();
+      if ($user['role'] === 'head_admin') {
+        $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users WHERE role = 'head_admin' AND is_active = 1");
+        $countStmt->execute();
+        $countResult = $countStmt->get_result();
+        $headAdminCount = $countResult->fetch_assoc()['count'];
+        $countStmt->close();
+        if ($headAdminCount <= 1) {
+          throw new Exception('Cannot delete the last active head administrator.');
+        }
+      }
 
-      // Delete avatar file before deleting user
-      $stmt = $mysqli->prepare("SELECT avatar_path FROM users WHERE id = ?");
+      // Delete avatar file
+      $stmt = $mysqli->prepare("
+        SELECT CASE WHEN u.role = 'employee' THEN e.avatar_path ELSE u.avatar_path END AS avatar_path
+        FROM users u
+        LEFT JOIN employees e ON u.id = e.user_id
+        WHERE u.id = ?
+      ");
       $stmt->bind_param("i", $id);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -268,7 +322,6 @@ switch ($action) {
         }
       }
       $stmt->close();
-
       $stmt = $mysqli->prepare("DELETE FROM users WHERE id = ?");
       $stmt->bind_param("i", $id);
       $stmt->execute();
@@ -290,7 +343,6 @@ switch ($action) {
     echo json_encode(['success' => false, 'message' => 'Invalid action']);
     break;
 }
-
 if ($mysqli) {
   $mysqli->close();
 }
