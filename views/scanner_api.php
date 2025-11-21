@@ -121,58 +121,108 @@ switch ($action) {
             $checkType = 'in';
             $timeIn = $now;
             $timeOut = null;
-            if ($existingLog) {
+            $logId = null;
+
+            // Only treat as existing if time_in is already set (ignore pre-populated 'Absent' logs with null time_in)
+            if ($existingLog && $existingLog['time_in']) {
                 if ($existingLog['time_out']) {
                     throw new Exception('Already checked out for today.');
                 }
+
+                // Cooldown check: Prevent scanning out if less than 60 seconds since time-in
+                $secondsSinceTimeIn = strtotime($now) - strtotime($existingLog['time_in']);
+                if ($secondsSinceTimeIn < 60) {
+                    $remaining = 60 - $secondsSinceTimeIn;
+                    throw new Exception("Please wait $remaining seconds before scanning out.");
+                }
+
                 $checkType = 'out';
                 $timeOut = $now;
                 $timeIn = $existingLog['time_in'];
+                $logId = $existingLog['id'];
             }
 
-            // Get expected times from schedule (assuming one schedule per day)
+            // Get all schedules for the employee for the current day
             $dayOfWeek = date('l');  // e.g., 'Monday'
-            $stmt = $mysqli->prepare("SELECT start_time, end_time FROM schedules WHERE employee_id = ? AND day_of_week = ? LIMIT 1");
+            $stmt = $mysqli->prepare("SELECT start_time, end_time FROM schedules WHERE employee_id = ? AND day_of_week = ? ORDER BY start_time ASC");
             $stmt->bind_param('is', $employeeId, $dayOfWeek);
             $stmt->execute();
             $scheduleResult = $stmt->get_result();
-            $schedule = $scheduleResult->fetch_assoc();
+            $schedules = $scheduleResult->fetch_all(MYSQLI_ASSOC);
             $stmt->close();
 
-            if (!$schedule) {
+            if (empty($schedules)) {
                 throw new Exception('No schedule found for this employee on ' . $dayOfWeek . '. Scanning not allowed.');
             }
 
-            $expectedStart = $schedule['start_time'];
-            $expectedEnd = $schedule['end_time'];
+            // Determine earliest start time and latest end time
+            $earliestStart = $schedules[0]['start_time'];
+            $latestEnd = $schedules[0]['end_time'];
 
-            // Basic status (expand as needed)
-            $status = 'Present';
-            if ($checkType === 'in' && $expectedStart && strtotime($now) > strtotime($today . ' ' . $expectedStart)) {
-                $status = 'Late';
-            } elseif ($checkType === 'out' && $expectedEnd && strtotime($now) < strtotime($today . ' ' . $expectedEnd)) {
-                $status = 'Undertime';
+            foreach ($schedules as $sched) {
+                if (strtotime($sched['end_time']) > strtotime($latestEnd)) {
+                    $latestEnd = $sched['end_time'];
+                }
             }
 
+            // Check if scanning after the latest end time (Shift Ended)
+            // Only apply this check for Time-In. Time-Out is allowed after shift end.
+            if ($checkType === 'in' && strtotime($now) > strtotime($today . ' ' . $latestEnd)) {
+                throw new Exception('Your shift has ended. You cannot time-in anymore.');
+            }
+
+            // Determine Status
+            $status = 'Present';
+            $gracePeriodMinutes = 15; // Example grace period, can be made dynamic later
+
+            if ($checkType === 'in') {
+                $expectedStartTimeStr = $today . ' ' . $earliestStart;
+                // Late if current time > expected start time + grace period
+                // For strict comparison without grace period, remove the addition
+                if (strtotime($now) > strtotime($expectedStartTimeStr)) {
+                    $status = 'Late';
+                }
+            } elseif ($checkType === 'out') {
+                $expectedEndTimeStr = $today . ' ' . $latestEnd;
+                // Undertime if current time < expected end time
+                if (strtotime($now) < strtotime($expectedEndTimeStr)) {
+                    $status = 'Undertime';
+                }
+            }
+
+            $expectedStart = $earliestStart;
+            $expectedEnd = $latestEnd;
+
             // Insert/update attendance log
-            if ($existingLog) {
+            if ($logId) {
+                // Update existing (time-out)
                 $stmt = $mysqli->prepare("UPDATE attendance_logs SET time_out = ?, status = ?, updated_at = NOW() WHERE id = ?");
-                $stmt->bind_param('ssi', $timeOut, $status, $existingLog['id']);
+                $stmt->bind_param('ssi', $timeOut, $status, $logId);
                 $stmt->execute();
-                $logId = $existingLog['id'];
                 $stmt->close();
             } else {
-                $stmt = $mysqli->prepare("INSERT INTO attendance_logs (employee_id, date, time_in, expected_start_time, expected_end_time, status, check_type) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param('issssss', $employeeId, $today, $timeIn, $expectedStart, $expectedEnd, $status, $checkType);
-                $stmt->execute();
-                $logId = $mysqli->insert_id;
-                $stmt->close();
+                // Insert new (time-in), or update pre-populated row if it exists
+                if ($existingLog) {
+                    // Update pre-populated row (set time_in)
+                    $stmt = $mysqli->prepare("UPDATE attendance_logs SET time_in = ?, expected_start_time = ?, expected_end_time = ?, status = ?, check_type = ?, updated_at = NOW() WHERE id = ?");
+                    $stmt->bind_param('sssssi', $timeIn, $expectedStart, $expectedEnd, $status, $checkType, $existingLog['id']);
+                    $stmt->execute();
+                    $logId = $existingLog['id'];
+                    $stmt->close();
+                } else {
+                    // Insert new row
+                    $stmt = $mysqli->prepare("INSERT INTO attendance_logs (employee_id, date, time_in, expected_start_time, expected_end_time, status, check_type) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->bind_param('issssss', $employeeId, $today, $timeIn, $expectedStart, $expectedEnd, $status, $checkType);
+                    $stmt->execute();
+                    $logId = $mysqli->insert_id;
+                    $stmt->close();
+                }
             }
 
             // Save snapshot
             $snapshotPath = null;
             if (!empty($snapshot)) {
-                $snapshotPath = saveSnapshot($snapshot, $logId, $mysqli);
+                $snapshotPath = saveSnapshot($snapshot, $logId);
                 if ($snapshotPath) {
                     $stmt = $mysqli->prepare("UPDATE attendance_logs SET snapshot_path = ? WHERE id = ?");
                     $stmt->bind_param('si', $snapshotPath, $logId);
@@ -222,16 +272,17 @@ switch ($action) {
     case 'get_recent_logs':
         try {
             $query = "
-                SELECT al.id, CONCAT(e.first_name, ' ', e.last_name) AS employee_name,
-                       jp.name AS job_position_name, al.date, al.time_in, al.time_out,
-                       TIME_FORMAT(al.time_in, '%h:%i %p') AS time_in_formatted,
-                       IF(al.time_out IS NOT NULL, TIME_FORMAT(al.time_out, '%h:%i %p'), 'Not Clocked Out') AS time_out_formatted
-                FROM attendance_logs al
-                JOIN employees e ON al.employee_id = e.id
-                LEFT JOIN job_positions jp ON e.job_position_id = jp.id
-                ORDER BY al.created_at DESC
-                LIMIT 7
-            ";
+            SELECT al.id, CONCAT(e.first_name, ' ', e.last_name) AS employee_name,
+                   jp.name AS job_position_name, al.date, al.time_in, al.time_out,
+                   TIME_FORMAT(al.time_in, '%h:%i %p') AS time_in_formatted,
+                   IF(al.time_out IS NOT NULL, TIME_FORMAT(al.time_out, '%h:%i %p'), 'Not Clocked Out') AS time_out_formatted
+            FROM attendance_logs al
+            JOIN employees e ON al.employee_id = e.id
+            LEFT JOIN job_positions jp ON e.job_position_id = jp.id
+            WHERE al.date = CURDATE() AND al.time_in IS NOT NULL  -- Only today's scans with time_in
+            ORDER BY al.time_in DESC  -- Most recent scans first
+            LIMIT 10
+        ";
             $result = $mysqli->query($query);
             if (!$result) {
                 throw new Exception('Query failed: ' . $mysqli->error);

@@ -51,6 +51,7 @@ if ($user['is_active'] != 1) {
 }
 
 // Set session data
+session_regenerate_id(true);
 $_SESSION['user_id'] = $user['id'];
 $_SESSION['first_name'] = $user['first_name'];
 $_SESSION['last_name'] = $user['last_name'];
@@ -65,4 +66,3 @@ echo json_encode([
     'message' => 'Login successful.'
 ]);
 exit;
-?>
