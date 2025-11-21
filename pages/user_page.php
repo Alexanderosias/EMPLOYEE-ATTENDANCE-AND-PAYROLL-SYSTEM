@@ -18,14 +18,14 @@ require_once '../views/auth.php'; // path relative to the page
 </head>
 
 <body>
-  <!-- Status Message (for feedback) -->
+  <!-- Status Message (for feedback) -->s
   <div id="status-message" class="status-message"></div>
 
   <div class="dashboard-container">
     <aside class="sidebar">
       <a class="sidebar-header" href="#">
-        <img src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="Logo" class="logo" />
-        <span class="app-name">EAAPS Admin</span>
+        <img alt="Logo" class="logo" id="sidebarLogo" />
+        <span class="app-name" id="sidebarAppName"></span>
       </a>
       <nav class="sidebar-nav">
         <ul>
@@ -298,11 +298,13 @@ require_once '../views/auth.php'; // path relative to the page
   </div>
 
   <script src="../js/dashboard.js"></script>
+  <script src="../js/sidebar_update.js"></script>
   <script src="../js/current_time.js"></script>
   <script>
     const currentUserId = <?php echo json_encode($_SESSION['user_id'] ?? 0); ?>;
   </script>
   <script src="../js/users_page.js"></script>
+  <script src="../js/auto_logout.js"></script>
 
 </body>
 

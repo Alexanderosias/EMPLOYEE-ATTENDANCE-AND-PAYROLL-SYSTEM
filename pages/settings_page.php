@@ -1,5 +1,5 @@
 <?php
-require_once '../views/auth.php'; // path relative to the page
+require_once '../views/auth.php';  // path relative to the page
 ?>
 
 <!DOCTYPE html>
@@ -11,19 +11,22 @@ require_once '../views/auth.php'; // path relative to the page
   <title>EAAPS Settings Page</title>
   <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/status-message.css">
   <link rel="stylesheet" href="css/settings_page.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script>
+    window.userRole = '<?php echo $_SESSION['role']; ?>';
+  </script>
 </head>
 
 <body>
-  <div id="successMessageBox" style="display: none;">
-    Login successful!
-  </div>
+  <!-- Status Message (for feedback) -->
+  <div id="status-message" class="status-message"></div>
   <div class="dashboard-container">
     <aside class="sidebar">
       <a class="sidebar-header" href="#">
-        <img src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="Logo" class="logo" />
-        <span class="app-name">EAAPS Admin</span>
+        <img alt="Logo" class="logo" id="sidebarLogo" />
+        <span class="app-name" id="sidebarAppName"></span>
       </a>
       <nav class="sidebar-nav">
         <ul>
@@ -114,41 +117,21 @@ require_once '../views/auth.php'; // path relative to the page
         </div>
       </header>
 
-      <!-- Comprehensive Settings Content -->
+      <!-- Simplified Settings Content -->
       <div class="settings-container">
-        <!-- Company Information Card -->
+        <!-- System Information Card -->
         <div class="settings-card">
           <div class="settings-section">
             <h4>
-              <img src="icons/building.png" alt="Company Information" class="section-icon" />
-              School Information
+              <img src="icons/building.png" alt="System Information" class="section-icon" />
+              System Information
             </h4>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="companyName">School</label>
-                <input type="text" id="companyName" value="Asian Development Foundation College" />
-              </div>
-              <div class="form-group">
-                <label for="taxId">Tax ID</label>
-                <input type="text" id="taxId" value="123-456-789-000" />
-              </div>
+            <div class="form-group">
+              <label for="systemName">System Name</label>
+              <input type="text" id="systemName" value="EAAPS Admin" maxlength="12" />
             </div>
             <div class="form-group">
-              <label for="companyAddress">School Address</label>
-              <textarea id="companyAddress" rows="3">P. Burgos St., Tacloban City, Leyte, Philippines</textarea>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="companyContact">Contact Number</label>
-                <input type="tel" id="companyContact" value="+63 (2) 123-4567" />
-              </div>
-              <div class="form-group">
-                <label for="companyEmail">School Email</label>
-                <input type="email" id="companyEmail" value="adfc@example.com" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="logoUpload">School Logo</label>
+              <label for="logoUpload">System Logo</label>
               <div class="logo-preview-container">
                 <img id="logoPreview" class="logo-preview" src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png"
                   alt="Current Logo" onclick="triggerLogoUpload()" />
@@ -160,14 +143,13 @@ require_once '../views/auth.php'; // path relative to the page
           </div>
 
           <div class="btn-group">
-            <button class="btn btn-primary" onclick="saveCompanyInfo()">
+            <button class="btn btn-primary" onclick="saveSystemInfo()">
               <img src="icons/save.png" alt="Save" class="btn-icon" />
-              Save School Information
+              Save System Information
             </button>
           </div>
         </div>
 
-        <!-- Time & Date Settings Card -->
         <div class="settings-card">
           <div class="settings-section">
             <h4>
@@ -176,10 +158,9 @@ require_once '../views/auth.php'; // path relative to the page
             </h4>
             <div class="form-row">
               <div class="form-group">
-                <label for="autoLogoutTime">Auto Logout Time (hours after last activity)</label>
-                <input type="number" id="autoLogoutTime" value="1" min="0.5" max="24" step="0.5" />
-                <p class="small-text">Set to 0 to disable. Employees will be automatically marked out after inactivity.
-                </p>
+                <label for="autoLogoutTime">Auto Logout Time (minutes after last activity)</label>
+                <input type="number" id="autoLogoutTime" value="60" min="10" max="1440" step="1" />
+                <p class="small-text">Set to 0 to disable. Employees will be automatically marked out after inactivity. Minimum: 10 minutes if enabled.</p>
               </div>
               <div class="form-group">
                 <label for="dateFormat">Date Format</label>
@@ -190,240 +171,24 @@ require_once '../views/auth.php'; // path relative to the page
                 </select>
               </div>
             </div>
-
-            <div class="btn-group">
-              <button class="btn btn-primary" onclick="saveTimeDateSettings()">
-                <img src="icons/save.png" alt="Save" class="btn-icon" />
-                Save Time & Date Settings
-              </button>
-            </div>
           </div>
 
-          <!-- Payroll & Leave Settings Card -->
-          <div class="settings-card">
-            <div class="settings-section">
-              <h4>
-                <img src="icons/cash.png" alt="Payroll & Leave Settings" class="section-icon" />
-                Leave Settings
-              </h4>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="annualLeaveDays">Annual Paid Leave Days</label>
-                  <input type="number" id="annualLeaveDays" value="15" min="0" max="30" />
-                </div>
-                <div class="form-group">
-                  <label for="unpaidLeaveDays">Annual Unpaid Leave Days</label>
-                  <input type="number" id="unpaidLeaveDays" value="5" min="0" max="20" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="sickLeaveDays">Annual Sick Leave Days</label>
-                <input type="number" id="sickLeaveDays" value="10" min="0" max="20" />
-              </div>
-            </div>
-
-            <div class="btn-group">
-              <button class="btn btn-primary" onclick="savePayrollLeaveSettings()">
-                <img src="icons/save.png" alt="Save" class="btn-icon" />
-                Save Payroll & Leave Settings
-              </button>
-            </div>
-          </div>
-
-          <!-- Attendance Settings Card -->
-          <div class="settings-card">
-            <div class="settings-section">
-              <h4>
-                <img src="icons/calendar-deadline-date.png" alt="Attendance Settings" class="section-icon" />
-                Attendance Settings
-              </h4>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="lateThreshold">Late Threshold (minutes)</label>
-                  <input type="number" id="lateThreshold" value="15" min="0" max="60" />
-                </div>
-                <div class="form-group">
-                  <label for="undertimeThreshold">Undertime Threshold (minutes)</label>
-                  <input type="number" id="undertimeThreshold" value="30" min="0" max="120" />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="regularOvertimeRate">Regular Overtime Rate (x)</label>
-                  <input type="number" id="regularOvertimeRate" value="1.25" min="1" max="2" step="0.25" />
-                </div>
-                <div class="form-group">
-                  <label for="holidayOvertimeRate">Holiday Overtime Rate (x)</label>
-                  <input type="number" id="holidayOvertimeRate" value="2" min="1" max="3" step="0.25" />
-                </div>
-              </div>
-            </div>
-
-            <div class="btn-group">
-              <button class="btn btn-primary" onclick="saveAttendanceSettings()">
-                <img src="icons/save.png" alt="Save" class="btn-icon" />
-                Save Attendance Settings
-              </button>
-            </div>
-          </div>
-          <!-- Backup & Restore Settings Card -->
-          <div class="settings-card">
-            <div class="settings-section">
-              <h4>
-                <img src="icons/backup.png" alt="Backup & Restore Settings" class="section-icon" />
-                Backup & Restore Settings
-              </h4>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="backupFrequency">Backup Frequency</label>
-                  <select id="backupFrequency">
-                    <option value="daily">Daily</option>
-                    <option value="weekly" selected>Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="sessionTimeout">Session Timeout (minutes)</label>
-                  <input type="number" id="sessionTimeout" value="30" min="5" max="120" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Backup Location</label>
-                <input type="text" value="Local Server (/backups)" readonly />
-                <p class="small-text">Backups are stored securely on the server. Use the buttons below to manage.</p>
-              </div>
-            </div>
-
-            <div class="btn-group">
-              <button class="btn btn-secondary" onclick="exportData()">
-                <img src="icons/export.png" alt="Export" class="btn-icon" />
-                Download Latest Backup
-              </button>
-              <button class="btn btn-primary" onclick="createBackup()">
-                <img src="icons/backup.png" alt="Create Backup" class="btn-icon" />
-                Create Backup Now
-              </button>
-              <button class="btn btn-secondary" onclick="restoreBackup()"
-                style="background: #FF6B6B; color: white; border-color: #FF6B6B;">
-                <img src="icons/restore.png" alt="Restore" class="btn-icon" />
-                Restore from Backup
-              </button>
-            </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="saveTimeDateSettings()">
+              <img src="icons/save.png" alt="Save" class="btn-icon" />
+              Save Time & Date Settings
+            </button>
           </div>
         </div>
+      </div>
 
-        <!-- Status Message (for feedback) -->
-        <div id="statusMessage" class="status-message"></div>
     </main>
   </div>
 
   <script src="../js/dashboard.js"></script>
+  <script src="../js/settings.js"></script>
   <script src="../js/current_time.js"></script>
-  <script>
-    let currentLogoFile = null; // Track uploaded logo file
-
-    // Logo Upload Functions
-    function triggerLogoUpload() {
-      document.getElementById('logoUpload').click();
-    }
-
-    document.getElementById('logoUpload').addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      if (file) {
-        if (!file.type.startsWith('image/')) {
-          showStatus('Please select a valid image file.', 'error');
-          return;
-        }
-        if (file.size > 2 * 1024 * 1024) {
-          showStatus('Image size must be less than 2MB.', 'error');
-          return;
-        }
-        currentLogoFile = file;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('logoPreview').src = e.target.result;
-          showStatus('Logo selected. Click Save to upload.', 'success');
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    // SSS Total Calculation (Auto-update on input change)
-    function updateSSSTotal() {
-      const er = parseFloat(document.getElementById('sssERContribution').value) || 0;
-      const ee = parseFloat(document.getElementById('sssEEContribution').value) || 0;
-      document.getElementById('sssTotal').value = (er + ee).toFixed(2);
-    }
-
-    document.getElementById('sssERContribution').addEventListener('input', updateSSSTotal);
-    document.getElementById('sssEEContribution').addEventListener('input', updateSSSTotal);
-
-    // Save Functions (Simulate - replace with API calls)
-    function saveCompanyInfo() {
-      if (currentLogoFile) {
-        // In real app: Upload logo via FormData
-        showStatus('Company information and logo updated successfully!', 'success');
-        currentLogoFile = null;
-      } else {
-        showStatus('Company information updated successfully!', 'success');
-      }
-    }
-
-    function saveTimeDateSettings() {
-      showStatus('Time & date settings updated successfully!', 'success');
-    }
-
-    function savePayrollLeaveSettings() {
-      showStatus('Payroll & leave settings updated successfully!', 'success');
-    }
-
-    function saveAttendanceSettings() {
-      showStatus('Attendance settings updated successfully!', 'success');
-    }
-
-    function saveTaxDeductionSettings() {
-      // In real app: Collect all tax fields and send to backend for validation/computation setup
-      showStatus('Tax & deduction settings updated successfully! Computations will use the configured rules.', 'success');
-    }
-
-    function exportData() {
-      showStatus('Backup download started.', 'success');
-      // In real app: window.open('/api/backup/download', '_blank');
-    }
-
-    function createBackup() {
-      showStatus('Backup created successfully!', 'success');
-      // In real app: fetch('/api/backup/create', { method: 'POST' });
-    }
-
-    function restoreBackup() {
-      if (confirm('Are you sure you want to restore from backup? This may overwrite current data.')) {
-        showStatus('Restore initiated. Please wait for completion.', 'success');
-        // In real app: Handle file upload and restore API
-      }
-    }
-
-    function showStatus(message, type) {
-      const statusDiv = document.getElementById('statusMessage');
-      statusDiv.textContent = message;
-      statusDiv.className = `status-message ${type}`;
-      statusDiv.style.display = 'block';
-      setTimeout(() => {
-        statusDiv.style.display = 'none';
-        statusDiv.className = 'status-message';
-      }, 5000);
-    }
-
-    // Auto-hide success message on load if present
-    window.addEventListener('load', () => {
-      const successBox = document.getElementById('successMessageBox');
-      if (successBox && successBox.style.display !== 'none') {
-        showStatus(successBox.textContent, 'success');
-        successBox.style.display = 'none';
-      }
-      updateSSSTotal(); // Initialize SSS total
-    });
-  </script>
+  <script src="../js/auto_logout.js"></script>
 
 </body>
 

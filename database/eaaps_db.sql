@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 16, 2025 at 03:30 PM
+-- Generation Time: Nov 21, 2025 at 04:13 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -35,7 +35,6 @@ CREATE TABLE `attendance_logs` (
   `time_out` datetime DEFAULT NULL,
   `expected_start_time` time DEFAULT NULL,
   `expected_end_time` time DEFAULT NULL,
-  `partial_absence_hours` decimal(5,2) DEFAULT 0.00,
   `status` enum('Present','Absent','Late','On Leave','Undertime') DEFAULT 'Present',
   `snapshot_path` varchar(500) DEFAULT NULL,
   `check_type` enum('in','out') DEFAULT 'in',
@@ -48,8 +47,13 @@ CREATE TABLE `attendance_logs` (
 -- Dumping data for table `attendance_logs`
 --
 
-INSERT INTO `attendance_logs` (`id`, `employee_id`, `date`, `time_in`, `time_out`, `expected_start_time`, `expected_end_time`, `partial_absence_hours`, `status`, `snapshot_path`, `check_type`, `is_synced`, `created_at`, `updated_at`) VALUES
-(18, 16, '2025-11-10', '2025-11-10 21:02:39', '2025-11-10 21:30:25', '07:00:00', '08:30:00', 0.00, 'Present', 'uploads/snapshots/snapshot_18_1762781425.png', 'in', 0, '2025-11-10 13:02:39', '2025-11-10 13:30:25');
+INSERT INTO `attendance_logs` (`id`, `employee_id`, `date`, `time_in`, `time_out`, `expected_start_time`, `expected_end_time`, `status`, `snapshot_path`, `check_type`, `is_synced`, `created_at`, `updated_at`) VALUES
+(39, 27, '2025-11-21', NULL, NULL, '04:42:00', '07:42:00', 'Absent', NULL, 'in', 0, '2025-11-21 10:38:34', '2025-11-21 10:38:34'),
+(41, 31, '2025-11-21', NULL, NULL, '06:38:00', '16:39:00', 'Absent', NULL, 'in', 0, '2025-11-21 10:38:34', '2025-11-21 10:38:34'),
+(42, 25, '2025-11-21', NULL, NULL, '11:00:00', '13:30:00', 'Absent', NULL, 'in', 0, '2025-11-21 11:01:06', '2025-11-21 11:01:06'),
+(43, 29, '2025-11-21', NULL, NULL, '01:39:00', '06:46:00', 'Absent', NULL, 'in', 0, '2025-11-21 11:24:58', '2025-11-21 11:24:58'),
+(46, 16, '2025-11-21', '2025-11-21 19:33:59', '2025-11-21 19:53:47', '12:00:00', '20:30:00', 'Undertime', 'uploads/snapshots/snapshot_46_1763726027.png', 'in', 0, '2025-11-21 11:33:59', '2025-11-21 11:53:47'),
+(47, 26, '2025-11-21', NULL, NULL, '00:00:00', '01:30:00', 'Absent', NULL, 'in', 0, '2025-11-21 11:51:54', '2025-11-21 11:51:54');
 
 -- --------------------------------------------------------
 
@@ -65,6 +69,13 @@ CREATE TABLE `backup_restore_settings` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `backup_restore_settings`
+--
+
+INSERT INTO `backup_restore_settings` (`id`, `backup_frequency`, `session_timeout_minutes`, `backup_location`, `created_at`, `updated_at`) VALUES
+(1, 'weekly', 30, 'Local Server (/backups)', '2025-11-21 12:44:20', '2025-11-21 12:44:20');
 
 -- --------------------------------------------------------
 
@@ -124,7 +135,15 @@ CREATE TABLE `employees` (
 --
 
 INSERT INTO `employees` (`id`, `user_id`, `first_name`, `last_name`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`) VALUES
-(16, NULL, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Annaliza Osias', '09432487398', 'Mother', '2025-11-10', 7, 13, 100.00, 15, 5, 10, 'uploads/avatars/emp_16_1762879611.png', '2025-11-10 12:57:16', '2025-11-11 16:46:51');
+(16, NULL, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Annaliza Osias', '09432487398', 'Mother', '2025-11-10', 7, 13, 100.00, 15, 5, 10, 'uploads/avatars/emp_16_1762879611.png', '2025-11-10 12:57:16', '2025-11-11 16:46:51'),
+(25, 40, 'fgagafgaf', 'fdsafsda', 'So. Bugho', 'Male', 'Single', 'Active', 'alexande@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'hakdog', '2025-11-20', 7, 11, 120.00, 15, 5, 10, NULL, '2025-11-20 14:17:46', '2025-11-20 14:17:46'),
+(26, 41, 'jak', 'kdfads', 'So. Bugho', 'Male', 'Single', 'Active', 'alexandeias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'dsflkadsf', '2025-11-20', 8, 11, 120.00, 15, 5, 10, NULL, '2025-11-20 14:21:00', '2025-11-20 14:21:00'),
+(27, 42, 'pahpgfd', 'etekcvca', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanas123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Wife', '2025-11-20', 7, 11, 120.00, 15, 5, 10, NULL, '2025-11-20 14:21:34', '2025-11-20 14:21:34'),
+(28, 43, 'qpertczjasdf', 'ytadht', 'So. Bugho', 'Male', 'Single', 'Active', 'alexa23@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Wife', '2025-11-20', 7, 13, 100.00, 15, 5, 10, NULL, '2025-11-20 14:22:05', '2025-11-20 14:22:05'),
+(29, 44, 'yoyta', 'baloga', 'So. Bugho', 'Male', 'Single', 'Active', 'anderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Wife', '2025-11-20', 7, 13, 100.00, 15, 5, 10, 'uploads/avatars/emp_29_1763725934.png', '2025-11-20 14:23:17', '2025-11-21 11:52:15'),
+(30, 45, 'macky', 'paksiw', 'So. Bugho', 'Male', 'Single', 'Active', 'alexderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Mother', '2025-11-20', 8, 12, 150.00, 15, 5, 10, NULL, '2025-11-20 14:24:21', '2025-11-20 14:24:21'),
+(31, 46, 'jake', 'ampong', 'So. Bugho', 'Male', 'Single', 'Active', 'alexandsias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'gfgdgdsgfgf', '2025-11-20', 8, 11, 120.00, 15, 5, 10, 'uploads/avatars/emp_31_1763664006.jpg', '2025-11-20 14:24:59', '2025-11-20 18:40:06'),
+(32, 47, 'Aleajandcedor', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexa23dsf@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Mother', '2025-11-20', 7, 13, 100.00, 15, 5, 10, NULL, '2025-11-20 14:25:50', '2025-11-20 14:25:50');
 
 -- --------------------------------------------------------
 
@@ -227,7 +246,15 @@ CREATE TABLE `qr_codes` (
 --
 
 INSERT INTO `qr_codes` (`id`, `employee_id`, `qr_data`, `qr_image_path`, `generated_at`) VALUES
-(13, 16, 'ID:16|First:Alexander|Last:Osias|Position:Instructor|Joined:2025-11-10', 'qrcodes/AlexanderOsias.png', '2025-11-10 12:57:16');
+(13, 16, 'ID:16|First:Alexander|Last:Osias|Position:Instructor|Joined:2025-11-10', 'qrcodes/AlexanderOsias.png', '2025-11-10 12:57:16'),
+(19, 25, 'ID:25|First:fgagafgaf|Last:fdsafsda|Position:Cashier|Joined:2025-11-20', 'qrcodes/fgagafgaffdsafsda.png', '2025-11-20 14:17:46'),
+(20, 26, 'ID:26|First:jak|Last:kdfads|Position:Cashier|Joined:2025-11-20', 'qrcodes/jakkdfads.png', '2025-11-20 14:21:00'),
+(21, 27, 'ID:27|First:pahpgfd|Last:etekcvca|Position:Cashier|Joined:2025-11-20', 'qrcodes/pahpgfdetekcvca.png', '2025-11-20 14:21:34'),
+(22, 28, 'ID:28|First:qpertczjasdf|Last:ytadht|Position:Instructor|Joined:2025-11-20', 'qrcodes/qpertczjasdfytadht.png', '2025-11-20 14:22:05'),
+(23, 29, 'ID:29|First:yoyta|Last:baloga|Position:Instructor|Joined:2025-11-20', 'qrcodes/yoytabaloga.png', '2025-11-20 14:23:17'),
+(24, 30, 'ID:30|First:macky|Last:paksiw|Position:Dean|Joined:2025-11-20', 'qrcodes/mackypaksiw.png', '2025-11-20 14:24:21'),
+(25, 31, 'ID:31|First:jake|Last:ampong|Position:Cashier|Joined:2025-11-20', 'qrcodes/jakeampong.png', '2025-11-20 14:24:59'),
+(26, 32, 'ID:32|First:Aleajandcedor|Last:Osias|Position:Instructor|Joined:2025-11-20', 'qrcodes/AleajandcedorOsias.png', '2025-11-20 14:25:50');
 
 -- --------------------------------------------------------
 
@@ -251,7 +278,16 @@ CREATE TABLE `schedules` (
 --
 
 INSERT INTO `schedules` (`id`, `employee_id`, `day_of_week`, `shift_name`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
-(26, 16, 'Monday', 'ITP 101 - Lab 3', '07:00:00', '08:30:00', '2025-11-10 12:58:33', '2025-11-10 12:58:33');
+(39, 31, 'Friday', 'PE', '06:38:00', '16:39:00', '2025-11-20 17:39:22', '2025-11-20 17:39:22'),
+(40, 29, 'Friday', 'PE', '01:39:00', '04:39:00', '2025-11-20 17:41:15', '2025-11-20 17:41:15'),
+(41, 29, 'Friday', 'ITP 101 - Lab 3', '04:41:00', '06:46:00', '2025-11-20 17:41:48', '2025-11-20 17:41:48'),
+(42, 27, 'Friday', 'PE', '04:42:00', '07:42:00', '2025-11-20 17:42:17', '2025-11-20 17:42:17'),
+(43, 26, 'Friday', 'PE', '00:00:00', '01:30:00', '2025-11-20 17:48:56', '2025-11-20 17:48:56'),
+(44, 16, 'Friday', 'ITP 101 - Lab 3', '17:30:00', '19:00:00', '2025-11-21 09:23:50', '2025-11-21 09:23:50'),
+(46, 16, 'Friday', 'sda', '15:00:00', '17:30:00', '2025-11-21 09:49:15', '2025-11-21 09:49:15'),
+(47, 16, 'Friday', 'Ethics', '12:00:00', '14:30:00', '2025-11-21 10:12:21', '2025-11-21 10:12:21'),
+(48, 16, 'Friday', 'ITP 111 - Lab 3', '19:00:00', '20:30:00', '2025-11-21 10:21:58', '2025-11-21 10:21:58'),
+(49, 25, 'Friday', 'kalld', '11:00:00', '13:30:00', '2025-11-21 11:01:01', '2025-11-21 11:01:01');
 
 -- --------------------------------------------------------
 
@@ -261,16 +297,18 @@ INSERT INTO `schedules` (`id`, `employee_id`, `day_of_week`, `shift_name`, `star
 
 CREATE TABLE `school_settings` (
   `id` int(11) NOT NULL,
-  `school_name` varchar(200) NOT NULL DEFAULT 'Asian Development Foundation College',
-  `tax_id` varchar(50) NOT NULL DEFAULT '',
-  `school_address` text NOT NULL DEFAULT '',
-  `contact_number` varchar(20) NOT NULL DEFAULT '',
-  `school_email` varchar(255) NOT NULL DEFAULT '',
   `logo_path` varchar(500) DEFAULT NULL,
   `system_name` varchar(100) NOT NULL DEFAULT 'EAAPS Admin',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `school_settings`
+--
+
+INSERT INTO `school_settings` (`id`, `logo_path`, `system_name`, `created_at`, `updated_at`) VALUES
+(1, NULL, 'EAAPS Admin', '2025-11-21 12:44:20', '2025-11-21 12:44:20');
 
 -- --------------------------------------------------------
 
@@ -290,7 +328,8 @@ CREATE TABLE `snapshots` (
 --
 
 INSERT INTO `snapshots` (`id`, `attendance_log_id`, `image_path`, `captured_at`) VALUES
-(25, 18, 'uploads/snapshots/snapshot_18_1762781425.png', '2025-11-10 13:30:25');
+(51, 46, 'uploads/snapshots/snapshot_46_1763724839.png', '2025-11-21 11:33:59'),
+(52, 46, 'uploads/snapshots/snapshot_46_1763726027.png', '2025-11-21 11:53:47');
 
 -- --------------------------------------------------------
 
@@ -320,6 +359,13 @@ CREATE TABLE `tax_deduction_settings` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `tax_deduction_settings`
+--
+
+INSERT INTO `tax_deduction_settings` (`id`, `philhealth_rate`, `philhealth_min`, `philhealth_max`, `philhealth_split_5050`, `pagibig_threshold`, `pagibig_employee_low_rate`, `pagibig_employee_high_rate`, `pagibig_employer_rate`, `sss_msc_min`, `sss_msc_max`, `sss_er_contribution`, `sss_ee_contribution`, `income_tax_rate`, `tax_calculation_rule`, `custom_tax_formula`, `auto_apply_deductions`, `created_at`, `updated_at`) VALUES
+(1, 5.00, 500.00, 5000.00, 1, 1500.00, 1.00, 2.00, 2.00, 10000, 20000, 1160.00, 450.00, 10.00, 'flat', NULL, 1, '2025-11-21 12:44:20', '2025-11-21 12:44:20');
+
 -- --------------------------------------------------------
 
 --
@@ -334,6 +380,13 @@ CREATE TABLE `time_date_settings` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `time_date_settings`
+--
+
+INSERT INTO `time_date_settings` (`id`, `default_timezone`, `date_format`, `auto_logout_time_hours`, `created_at`, `updated_at`) VALUES
+(1, 'PHST', 'DD/MM/YYYY', 1.0, '2025-11-21 12:44:20', '2025-11-21 12:44:20');
 
 -- --------------------------------------------------------
 
@@ -362,7 +415,15 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `phone_number`, `address`, `department_id`, `role`, `password_hash`, `is_active`, `created_at`, `updated_at`, `avatar_path`) VALUES
-(37, 'Giyu', 'Tomioka', 'alexanderosias123@gmail.com', '09305909175', 'So. Bugho\r\nBarangay Dampigan', 7, 'head_admin', '$2y$10$DMz2nEUAfALg7PsLcUDcZ.GMp9G8nTV6jckqQ0fj7GwJINtmD99HG', 1, '2025-11-16 07:15:52', '2025-11-16 08:04:52', NULL);
+(37, 'Giyu', 'Tomioka', 'alexanderosias123@gmail.com', '09305909175', 'So. Bugho\r\nBarangay Dampigan', 7, 'head_admin', '$2y$10$.PSh8v4TcXDDg96auIKxQuVEyZPCuVNCfvsxHskGKcfQPj13F8BOu', 1, '2025-11-16 07:15:52', '2025-11-21 13:52:21', 'uploads/avatars/user_37_1763477253.jpg'),
+(40, 'fgagafgaf', 'fdsafsda', 'alexande@gmail.com', '09305909175', 'So. Bugho', 7, 'employee', '$2y$10$RHvQnO9LjWR1sCpu0AY2cuY8Kppf2Ok6rFIcD6/CHtP.kiwTgw4y6', 1, '2025-11-20 14:17:46', '2025-11-20 14:17:46', NULL),
+(41, 'jak', 'kdfads', 'alexandeias123@gmail.com', '09305909175', 'So. Bugho', 8, 'employee', '$2y$10$GaHG4nhDdkrZJkX5ULhIpuW0ZJd0KpKEz7yA8TWFk7eI8vGIqJb2e', 1, '2025-11-20 14:21:00', '2025-11-20 14:21:00', NULL),
+(42, 'pahpgfd', 'etekcvca', 'alexanas123@gmail.com', '09305909175', 'So. Bugho', 7, 'employee', '$2y$10$dxgRXHNxwsui5ATIPe1ya.O6LCDkjg4DbULSO7L3./31JQ7FpPFaK', 1, '2025-11-20 14:21:34', '2025-11-20 14:21:34', NULL),
+(43, 'qpertczjasdf', 'ytadht', 'alexa23@gmail.com', '09305909175', 'So. Bugho', 7, 'employee', '$2y$10$zults1MThEt1U6RioSUBp.aey1EIw07P0ryIr0CHoSB9iXjZPBnz2', 1, '2025-11-20 14:22:05', '2025-11-20 14:22:05', NULL),
+(44, 'yoyta', 'baloga', 'anderosias123@gmail.com', '09305909175', 'So. Bugho', 7, 'employee', '$2y$10$kG8BbCjctlWs942Iw8j3l.j4d1ibD/.kJs5IvS0tzQbygsywa9QK.', 1, '2025-11-20 14:23:17', '2025-11-20 14:23:17', NULL),
+(45, 'macky', 'paksiw', 'alexderosias123@gmail.com', '09305909175', 'So. Bugho', 8, 'employee', '$2y$10$ZPvlKi24ENcDFabndMhBxOTJc4UPuMScsayeH7KmFQRTs97j4INkO', 1, '2025-11-20 14:24:21', '2025-11-20 14:24:21', NULL),
+(46, 'jake', 'ampong', 'alexandsias123@gmail.com', '09305909175', 'So. Bugho', 8, 'employee', '$2y$10$ipBRVbwhyEP7n0EafdzxRO/zbnrYOEAuUfm7PM6pr8ueQsLuy1HB2', 1, '2025-11-20 14:24:59', '2025-11-20 14:24:59', NULL),
+(47, 'Aleajandcedor', 'Osias', 'alexa23dsf@gmail.com', '09305909175', 'So. Bugho', 7, 'employee', '$2y$10$3OmOcyNguS31aolONPXd0OHv50CZlF/jKdDv34zgx7A2qULjsjMri', 1, '2025-11-20 14:25:50', '2025-11-20 14:25:50', NULL);
 
 --
 -- Indexes for dumped tables
@@ -497,13 +558,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `attendance_logs`
 --
 ALTER TABLE `attendance_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
 
 --
 -- AUTO_INCREMENT for table `backup_restore_settings`
 --
 ALTER TABLE `backup_restore_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `departments`
@@ -515,7 +576,7 @@ ALTER TABLE `departments`
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `job_positions`
@@ -533,7 +594,7 @@ ALTER TABLE `leave_requests`
 -- AUTO_INCREMENT for table `password_resets`
 --
 ALTER TABLE `password_resets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT for table `payroll`
@@ -545,43 +606,43 @@ ALTER TABLE `payroll`
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT for table `school_settings`
 --
 ALTER TABLE `school_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `snapshots`
 --
 ALTER TABLE `snapshots`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- AUTO_INCREMENT for table `tax_deduction_settings`
 --
 ALTER TABLE `tax_deduction_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `time_date_settings`
 --
 ALTER TABLE `time_date_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
 
 --
 -- Constraints for dumped tables

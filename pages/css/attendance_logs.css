@@ -1,136 +1,152 @@
 /* Style for Import Attendance container */
-    .import-attendance-container {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
+.import-attendance-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
-    .import-attendance-container label {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      background-color: #2563eb;
-      color: white;
-      padding: 0.4rem 0.8rem;
-      border-radius: 0.375rem;
-      font-weight: 600;
-      font-size: 0.9rem;
-      user-select: none;
-      transition: background-color 0.3s;
-    }
+.import-attendance-container label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background-color: #2563eb;
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  user-select: none;
+  transition: background-color 0.3s;
+}
 
-    .import-attendance-container label:hover {
-      background-color: #1d4ed8;
-    }
+.import-attendance-container label:hover {
+  background-color: #1d4ed8;
+}
 
-    .import-attendance-container label img {
-      width: 20px;
-      height: 20px;
-    }
+.import-attendance-container label img {
+  width: 20px;
+  height: 20px;
+}
 
-    .import-attendance-container input[type="file"] {
-      display: none;
-    }
+.import-attendance-container input[type="file"] {
+  display: none;
+}
 
-    /* Add cursor pointer to edit icon */
-    .edit-icon {
-      cursor: pointer;
-      width: 20px;
-      height: 20px;
-    }
+/* Add cursor pointer to edit and delete icons */
+.edit-icon,
+.delete-icon {
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
 
-    /* Center Actions column text */
-    th.actions-header,
-    td.actions-cell {
-      text-align: center;
-      white-space: nowrap;
-    }
+/* Center Actions column text */
+th.actions-header,
+td.actions-cell {
+  text-align: center;
+  white-space: nowrap;
+}
 
-    /* Modal styles */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
+.actions-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  /* space between icons */
+}
 
-    .modal-overlay.active {
-      display: flex;
-    }
 
-    .modal {
-      background: white;
-      border-radius: 0.5rem;
-      padding: 1.5rem;
-      width: 400px;
-      max-width: 90vw;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-      position: relative;
-    }
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
 
-    .modal h3 {
-      margin-top: 0;
-      margin-bottom: 1rem;
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #2563eb;
-    }
+.modal-overlay.active {
+  display: flex;
+}
 
-    .modal label {
-      display: block;
-      margin-bottom: 0.25rem;
-      font-weight: 600;
-      color: #374151;
-    }
+.modal {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  width: 420px;
+  max-width: 90vw;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
 
-    .modal input,
-    .modal select {
-      width: 100%;
-      padding: 0.4rem 0.6rem;
-      margin-bottom: 1rem;
-      border: 1px solid #d1d5db;
-      border-radius: 0.375rem;
-      font-size: 1rem;
-      color: #374151;
-    }
+.modal h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2563eb;
+}
 
-    .modal-buttons {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-    }
+.modal label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+  color: #374151;
+}
 
-    .modal-buttons button {
-      padding: 0.5rem 1rem;
-      border-radius: 0.375rem;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      border: none;
-      transition: background-color 0.3s;
-    }
+.modal input,
+.modal select {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  color: #374151;
+}
 
-    .modal-buttons .save-btn {
-      background-color: #2563eb;
-      color: white;
-    }
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
 
-    .modal-buttons .save-btn:hover {
-      background-color: #1d4ed8;
-    }
+.modal-buttons button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.3s;
+}
 
-    .modal-buttons .cancel-btn {
-      background-color: #e5e7eb;
-      color: #374151;
-    }
+.modal-buttons .save-btn {
+  background-color: #2563eb;
+  color: white;
+}
 
-    .modal-buttons .cancel-btn:hover {
-      background-color: #d1d5db;
-    }
+.modal-buttons .save-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.modal-buttons .cancel-btn {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.modal-buttons .cancel-btn:hover {
+  background-color: #d1d5db;
+}
+
+.actions-cell {
+  vertical-align: middle;
+}
