@@ -22,6 +22,7 @@ require_once '../views/auth.php';  // path relative to the page
 <body>
   <!-- Status Message (for feedback) -->
   <div id="status-message" class="status-message"></div>
+
   <div class="dashboard-container">
     <aside class="sidebar">
       <a class="sidebar-header" href="#">
@@ -84,7 +85,10 @@ require_once '../views/auth.php';  // path relative to the page
               Profile
             </a>
           </li>
-          <?php if ($_SESSION['role'] === 'head_admin'): ?>
+          <?php
+          $userRoles = $_SESSION['roles'] ?? [];
+          if (in_array('head_admin', $userRoles)):
+          ?>
             <li>
               <a href="user_page.php">
                 <img src="icons/add-user.png" alt="Users" class="icon" />
@@ -109,75 +113,111 @@ require_once '../views/auth.php';  // path relative to the page
 
     <main class="main-content">
       <header class="dashboard-header">
-        <div>
-          <h2>SYSTEM SETTINGS</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div>
+            <h2>System Settings</h2>
+          </div>
+          <div>
+            <p id="current-datetime"></p>
+          </div>
         </div>
-        <div>
-          <p id="current-datetime"></p>
-        </div>
+        <div class="bottom-border"></div>
       </header>
+      <div class="scrollbar-container">
 
-      <!-- Simplified Settings Content -->
-      <div class="settings-container">
-        <!-- System Information Card -->
-        <div class="settings-card">
-          <div class="settings-section">
-            <h4>
-              <img src="icons/building.png" alt="System Information" class="section-icon" />
-              System Information
-            </h4>
-            <div class="form-group">
-              <label for="systemName">System Name</label>
-              <input type="text" id="systemName" value="EAAPS Admin" maxlength="12" />
-            </div>
-            <div class="form-group">
-              <label for="logoUpload">System Logo</label>
-              <div class="logo-preview-container">
-                <img id="logoPreview" class="logo-preview" src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png"
-                  alt="Current Logo" onclick="triggerLogoUpload()" />
-                <input type="file" id="logoUpload" accept="image/*" />
-              </div>
-              <p class="upload-hint">Click the logo preview to upload a new image (PNG/JPG, <2MB). Current logo will be
-                  replaced on save.</p>
-            </div>
-          </div>
-
-          <div class="btn-group">
-            <button class="btn btn-primary" onclick="saveSystemInfo()">
-              <img src="icons/save.png" alt="Save" class="btn-icon" />
-              Save System Information
-            </button>
-          </div>
-        </div>
-
-        <div class="settings-card">
-          <div class="settings-section">
-            <h4>
-              <img src="icons/clock.png" alt="Time & Date Settings" class="section-icon" />
-              Time & Date Settings
-            </h4>
-            <div class="form-row">
+        <!-- Simplified Settings Content -->
+        <div class="settings-container">
+          <!-- System Information Card -->
+          <div class="settings-card">
+            <div class="settings-section">
+              <h4>
+                <img src="icons/management.png" alt="System Information" class="section-icon" />
+                System Information
+              </h4>
               <div class="form-group">
-                <label for="autoLogoutTime">Auto Logout Time (minutes after last activity)</label>
-                <input type="number" id="autoLogoutTime" value="60" min="10" max="1440" step="1" />
-                <p class="small-text">Set to 0 to disable. Employees will be automatically marked out after inactivity. Minimum: 10 minutes if enabled.</p>
+                <label for="systemName">System Name</label>
+                <input type="text" id="systemName" value="EAAPS Admin" maxlength="12" />
               </div>
               <div class="form-group">
-                <label for="dateFormat">Date Format</label>
-                <select id="dateFormat">
-                  <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                  <option value="DD/MM/YYYY" selected>DD/MM/YYYY</option>
-                  <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                </select>
+                <label for="logoUpload">System Logo</label>
+                <div class="logo-preview-container">
+                  <img id="logoPreview" class="logo-preview" src="img/adfc_logo_by_jintokai_d4pchwp-fullview.png"
+                    alt="Current Logo" onclick="triggerLogoUpload()" />
+                  <input type="file" id="logoUpload" accept="image/*" />
+                </div>
+                <p class="upload-hint">Click the logo preview to upload a new image (PNG/JPG, <2MB). Current logo will be
+                    replaced on save.</p>
               </div>
+            </div>
+
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="saveSystemInfo()">
+                <img src="icons/save.png" alt="Save" class="btn-icon" />
+                Save System Information
+              </button>
             </div>
           </div>
 
-          <div class="btn-group">
-            <button class="btn btn-primary" onclick="saveTimeDateSettings()">
-              <img src="icons/save.png" alt="Save" class="btn-icon" />
-              Save Time & Date Settings
-            </button>
+          <div class="settings-card">
+            <div class="settings-section">
+              <h4>
+                <img src="icons/time_date_settings.png" alt="Time & Date Settings" class="section-icon" />
+                Time & Date Settings
+              </h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="autoLogoutTime">Auto Logout Time (minutes after last activity)</label>
+                  <input type="number" id="autoLogoutTime" value="60" min="10" max="1440" step="1" />
+                  <p class="small-text">Set to 0 to disable. Employees will be automatically marked out after inactivity. Minimum: 10 minutes if enabled.</p>
+                </div>
+                <div class="form-group">
+                  <label for="dateFormat">Date Format</label>
+                  <select id="dateFormat">
+                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                    <option value="DD/MM/YYYY" selected>DD/MM/YYYY</option>
+                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="saveTimeDateSettings()">
+                <img src="icons/save.png" alt="Save" class="btn-icon" />
+                Save Time & Date Settings
+              </button>
+            </div>
+          </div>
+
+          <!-- Leave Settings Card -->
+          <div class="settings-card">
+            <div class="settings-section">
+              <h4>
+                <img src="icons/leave.png" alt="Leave Settings" class="section-icon" />
+                Leave Settings
+              </h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="annualLeaveDays">Annual Paid Leave Days</label>
+                  <input type="number" id="annualLeaveDays" value="15" min="0" max="30" />
+                </div>
+                <div class="form-group">
+                  <label for="unpaidLeaveDays">Annual Unpaid Leave Days</label>
+                  <input type="number" id="unpaidLeaveDays" value="5" min="0" max="20" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="sickLeaveDays">Annual Sick Leave Days</label>
+                <input type="number" id="sickLeaveDays" value="10" min="0" max="20" />
+              </div>
+            </div>
+
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="savePayrollLeaveSettings()">
+                <img src="icons/save.png" alt="Save" class="btn-icon" />
+                Save Leave Settings
+              </button>
+            </div>
           </div>
         </div>
       </div>

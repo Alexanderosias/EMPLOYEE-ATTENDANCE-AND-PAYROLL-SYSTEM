@@ -1,6 +1,15 @@
 let inactivityTimer;
 let logoutTimeHours = 1; // Default, will be updated from settings
 
+// Function to get user roles (set from PHP session as JSON)
+function getUserRoles() {
+  try {
+    return JSON.parse(window.userRoles || "[]"); // Assuming you set window.userRoles in PHP
+  } catch (e) {
+    return [];
+  }
+}
+
 // Fetch auto logout time from settings (only for head_admin/admin)
 async function loadAutoLogoutSetting() {
   try {
@@ -9,9 +18,9 @@ async function loadAutoLogoutSetting() {
     if (result.success && result.data.time_date) {
       logoutTimeHours = result.data.time_date.auto_logout_time_hours || 1;
       // Only apply to head_admin or admin, and only if not disabled (0)
-      const userRole = getUserRole();
+      const userRoles = getUserRoles();
       if (
-        (userRole === "head_admin" || userRole === "admin") &&
+        (userRoles.includes("head_admin") || userRoles.includes("admin")) &&
         logoutTimeHours > 0
       ) {
         startInactivityTimer();
@@ -20,12 +29,6 @@ async function loadAutoLogoutSetting() {
   } catch (error) {
     console.warn("Failed to load auto logout setting:", error);
   }
-}
-
-// Function to get user role (set from PHP session)
-function getUserRole() {
-  // Assuming you set a global variable or data attribute from PHP
-  return window.userRole || "employee"; // Default to employee if not set
 }
 
 // Start/reset inactivity timer

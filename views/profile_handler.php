@@ -47,22 +47,22 @@ switch ($action) {
   case 'get_profile':
     try {
       $stmt = $mysqli->prepare("
-        SELECT u.id, u.first_name, u.last_name, u.email, u.phone_number, u.address,
-              u.role, u.created_at, u.avatar_path, d.name AS department_name, d.id AS department_id
-        FROM users u
-        LEFT JOIN departments d ON u.department_id = d.id
-        WHERE u.id = ?
-      ");
+      SELECT u.id, u.first_name, u.last_name, u.email, u.phone_number, u.address,
+            u.roles, u.created_at, d.name AS department_name, d.id AS department_id,
+            CASE WHEN JSON_CONTAINS(u.roles, '\"employee\"') THEN e.avatar_path ELSE u.avatar_path END AS avatar_path
+      FROM users u
+      LEFT JOIN departments d ON u.department_id = d.id
+      LEFT JOIN employees e ON u.id = e.user_id
+      WHERE u.id = ?
+    ");
       $stmt->bind_param("i", $userId);
       $stmt->execute();
       $result = $stmt->get_result();
       $user = $result->fetch_assoc();
       $stmt->close();
-
       if (!$user) {
         throw new Exception('User not found');
       }
-
       ob_end_clean();
       echo json_encode(['success' => true, 'data' => $user]);
     } catch (Exception $e) {

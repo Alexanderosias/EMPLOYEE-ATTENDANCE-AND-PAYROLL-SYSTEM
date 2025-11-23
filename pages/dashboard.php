@@ -81,7 +81,10 @@ require_once '../views/auth.php'; // Check login
                             Profile
                         </a>
                     </li>
-                    <?php if ($_SESSION['role'] === 'head_admin'): ?>
+                    <?php
+                    $userRoles = $_SESSION['roles'] ?? [];
+                    if (in_array('head_admin', $userRoles)):
+                    ?>
                         <li>
                             <a href="user_page.php">
                                 <img src="icons/add-user.png" alt="Users" class="icon" />
@@ -106,69 +109,74 @@ require_once '../views/auth.php'; // Check login
 
         <main class="main-content">
             <header class="dashboard-header">
-                <div>
-                    <h2>DASHBOARD</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div>
+                        <h2>Dashboard</h2>
+                    </div>
+                    <div>
+                        <p id="current-datetime"></p>
+                    </div>
                 </div>
-                <div>
-                    <p id="current-datetime"></p>
-                </div>
+                <div class="bottom-border"></div>
             </header>
 
-            <!-- Info Banners -->
-            <div class="info-banner" id="payroll-date-banner">
-                Next Payroll Date: <span id="next-payroll-date">--</span> &nbsp;&nbsp;|&nbsp;&nbsp; Last Payroll Date:
-                <span id="last-payroll-date">--</span>
-            </div>
+            <div class="scrollbar-container">
+                <!-- Info Banners -->
+                <div class="info-banner" id="payroll-date-banner">
+                    Next Payroll Date: <span id="next-payroll-date">--</span> &nbsp;&nbsp;|&nbsp;&nbsp; Last Payroll Date:
+                    <span id="last-payroll-date">--</span>
+                </div>
 
-            <div class="metrics-cards">
-                <div class="card card-blue">
-                    <p>Total Employees</p>
-                    <h3>42</h3>
+                <div class="metrics-cards">
+                    <div class="card card-blue">
+                        <p>Total Employees</p>
+                        <h3>42</h3>
+                    </div>
+                    <div class="card card-green">
+                        <p>Present Today</p>
+                        <h3>38</h3>
+                    </div>
+                    <div class="card card-orange">
+                        <p>Late Today</p>
+                        <h3>4</h3>
+                    </div>
+                    <div class="card card-purple">
+                        <p>Pending Payroll</p>
+                        <h3>3</h3>
+                    </div>
                 </div>
-                <div class="card card-green">
-                    <p>Present Today</p>
-                    <h3>38</h3>
-                </div>
-                <div class="card card-orange">
-                    <p>Late Today</p>
-                    <h3>4</h3>
-                </div>
-                <div class="card card-purple">
-                    <p>Pending Payroll</p>
-                    <h3>3</h3>
-                </div>
-            </div>
 
-            <!-- Side by side charts container -->
-            <div class="charts-container">
-                <!-- Attendance Trends Section -->
-                <section class="dashboard-section monthly-attendance-reports chart-section">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-semibold text-gray-800">Attendance Trends</h3>
-                        <div class="filter-group">
-                            <label for="year-filter">Year:</label>
-                            <input type="number" id="year-filter" min="2000" max="2100" step="1"
-                                aria-label="Select Year" />
-                            <label for="period-filter">Period:</label>
-                            <select id="period-filter" aria-label="Select Period">
-                                <option value="daily">Daily</option>
-                                <option value="weekly" selected>Weekly</option>
-                                <option value="monthly">Monthly</option>
-                            </select>
+                <!-- Side by side charts container -->
+                <div class="charts-container">
+                    <!-- Attendance Trends Section -->
+                    <section class="dashboard-section monthly-attendance-reports chart-section">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-semibold text-gray-800">Attendance Trends</h3>
+                            <div class="filter-group">
+                                <label for="year-filter">Year:</label>
+                                <input type="number" id="year-filter" min="2000" max="2100" step="1"
+                                    aria-label="Select Year" />
+                                <label for="period-filter">Period:</label>
+                                <select id="period-filter" aria-label="Select Period">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly" selected>Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div id="attendance-chart">
-                        Attendance chart will be rendered here.
-                    </div>
-                </section>
+                        <div id="attendance-chart">
+                            Attendance chart will be rendered here.
+                        </div>
+                    </section>
 
-                <!-- Salary Distribution Section -->
-                <section class="dashboard-section salary-distribution chart-section">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Salary Distribution</h3>
-                    <div id="salary-distribution-chart">
-                        Salary distribution chart will be rendered here.
-                    </div>
-                </section>
+                    <!-- Salary Distribution Section -->
+                    <section class="dashboard-section salary-distribution chart-section">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Salary Distribution</h3>
+                        <div id="salary-distribution-chart">
+                            Salary distribution chart will be rendered here.
+                        </div>
+                    </section>
+                </div>
             </div>
         </main>
     </div>

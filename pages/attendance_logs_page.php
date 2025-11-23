@@ -79,7 +79,10 @@ require_once '../views/auth.php'; // path relative to the page
               Profile
             </a>
           </li>
-          <?php if ($_SESSION['role'] === 'head_admin'): ?>
+          <?php
+          $userRoles = $_SESSION['roles'] ?? [];
+          if (in_array('head_admin', $userRoles)):
+          ?>
             <li>
               <a href="user_page.php">
                 <img src="icons/add-user.png" alt="Users" class="icon" />
@@ -104,80 +107,85 @@ require_once '../views/auth.php'; // path relative to the page
 
     <main class="main-content">
       <header class="dashboard-header">
-        <div>
-          <h2>ATTENDANCE LOGS</h2>
-        </div>
-        <div>
-          <p id="current-datetime"></p>
-        </div>
-      </header>
-      <section class="attendance-logs max-w-7xl mx-auto">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
-          <div class="flex items-center space-x-2">
-            <label for="rows-per-page" class="text-gray-700 text-sm font-medium">Show</label>
-            <select id="rows-per-page"
-              class="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="5" selected>5</option>
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-            </select>
-            <span class="text-gray-700 text-sm">entries</span>
-            <input type="date" id="filter-date"
-              class="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <button id="filter-btn"
-              class="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 transition">Filter</button>
-            <button id="clear-filter-btn"
-              class="bg-gray-300 text-gray-700 px-4 py-1 rounded hover:bg-gray-400 transition">Clear</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div>
+            <h2>Attendance Logs</h2>
           </div>
+          <div>
+            <p id="current-datetime"></p>
+          </div>
+        </div>
+        <div class="bottom-border"></div>
+      </header>
+      <div class="scrollbar-container">
+        <section class="attendance-logs max-w-7xl mx-auto">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+            <div class="flex items-center space-x-2">
+              <label for="rows-per-page" class="text-gray-700 text-sm font-medium">Show</label>
+              <select id="rows-per-page"
+                class="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="5" selected>5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+              <span class="text-gray-700 text-sm">entries</span>
+              <input type="date" id="filter-date"
+                class="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <button id="filter-btn"
+                class="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 transition">Filter</button>
+              <button id="clear-filter-btn"
+                class="bg-gray-300 text-gray-700 px-4 py-1 rounded hover:bg-gray-400 transition">Clear</button>
+            </div>
 
-          <div class="flex space-x-2 items-center">
-            <!-- Import Attendance Control -->
-            <div class="import-attendance-container" title="Import Attendance Excel File">
-              <label for="import-attendance-file">
-                <img src="icons/import.png" alt="Import Icon" />
-                Import Attendance
-              </label>
-              <input type="file" id="import-attendance-file" accept=".xls,.xlsx" />
+            <div class="flex space-x-2 items-center">
+              <!-- Import Attendance Control -->
+              <div class="import-attendance-container" title="Import Attendance Excel File">
+                <label for="import-attendance-file">
+                  <img src="icons/import.png" alt="Import Icon" />
+                  Import Attendance
+                </label>
+                <input type="file" id="import-attendance-file" accept=".xls,.xlsx" />
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="overflow-x-auto bg-white rounded shadow">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-200">
-              <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avatar</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee Name</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Time In</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Time Out</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status</th>
-                <th scope="col"
-                  class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider actions-header">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody id="attendance-table-body" class="bg-white divide-y divide-gray-200">
-              <!-- Attendance log rows will be inserted here dynamically -->
-            </tbody>
-          </table>
-        </div>
+          <div class="overflow-x-auto bg-white rounded shadow">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Avatar</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Employee Name</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Time In</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Time Out</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status</th>
+                  <th scope="col"
+                    class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider actions-header">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="attendance-table-body" class="bg-white divide-y divide-gray-200">
+                <!-- Attendance log rows will be inserted here dynamically -->
+              </tbody>
+            </table>
+          </div>
 
-        <div class="mt-4 flex justify-end space-x-2">
-          <button id="prev-page" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
-            disabled>Previous</button>
-          <span id="page-info" class="self-center text-gray-700 text-sm">Page 1</span>
-          <button id="next-page" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</button>
-        </div>
-      </section>
+          <div class="mt-4 flex justify-end space-x-2">
+            <button id="prev-page" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+              disabled>Previous</button>
+            <span id="page-info" class="self-center text-gray-700 text-sm">Page 1</span>
+            <button id="next-page" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</button>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 

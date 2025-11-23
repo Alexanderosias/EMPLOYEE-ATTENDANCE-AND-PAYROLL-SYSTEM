@@ -81,7 +81,10 @@ require_once '../views/auth.php'; // path relative to the page
               Profile
             </a>
           </li>
-          <?php if ($_SESSION['role'] === 'head_admin'): ?>
+          <?php
+          $userRoles = $_SESSION['roles'] ?? [];
+          if (in_array('head_admin', $userRoles)):
+          ?>
             <li>
               <a href="user_page.php">
                 <img src="icons/add-user.png" alt="Users" class="icon" />
@@ -106,102 +109,110 @@ require_once '../views/auth.php'; // path relative to the page
 
     <main class="main-content">
       <header class="dashboard-header">
-        <h2>PAYROLL</h2>
-        <p id="current-datetime" aria-live="polite"></p>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div>
+            <h2>Manage Payroll</h2>
+          </div>
+          <div>
+            <p id="current-datetime"></p>
+          </div>
+        </div>
+        <div class="bottom-border"></div>
       </header>
 
-      <section class="summary-cards" aria-label="Payroll summary">
-        <div class="summary-card blue">
-          <p class="label">Total Gross Pay</p>
-          <p class="value" id="total-gross-pay">₱0.00</p>
-        </div>
-
-        <div class="summary-card red">
-          <p class="label">Total Taxes & Deductions</p>
-          <p class="value" id="total-deductions">₱0.00</p>
-        </div>
-
-        <div class="summary-card green">
-          <p class="label">Total Net Pay</p>
-          <p class="value" id="total-net-pay">₱0.00</p>
-        </div>
-      </section>
-
-      <section class="payroll-dashboard" aria-label="Payroll dashboard">
-        <div class="payroll-header">
-          <div>
-            <label for="payroll-schedule">Payroll Schedule</label>
-            <select id="payroll-schedule" name="payroll-schedule">
-              <option value="" disabled selected>Select payroll schedule</option>
-              <option value="biweekly">Every 15 Days (Bi-weekly)</option>
-              <option value="monthly">Every 1 Month (Monthly)</option>
-              <option value="weekly">Every 7 Days (Weekly)</option>
-              <option value="daily">Daily</option>
-            </select>
+      <div class="scrollbar-container">
+        <section class="summary-cards" aria-label="Payroll summary">
+          <div class="summary-card blue">
+            <p class="label">Total Gross Pay</p>
+            <p class="value" id="total-gross-pay">₱0.00</p>
           </div>
 
-          <div>
-            <p>Next Payroll: <span>11/12/25</span></p>
-          </div>
-        </div>
-
-        <section class="tax-settings" aria-label="Tax rate settings">
-          <div id="tax-settings-header" tabindex="0" role="button" aria-expanded="false"
-            aria-controls="tax-settings-content" class="tax-settings-header"
-            aria-label="Toggle tax rate settings">
-            Tax Rate Settings
-            <svg id="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-              fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"
-              style="transition: transform 0.3s ease;">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+          <div class="summary-card red">
+            <p class="label">Total Taxes & Deductions</p>
+            <p class="value" id="total-deductions">₱0.00</p>
           </div>
 
-          <div id="tax-settings-content" class="tax-settings-content">
-            <div class="tax-sections-row">
-              <div class="section">
-                <h3>
-                  PhilHealth
-                  <a href="https://www.philhealth.gov.ph/" target="_blank" rel="noopener"
-                    class="tax-link" aria-label="PhilHealth official site">🔗</a>
-                </h3>
-                <label for="philhealth-rate">Rate</label>
-                <input type="number" step="0.001" id="philhealth-rate" value="0.05" />
-                <label for="philhealth-floor">Salary Floor</label>
-                <input type="number" id="philhealth-floor" value="10000" />
-                <label for="philhealth-ceiling">Salary Ceiling</label>
-                <input type="number" id="philhealth-ceiling" value="100000" />
-                <label for="philhealth-fixed-floor">Fixed Amount (Floor)</label>
-                <input type="number" id="philhealth-fixed-floor" value="500" />
-                <label for="philhealth-fixed-ceiling">Fixed Amount (Ceiling)</label>
-                <input type="number" id="philhealth-fixed-ceiling" value="5000" />
-              </div>
+          <div class="summary-card green">
+            <p class="label">Total Net Pay</p>
+            <p class="value" id="total-net-pay">₱0.00</p>
+          </div>
+        </section>
 
-              <div class="section">
-                <h3>
-                  Pag-IBIG
-                  <a href="https://www.pagibigfund.gov.ph/" target="_blank" rel="noopener"
-                    class="tax-link" aria-label="Pag-IBIG official site">🔗</a>
-                </h3>
-                <label for="pagibig-rate">Employee Rate</label>
-                <input type="number" step="0.001" id="pagibig-rate" value="0.02" />
-                <label for="pagibig-low-rate">Low-Income Rate</label>
-                <input type="number" step="0.001" id="pagibig-low-rate" value="0.01" />
-                <label for="pagibig-threshold">Low-Income Threshold</label>
-                <input type="number" id="pagibig-threshold" value="1500" />
-              </div>
+        <section class="payroll-dashboard" aria-label="Payroll dashboard">
+          <div class="payroll-header">
+            <div>
+              <label for="payroll-schedule">Payroll Schedule</label>
+              <select id="payroll-schedule" name="payroll-schedule">
+                <option value="" disabled selected>Select payroll schedule</option>
+                <option value="biweekly">Every 15 Days (Bi-weekly)</option>
+                <option value="monthly">Every 1 Month (Monthly)</option>
+                <option value="weekly">Every 7 Days (Weekly)</option>
+                <option value="daily">Daily</option>
+              </select>
             </div>
 
-            <div class="section">
-              <h3>
-                SSS Contribution Table (JSON)
-                <a href="https://www.sss.gov.ph/" target="_blank" rel="noopener"
-                  class="tax-link" aria-label="SSS official site">🔗</a>
-              </h3>
+            <div>
+              <p>Next Payroll: <span>11/12/25</span></p>
+            </div>
+          </div>
 
-              <textarea id="sss-table" aria-label="SSS Contribution Table JSON"
-                spellcheck="false" rows="10" style="font-family: monospace; font-size: 0.85rem;">
+          <section class="tax-settings" aria-label="Tax rate settings">
+            <div id="tax-settings-header" tabindex="0" role="button" aria-expanded="false"
+              aria-controls="tax-settings-content" class="tax-settings-header"
+              aria-label="Toggle tax rate settings">
+              Tax Rate Settings
+              <svg id="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"
+                style="transition: transform 0.3s ease;">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+
+            <div id="tax-settings-content" class="tax-settings-content">
+              <div class="tax-sections-row">
+                <div class="section">
+                  <h3>
+                    PhilHealth
+                    <a href="https://www.philhealth.gov.ph/" target="_blank" rel="noopener"
+                      class="tax-link" aria-label="PhilHealth official site">🔗</a>
+                  </h3>
+                  <label for="philhealth-rate">Rate</label>
+                  <input type="number" step="0.001" id="philhealth-rate" value="0.05" />
+                  <label for="philhealth-floor">Salary Floor</label>
+                  <input type="number" id="philhealth-floor" value="10000" />
+                  <label for="philhealth-ceiling">Salary Ceiling</label>
+                  <input type="number" id="philhealth-ceiling" value="100000" />
+                  <label for="philhealth-fixed-floor">Fixed Amount (Floor)</label>
+                  <input type="number" id="philhealth-fixed-floor" value="500" />
+                  <label for="philhealth-fixed-ceiling">Fixed Amount (Ceiling)</label>
+                  <input type="number" id="philhealth-fixed-ceiling" value="5000" />
+                </div>
+
+                <div class="section">
+                  <h3>
+                    Pag-IBIG
+                    <a href="https://www.pagibigfund.gov.ph/" target="_blank" rel="noopener"
+                      class="tax-link" aria-label="Pag-IBIG official site">🔗</a>
+                  </h3>
+                  <label for="pagibig-rate">Employee Rate</label>
+                  <input type="number" step="0.001" id="pagibig-rate" value="0.02" />
+                  <label for="pagibig-low-rate">Low-Income Rate</label>
+                  <input type="number" step="0.001" id="pagibig-low-rate" value="0.01" />
+                  <label for="pagibig-threshold">Low-Income Threshold</label>
+                  <input type="number" id="pagibig-threshold" value="1500" />
+                </div>
+              </div>
+
+              <div class="section">
+                <h3>
+                  SSS Contribution Table (JSON)
+                  <a href="https://www.sss.gov.ph/" target="_blank" rel="noopener"
+                    class="tax-link" aria-label="SSS official site">🔗</a>
+                </h3>
+
+                <textarea id="sss-table" aria-label="SSS Contribution Table JSON"
+                  spellcheck="false" rows="10" style="font-family: monospace; font-size: 0.85rem;">
 [
   {"salaryRange":[0,3249.99],"sssContribution":135},
   {"salaryRange":[3250,3749.99],"sssContribution":157.5},
@@ -244,50 +255,51 @@ require_once '../views/auth.php'; // path relative to the page
   {"salaryRange":[21750,22249.99],"sssContribution":990}
 ]
               </textarea>
+              </div>
+
+              <button id="save-tax-rates-btn" class="tax-settings-save-btn" type="button">
+                Save Tax Rates
+              </button>
+            </div>
+          </section>
+
+          <div class="below-settings">
+            <div class="toggle-container">
+              <label class="toggle-label">Auto-Apply All Government Deductions</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="autoApplyDeductions" checked />
+                <span class="slider"></span>
+              </label>
             </div>
 
-            <button id="save-tax-rates-btn" class="tax-settings-save-btn" type="button">
-              Save Tax Rates
+            <button id="mark-as-paid-btn" class="mark-paid-btn" disabled type="button">
+              Mark all as Paid
             </button>
           </div>
-        </section>
 
-        <div class="below-settings">
-          <div class="toggle-container">
-            <label class="toggle-label">Auto-Apply All Government Deductions</label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="autoApplyDeductions" checked />
-              <span class="slider"></span>
-            </label>
+          <div class="payroll-table-container" aria-label="Payroll records table">
+            <table class="payroll-table" role="table" aria-describedby="pay-period-display">
+              <thead>
+                <tr>
+                  <th scope="col">Employee Name</th>
+                  <th scope="col">Gross Pay</th>
+                  <th scope="col">PhilHealth</th>
+                  <th scope="col">SSS</th>
+                  <th scope="col">Pag-IBIG</th>
+                  <th scope="col">Other Deductions</th>
+                  <th scope="col">Total Deductions</th>
+                  <th scope="col">Net Pay</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+
+              <tbody id="payroll-table-body">
+                <!-- Rows inserted by JS -->
+              </tbody>
+            </table>
           </div>
-
-          <button id="mark-as-paid-btn" class="mark-paid-btn" disabled type="button">
-            Mark all as Paid
-          </button>
-        </div>
-
-        <div class="payroll-table-container" aria-label="Payroll records table">
-          <table class="payroll-table" role="table" aria-describedby="pay-period-display">
-            <thead>
-              <tr>
-                <th scope="col">Employee Name</th>
-                <th scope="col">Gross Pay</th>
-                <th scope="col">PhilHealth</th>
-                <th scope="col">SSS</th>
-                <th scope="col">Pag-IBIG</th>
-                <th scope="col">Other Deductions</th>
-                <th scope="col">Total Deductions</th>
-                <th scope="col">Net Pay</th>
-                <th scope="col">Action</th>
-              </tr>
-            </thead>
-
-            <tbody id="payroll-table-body">
-              <!-- Rows inserted by JS -->
-            </tbody>
-          </table>
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
   </div>
 

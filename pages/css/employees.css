@@ -25,16 +25,21 @@
 
 .search-add-bar {
   display: flex;
-  position: sticky;
-  top: 75px;
-  background-color: rgb(240, 242, 245, 0.8);
-  border-bottom-left-radius: 5px;
-  border-bottom-right-radius: 5px;
-  margin-bottom: 2rem;
+  position: fixed !important;
+  top: 65px !important;
+  left: 280px;
+  right: 30px;
+  background-color: rgb(240, 242, 245, 0.95) !important;
+  border-bottom-left-radius: 5px !important;
+  border-bottom-right-radius: 5px !important;
+  margin-bottom: 10px !important;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  z-index: 100;
+  z-index: 900;
+  padding-top: 10px;
+  padding-bottom: 5px;
+  backdrop-filter: blur(5px);
 }
 
 .filter-add-group {
@@ -74,7 +79,6 @@
   background: none;
   border: none;
   color: var(--search-btn-color);
-  cursor: pointer;
   font-size: 1.25rem;
   padding: 0 0.5rem;
   transition: color 0.3s ease;
@@ -114,6 +118,10 @@
   background-color: var(--add-btn-hover);
 }
 
+.dashboard-header {
+  margin-bottom: 75px;
+}
+
 .employee-list {
   display: flex;
   flex-direction: column;
@@ -143,16 +151,38 @@
   padding-bottom: 1rem;
 }
 
-.employee-card:first-child .card-index {
-  background-color: #28a745;
+.employee-card:nth-child(1) .card-index {
+  background: #007bff;
 }
-
 .employee-card:nth-child(2) .card-index {
-  background-color: #dc3545;
+  background: #28a745;
 }
-
 .employee-card:nth-child(3) .card-index {
-  background-color: #007bff;
+  background: #ffc107;
+}
+.employee-card:nth-child(4) .card-index {
+  background: #dc3545;
+}
+.employee-card:nth-child(5) .card-index {
+  background: #6f42c1;
+}
+.employee-card:nth-child(6) .card-index {
+  background: #fd7e14;
+}
+.employee-card:nth-child(7) .card-index {
+  background: #20c997;
+}
+.employee-card:nth-child(8) .card-index {
+  background: #e83e8c;
+}
+.employee-card:nth-child(9) .card-index {
+  background: #17a2b8;
+}
+.employee-card:nth-child(10) .card-index {
+  background: #343a40;
+}
+.employee-card:nth-child(n+11) .card-index {
+  background: #007bff;
 }
 
 .card-index {
@@ -403,7 +433,7 @@
 }
 
 .modal-header h3 {
-  font-family: "Bowlby One";
+  font-family: "Inter";
   margin: 0;
   font-size: 1.25rem;
 }

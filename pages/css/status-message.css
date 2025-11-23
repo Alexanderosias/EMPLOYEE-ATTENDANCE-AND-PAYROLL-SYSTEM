@@ -1,32 +1,32 @@
 .status-message {
-  display: none;
-  position: fixed;
-  top: 25px;
-  justify-self: center;
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: #dc2626;
-  padding: 20px 40px;
-  border: 2px solid rgb(216, 216, 216);
-  background-color: rgb(245, 245, 245);
-  border-radius: 10px;
-  z-index: 10000;
-  max-width: 600px;
-  text-align: center;
-  line-height: 25px;
+  display: none !important;
+  position: fixed !important;
+  top: 25px !important;
+  justify-self: center !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 1rem !important;
+  color: #dc2626 !important;
+  padding: 20px 40px !important;
+  border: 2px solid rgb(216, 216, 216) !important;
+  background-color: rgb(245, 245, 245) !important;
+  border-radius: 10px !important;
+  z-index: 10000 !important;
+  max-width: 600px !important;
+  text-align: center !important;
+  line-height: 25px !important;
 }
 
 .status-message.success {
-  background-color: rgba(206, 255, 190, 0.9);
-  color: #16a34a;
-  border: 1px solid #C3E6CB;
-  display: block;
+  background-color: rgba(206, 255, 190, 0.9) !important;
+  color: #16a34a !important;
+  border: 1px solid #C3E6CB !important;
+  display: block !important;
 }
 
 .status-message.error {
-  background-color: rgba(255, 200, 200, 0.9);
-  color: #721C24;
-  border: 1px solid #F5C6CB;
-  display: block;
+  background-color: rgba(255, 200, 200, 0.9) !important;
+  color: #721C24 !important;
+  border: 1px solid #F5C6CB !important;
+  display: block !important;
 }

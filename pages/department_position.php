@@ -81,7 +81,10 @@ require_once '../views/auth.php'; // path relative to the page
               Profile
             </a>
           </li>
-          <?php if ($_SESSION['role'] === 'head_admin'): ?>
+          <?php
+          $userRoles = $_SESSION['roles'] ?? [];
+          if (in_array('head_admin', $userRoles)):
+          ?>
             <li>
               <a href="user_page.php">
                 <img src="icons/add-user.png" alt="Users" class="icon" />
@@ -106,103 +109,108 @@ require_once '../views/auth.php'; // path relative to the page
 
     <main class="main-content">
       <header class="dashboard-header">
-        <div>
-          <h2>DEPARTMENTS & JOB POSITIONS</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div>
+            <h2>Manage Departments and Job Positions</h2>
+          </div>
+          <div>
+            <p id="current-datetime"></p>
+          </div>
         </div>
-        <div>
-          <p id="current-datetime"></p>
-        </div>
+        <div class="bottom-border"></div>
       </header>
 
-      <!-- Insert Departments and Job Positions container here -->
-      <div class="container">
-        <!-- Departments Section -->
-        <section class="section-box" aria-labelledby="departments-title">
-          <h3 id="departments-title">Departments</h3>
-          <ul id="departments-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
-            <!-- Dynamic items inserted by JS -->
-          </ul>
-          <button id="add-department-btn" class="btn-add" aria-haspopup="dialog" aria-controls="add-department-modal">
-            <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
-            Add Department
-          </button>
-        </section>
+      <div class="scrollbar-container">
+        <!-- Insert Departments and Job Positions container here -->
+        <div class="container">
+          <!-- Departments Section -->
+          <section class="section-box" aria-labelledby="departments-title">
+            <h3 id="departments-title">Departments</h3>
+            <ul id="departments-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
+              <!-- Dynamic items inserted by JS -->
+            </ul>
+            <button id="add-department-btn" class="btn-add" aria-haspopup="dialog" aria-controls="add-department-modal">
+              <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
+              Add Department
+            </button>
+          </section>
 
-        <!-- Job Positions Section -->
-        <section class="section-box" aria-labelledby="job-positions-title">
-          <h3 id="job-positions-title">Job Positions</h3>
-          <ul id="job-positions-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
-            <!-- Dynamic items inserted by JS, e.g., <li>Instructor - $15.50/hr <button>Edit</button> <button>Delete</button></li> -->
-          </ul>
-          <button id="add-job-position-btn" class="btn-add" aria-haspopup="dialog"
-            aria-controls="add-job-position-modal">
-            <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
-            Add Job Position
-          </button>
-        </section>
-      </div>
-
-      <!-- Add Department Modal -->
-      <div id="add-department-modal" class="modal" aria-hidden="true" role="dialog"
-        aria-labelledby="add-department-title" aria-modal="true">
-        <div class="modal-content">
-          <header class="modal-header">
-            <h4 id="add-department-title">Add Department</h4>
-            <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
-          </header>
-          <form id="add-department-form" novalidate>
-            <div class="modal-body">
-              <label for="department-name">Department Name</label>
-              <input type="text" id="department-name" name="name" required placeholder="Enter department name" />
-            </div>
-            <footer class="modal-footer">
-              <button type="submit" class="btn btn-primary">Add Department</button>
-              <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
-            </footer>
-          </form>
+          <!-- Job Positions Section -->
+          <section class="section-box" aria-labelledby="job-positions-title">
+            <h3 id="job-positions-title">Job Positions</h3>
+            <ul id="job-positions-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
+              <!-- Dynamic items inserted by JS, e.g., <li>Instructor - $15.50/hr <button>Edit</button> <button>Delete</button></li> -->
+            </ul>
+            <button id="add-job-position-btn" class="btn-add" aria-haspopup="dialog"
+              aria-controls="add-job-position-modal">
+              <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
+              Add Job Position
+            </button>
+          </section>
         </div>
-      </div>
 
-      <!-- Add Job Position Modal -->
-      <div id="add-job-position-modal" class="modal" aria-hidden="true" role="dialog"
-        aria-labelledby="add-job-position-title" aria-modal="true">
-        <div class="modal-content">
-          <header class="modal-header">
-            <h4 id="add-job-position-title">Add Job Position</h4>
-            <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
-          </header>
-          <form id="add-job-position-form" novalidate>
-            <div class="modal-body">
-              <label for="job-position-name">Job Position Name</label>
-              <input type="text" id="job-position-name" name="name" required placeholder="Enter job position name" />
-              <label for="job-position-rate">Rate per Hour</label>
-              <input type="number" id="job-position-rate" name="rate_per_hour" step="0.01" min="0" required
-                placeholder="Enter rate per hour (e.g., 15.50)" />
-            </div>
-            <footer class="modal-footer">
-              <button type="submit" class="btn btn-primary">Add Job Position</button>
-              <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
-            </footer>
-          </form>
-        </div>
-      </div>
-
-      <!-- Delete Confirmation Modal -->
-      <div id="delete-confirmation-modal" class="modal" aria-hidden="true" role="dialog"
-        aria-labelledby="delete-confirmation-title" aria-modal="true">
-        <div class="modal-content">
-          <header class="modal-header">
-            <h4 id="delete-confirmation-title">Confirm Deletion</h4>
-            <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
-          </header>
-          <div class="modal-body">
-            <p id="delete-confirmation-message">Are you sure you want to delete this item?</p>
-            <p id="delete-warning-message" class="warning-text" style="display: none;"></p>
+        <!-- Add Department Modal -->
+        <div id="add-department-modal" class="modal" aria-hidden="true" role="dialog"
+          aria-labelledby="add-department-title" aria-modal="true">
+          <div class="modal-content">
+            <header class="modal-header">
+              <h4 id="add-department-title">Add Department</h4>
+              <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
+            </header>
+            <form id="add-department-form" novalidate>
+              <div class="modal-body">
+                <label for="department-name">Department Name</label>
+                <input type="text" id="department-name" name="name" required placeholder="Enter department name" />
+              </div>
+              <footer class="modal-footer">
+                <button type="submit" class="btn btn-primary">Add Department</button>
+                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+              </footer>
+            </form>
           </div>
-          <footer class="modal-footer">
-            <button type="button" id="confirm-delete-btn" class="btn btn-danger">Delete</button>
-            <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
-          </footer>
+        </div>
+
+        <!-- Add Job Position Modal -->
+        <div id="add-job-position-modal" class="modal" aria-hidden="true" role="dialog"
+          aria-labelledby="add-job-position-title" aria-modal="true">
+          <div class="modal-content">
+            <header class="modal-header">
+              <h4 id="add-job-position-title">Add Job Position</h4>
+              <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
+            </header>
+            <form id="add-job-position-form" novalidate>
+              <div class="modal-body">
+                <label for="job-position-name">Job Position Name</label>
+                <input type="text" id="job-position-name" name="name" required placeholder="Enter job position name" />
+                <label for="job-position-rate">Rate per Hour</label>
+                <input type="number" id="job-position-rate" name="rate_per_hour" step="0.01" min="0" required
+                  placeholder="Enter rate per hour (e.g., 15.50)" />
+              </div>
+              <footer class="modal-footer">
+                <button type="submit" class="btn btn-primary">Add Job Position</button>
+                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+              </footer>
+            </form>
+          </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-confirmation-modal" class="modal" aria-hidden="true" role="dialog"
+          aria-labelledby="delete-confirmation-title" aria-modal="true">
+          <div class="modal-content">
+            <header class="modal-header">
+              <h4 id="delete-confirmation-title">Confirm Deletion</h4>
+              <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
+            </header>
+            <div class="modal-body">
+              <p id="delete-confirmation-message">Are you sure you want to delete this item?</p>
+              <p id="delete-warning-message" class="warning-text" style="display: none;"></p>
+            </div>
+            <footer class="modal-footer">
+              <button type="button" id="confirm-delete-btn" class="btn btn-danger">Delete</button>
+              <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+            </footer>
+          </div>
         </div>
       </div>
     </main>
