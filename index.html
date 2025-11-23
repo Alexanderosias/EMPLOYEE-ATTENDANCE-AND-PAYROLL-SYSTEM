@@ -105,6 +105,63 @@
     #animatedMessageBox.visible {
       transform: translateX(-50%) translateY(0);
     }
+
+    /* Role Selection Modal */
+    #roleModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    #roleModal.show {
+      display: flex;
+    }
+
+    .role-modal-content {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      border-radius: 1rem;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .role-modal-content h2 {
+      color: white;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .role-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .role-btn {
+      background: #4169E1;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .role-btn:hover {
+      background: #0056b3;
+    }
   </style>
 </head>
 
@@ -155,6 +212,17 @@
         <a href="pages/send_code.html" class="text-sky-400 hover:underline">Forgot your password?</a>
       </p>
     </form>
+  </div>
+
+  <!-- Role Selection Modal -->
+  <div id="roleModal">
+    <div class="role-modal-content">
+      <h2>Login as:</h2>
+      <div class="role-buttons">
+        <button class="role-btn" id="loginAsEmployee">Employee</button>
+        <button class="role-btn" id="loginAsAdmin">Admin</button>
+      </div>
+    </div>
   </div>
 
   <script src="js/login.js"></script>

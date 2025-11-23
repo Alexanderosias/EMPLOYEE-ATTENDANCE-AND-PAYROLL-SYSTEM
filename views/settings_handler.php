@@ -6,6 +6,18 @@ require_once 'auth.php';  // Ensure head_admin access for saves only
 
 header('Content-Type: application/json');
 
+// Helper function to check if user has head_admin role
+function hasHeadAdminRole()
+{
+    if (isset($_SESSION['roles'])) {
+        $userRoles = is_array($_SESSION['roles']) ? $_SESSION['roles'] : json_decode($_SESSION['roles'], true);
+        return in_array('head_admin', $userRoles);
+    } elseif (isset($_SESSION['role'])) {
+        return $_SESSION['role'] === 'head_admin';
+    }
+    return false;
+}
+
 try {
     $db = conn();
     $mysqli = $db['mysqli'];
@@ -16,17 +28,19 @@ try {
         case 'load':
             // Load all settings
             $systemResult = $mysqli->query("SELECT system_name, logo_path, annual_paid_leave_days, annual_unpaid_leave_days, annual_sick_leave_days FROM school_settings LIMIT 1");
+            $systemData = $systemResult->fetch_assoc() ?: [];
+
             $timeDateResult = $mysqli->query("SELECT auto_logout_time_hours, date_format FROM time_date_settings LIMIT 1");
             $taxResult = $mysqli->query("SELECT income_tax_rate, custom_tax_formula FROM tax_deduction_settings LIMIT 1");
             $backupResult = $mysqli->query("SELECT backup_frequency, session_timeout_minutes FROM backup_restore_settings LIMIT 1");
 
             $settings = [
-                'system' => $systemResult->fetch_assoc() ?: [],
+                'system' => $systemData,
                 'time_date' => $timeDateResult->fetch_assoc() ?: [],
                 'leave' => [
-                    'annual_paid_leave_days' => $systemResult->fetch_assoc()['annual_paid_leave_days'] ?? 15,
-                    'annual_unpaid_leave_days' => $systemResult->fetch_assoc()['annual_unpaid_leave_days'] ?? 5,
-                    'annual_sick_leave_days' => $systemResult->fetch_assoc()['annual_sick_leave_days'] ?? 10
+                    'annual_paid_leave_days' => $systemData['annual_paid_leave_days'] ?? 15,
+                    'annual_unpaid_leave_days' => $systemData['annual_unpaid_leave_days'] ?? 5,
+                    'annual_sick_leave_days' => $systemData['annual_sick_leave_days'] ?? 10
                 ],
                 'attendance' => [],
                 'backup' => $backupResult->fetch_assoc() ?: []
@@ -46,9 +60,9 @@ try {
             break;
 
         case 'save_system_info':
-            // Check session role for saves (head_admin only)
-            if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'head_admin') {
-                throw new Exception('Unauthorized: Must be logged in as head_admin.');
+            // Check if user has head_admin role
+            if (!hasHeadAdminRole()) {
+                throw new Exception('Unauthorized: Must have head_admin role.');
             }
 
             $systemName = trim($_POST['system_name'] ?? '');
@@ -101,9 +115,9 @@ try {
             break;
 
         case 'save_time_date':
-            // Check session role for saves (head_admin only)
-            if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'head_admin') {
-                throw new Exception('Unauthorized: Must be logged in as head_admin.');
+            // Check if user has head_admin role
+            if (!hasHeadAdminRole()) {
+                throw new Exception('Unauthorized: Must have head_admin role.');
             }
 
             $minutes = intval($_POST['auto_logout'] ?? 60);
@@ -131,9 +145,9 @@ try {
             break;
 
         case 'save_leave':
-            // Check session role for saves (head_admin only)
-            if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'head_admin') {
-                throw new Exception('Unauthorized: Must be logged in as head_admin.');
+            // Check if user has head_admin role
+            if (!hasHeadAdminRole()) {
+                throw new Exception('Unauthorized: Must have head_admin role.');
             }
 
             $paidLeave = intval($_POST['annual_paid_leave'] ?? 15);
@@ -149,9 +163,9 @@ try {
             break;
 
         case 'save_attendance':
-            // Check session role for saves (head_admin only)
-            if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'head_admin') {
-                throw new Exception('Unauthorized: Must be logged in as head_admin.');
+            // Check if user has head_admin role
+            if (!hasHeadAdminRole()) {
+                throw new Exception('Unauthorized: Must have head_admin role.');
             }
 
             $lateThreshold = intval($_POST['late_threshold'] ?? 15);
@@ -174,9 +188,9 @@ try {
             break;
 
         case 'save_backup':
-            // Check session role for saves (head_admin only)
-            if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'head_admin') {
-                throw new Exception('Unauthorized: Must be logged in as head_admin.');
+            // Check if user has head_admin role
+            if (!hasHeadAdminRole()) {
+                throw new Exception('Unauthorized: Must have head_admin role.');
             }
 
             $frequency = $_POST['backup_frequency'] ?? 'weekly';

@@ -68,9 +68,10 @@ function generateQRCode($employee_data, $qr_dir = '../qrcodes/') // Fixed defaul
 
         // Build data: First name, last name, position name, date joined
         $id = (int)($employee_data['id'] ?? 0);
-        $first = trim(preg_replace('/[^a-zA-Z0-9]/', '', $employee_data['first_name'] ?? 'EMP'));
+        // Allow spaces and other characters, only remove QR delimiters (| and :)
+        $first = trim(preg_replace('/[|:]/', '', $employee_data['first_name'] ?? 'EMP'));
         if ($first === '') $first = 'EMP';
-        $last  = trim(preg_replace('/[^a-zA-Z0-9]/', '', $employee_data['last_name'] ?? ''));
+        $last  = trim(preg_replace('/[|:]/', '', $employee_data['last_name'] ?? ''));
         $pos = trim($employee_data['position_name'] ?? 'N/A');  // Job position name from joined table
         $joined = (!empty($employee_data['date_joined']) && $employee_data['date_joined'] !== '0000-00-00')
             ? $employee_data['date_joined'] : 'N/A';
@@ -365,7 +366,7 @@ switch ($action) {
 
             // Insert into users first
             $password_hash = password_hash('12345678', PASSWORD_DEFAULT);
-            $user_stmt = $mysqli->prepare("INSERT INTO users (first_name, last_name, email, phone_number, address, department_id, role, password_hash) VALUES (?, ?, ?, ?, ?, ?, 'employee', ?)");
+            $user_stmt = $mysqli->prepare("INSERT INTO users (first_name, last_name, email, phone_number, address, department_id, roles, password_hash) VALUES (?, ?, ?, ?, ?, ?, '[\"employee\"]', ?)");
             $user_stmt->bind_param('sssssis', $first_name, $last_name, $email, $contact_number, $address, $department_id, $password_hash);
             if (!$user_stmt->execute()) {
                 throw new Exception('Failed to create user account.');
@@ -807,6 +808,46 @@ switch ($action) {
             error_log("Positions Error: " . $e->getMessage());
             ob_end_clean();
             echo json_encode(['success' => false, 'message' => 'Failed to fetch job positions: ' . $e->getMessage()]);
+        }
+        break;
+
+    case 'check_email':
+        $email = $_GET['email'] ?? '';
+        if (!$email) {
+            ob_end_clean();
+            echo json_encode(['success' => false, 'message' => 'Email required']);
+            break;
+        }
+        try {
+            // Check if email exists in employees
+            $emp_stmt = $mysqli->prepare("SELECT * FROM employees WHERE email = ?");
+            $emp_stmt->bind_param('s', $email);
+            $emp_stmt->execute();
+            $emp_result = $emp_stmt->get_result();
+            $employee = $emp_result->fetch_assoc();
+            $emp_stmt->close();
+
+            // Check if email exists in users
+            $user_stmt = $mysqli->prepare("SELECT id FROM users WHERE email = ?");
+            $user_stmt->bind_param('s', $email);
+            $user_stmt->execute();
+            $user_result = $user_stmt->get_result();
+            $user_exists = $user_result->num_rows > 0;
+            $user_stmt->close();
+
+            $response = [
+                'success' => true,
+                'exists' => $employee ? true : false,
+                'user_exists' => $user_exists,
+                'data' => $employee
+            ];
+
+            ob_end_clean();
+            echo json_encode($response);
+        } catch (Exception $e) {
+            error_log("Check Email Error: " . $e->getMessage());
+            ob_end_clean();
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         break;
 

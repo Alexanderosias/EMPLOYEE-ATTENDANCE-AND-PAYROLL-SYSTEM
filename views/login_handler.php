@@ -27,7 +27,7 @@ if (!$email || !$password) {
 $db = conn();
 $mysqli = $db['mysqli'];
 
-$stmt = $mysqli->prepare("SELECT id, first_name, last_name, role, password_hash, is_active FROM users WHERE email = ?");
+$stmt = $mysqli->prepare("SELECT id, first_name, last_name, roles, password_hash, is_active FROM users WHERE email = ?");
 $stmt->bind_param("s", $email);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -55,14 +55,41 @@ session_regenerate_id(true);
 $_SESSION['user_id'] = $user['id'];
 $_SESSION['first_name'] = $user['first_name'];
 $_SESSION['last_name'] = $user['last_name'];
-$_SESSION['role'] = $user['role'];
 
-// Redirect based on role (all users go to dashboard, but access is controlled by auth.php)
-$redirect = 'pages/dashboard.php'; // Relative to root
+// Decode roles
+$roles = json_decode($user['roles'] ?? '[]', true);
+if (!is_array($roles)) {
+    $roles = [];
+}
+$_SESSION['roles'] = $roles; // Store all roles in session
 
-echo json_encode([
-    'status' => 'success',
-    'redirect' => $redirect,
-    'message' => 'Login successful.'
-]);
+// Determine redirect or role selection
+$hasEmployee = in_array('employee', $roles);
+$hasAdmin = in_array('admin', $roles) || in_array('head_admin', $roles);
+
+if ($hasEmployee && $hasAdmin) {
+    // Multi-role: Ask user to select
+    echo json_encode([
+        'status' => 'success',
+        'action' => 'select_role',
+        'message' => 'Login successful. Please select a role.'
+    ]);
+} elseif ($hasEmployee) {
+    // Employee only
+    $_SESSION['role'] = 'employee'; // Set current active role
+    echo json_encode([
+        'status' => 'success',
+        'redirect' => 'employee-pages/employee_dashboard.php',
+        'message' => 'Login successful.'
+    ]);
+} else {
+    // Admin/Head Admin only (or no role, default to dashboard)
+    // Default to the first role found or admin
+    $_SESSION['role'] = $roles[0] ?? 'admin';
+    echo json_encode([
+        'status' => 'success',
+        'redirect' => 'pages/dashboard.php',
+        'message' => 'Login successful.'
+    ]);
+}
 exit;

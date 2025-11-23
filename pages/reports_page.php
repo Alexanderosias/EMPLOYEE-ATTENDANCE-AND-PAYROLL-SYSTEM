@@ -78,7 +78,10 @@ require_once '../views/auth.php'; // path relative to the page
               Profile
             </a>
           </li>
-          <?php if ($_SESSION['role'] === 'head_admin'): ?>
+          <?php
+          $userRoles = $_SESSION['roles'] ?? [];
+          if (in_array('head_admin', $userRoles)):
+          ?>
             <li>
               <a href="user_page.php">
                 <img src="icons/add-user.png" alt="Users" class="icon" />
@@ -101,73 +104,82 @@ require_once '../views/auth.php'; // path relative to the page
       </a>
     </aside>
 
-    <main class="main-content p-6 bg-gray-50 min-h-screen overflow-auto">
-      <header class="dashboard-header flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-semibold text-gray-800">REPORTS</h2>
-        <p id="current-datetime" class="text-gray-600 text-sm"></p>
+    <main class="main-content">
+      <header class="dashboard-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div>
+            <h2>Reports</h2>
+          </div>
+          <div>
+            <p id="current-datetime"></p>
+          </div>
+        </div>
+        <div class="bottom-border"></div>
       </header>
 
-      <article class="reports-content" aria-label="Reports content">
+      <div class="scrollbar-container">
+        <article class="reports-content" aria-label="Reports content">
 
-        <!-- Attendance Reports -->
-        <section class="report-card" id="attendance-report">
-          <h3>Attendance Reports</h3>
-          <select class="frequency-select" aria-label="Select attendance report frequency">
-            <option value="daily">Daily Attendance Report</option>
-            <option value="weekly">Weekly Attendance Report</option>
-            <option value="biweekly">Bi-Monthly / 15-Day Report</option>
-            <option value="monthly">Monthly Attendance Report</option>
-            <option value="yearly">Yearly Attendance Summary</option>
-            <option value="employee">Employee Attendance Record</option>
-          </select>
-          <div class="btn-container">
-            <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
-            <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
-          </div>
-          <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
+          <!-- Attendance Reports -->
+          <section class="report-card" id="attendance-report">
+            <h3>Attendance Reports</h3>
+            <select class="frequency-select" aria-label="Select attendance report frequency">
+              <option value="daily">Daily Attendance Report</option>
+              <option value="weekly">Weekly Attendance Report</option>
+              <option value="biweekly">Bi-Monthly / 15-Day Report</option>
+              <option value="monthly">Monthly Attendance Report</option>
+              <option value="yearly">Yearly Attendance Summary</option>
+              <option value="employee">Employee Attendance Record</option>
+            </select>
+            <div class="btn-container">
+              <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
+              <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
+            </div>
+            <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
 Select a report and click Generate.
           </pre>
-        </section>
+          </section>
 
-        <!-- Payroll Reports -->
-        <section class="report-card" id="payroll-report">
-          <h3>Payroll Reports</h3>
-          <select class="frequency-select" aria-label="Select payroll report frequency">
-            <option value="register">Payroll Register Report</option>
-            <option value="payslip">Payslip Report</option>
-            <option value="overtime">Overtime Report</option>
-            <option value="deductions">Deductions Report</option>
-            <option value="bonus">13th Month / Bonus Report</option>
-            <option value="yearend">Year-End Payroll Summary</option>
-          </select>
-          <div class="btn-container">
-            <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
-            <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
-          </div>
-          <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
+          <!-- Payroll Reports -->
+          <section class="report-card" id="payroll-report">
+            <h3>Payroll Reports</h3>
+            <select class="frequency-select" aria-label="Select payroll report frequency">
+              <option value="register">Payroll Register Report</option>
+              <option value="payslip">Payslip Report</option>
+              <option value="overtime">Overtime Report</option>
+              <option value="deductions">Deductions Report</option>
+              <option value="bonus">13th Month / Bonus Report</option>
+              <option value="yearend">Year-End Payroll Summary</option>
+            </select>
+            <div class="btn-container">
+              <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
+              <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
+            </div>
+            <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
 Select a report and click Generate.
           </pre>
-        </section>
+          </section>
 
-        <!-- Other Useful Reports -->
-        <section class="report-card" id="other-report">
-          <h3>Other Useful Reports</h3>
-          <select class="frequency-select" aria-label="Select other report frequency">
-            <option value="leave">Leave Report</option>
-            <option value="deptpos">Department/Position-wise Report</option>
-            <option value="performance">Employee Performance Report (Attendance-Based)</option>
-            <option value="audit">Audit Report</option>
-          </select>
-          <div class="btn-container">
-            <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
-            <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
-          </div>
-          <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
+          <!-- Other Useful Reports -->
+          <section class="report-card" id="other-report">
+            <h3>Other Useful Reports</h3>
+            <select class="frequency-select" aria-label="Select other report frequency">
+              <option value="leave">Leave Report</option>
+              <option value="deptpos">Department/Position-wise Report</option>
+              <option value="performance">Employee Performance Report (Attendance-Based)</option>
+              <option value="audit">Audit Report</option>
+            </select>
+            <div class="btn-container">
+              <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
+              <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
+            </div>
+            <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
 Select a report and click Generate.
           </pre>
-        </section>
+          </section>
 
-      </article>
+        </article>
+      </div>
     </main>
   </div>
 

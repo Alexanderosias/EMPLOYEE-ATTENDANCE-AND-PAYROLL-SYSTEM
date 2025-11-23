@@ -11,8 +11,8 @@ require_once '../views/auth.php'; // path relative to the page
   <title>EAAPS QR Codes & Snapshots Page</title>
   <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <link rel="stylesheet" href="css/qr_and_snapshots.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 </head>
 
 <body>
@@ -81,7 +81,10 @@ require_once '../views/auth.php'; // path relative to the page
               Profile
             </a>
           </li>
-          <?php if ($_SESSION['role'] === 'head_admin'): ?>
+          <?php
+          $userRoles = $_SESSION['roles'] ?? [];
+          if (in_array('head_admin', $userRoles)):
+          ?>
             <li>
               <a href="user_page.php">
                 <img src="icons/add-user.png" alt="Users" class="icon" />
@@ -106,41 +109,46 @@ require_once '../views/auth.php'; // path relative to the page
 
     <main class="main-content">
       <header class="dashboard-header">
-        <div>
-          <h2>QR CODES AND SNAPSHOTS</h2>
-        </div>
-        <div>
-          <p id="current-datetime"></p>
-        </div>
-      </header>
-
-      <div style="width: 100%;">
-        <div class="search-input-group">
-          <input type="text" id="employee-search" class="search-input" placeholder="Search employee name" />
-          <img src="icons/search.png" alt="Search Icon" class="search-icon" />
-        </div>
-      </div>
-
-      <!-- Employees container -->
-      <section id="employees-container">
-        <!-- Employee cards will be injected here -->
-      </section>
-
-      <div id="snapshot-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto p-6 relative">
-          <button id="modal-close-btn"
-            class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold">&times;</button>
-          <h3 id="modal-employee-name" class="text-xl font-semibold mb-4"></h3>
-          <div id="modal-snapshots-container">
-            <!-- Snapshot cards inserted here -->
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div>
+            <h2>QR Codes and Snapshots</h2>
+          </div>
+          <div>
+            <p id="current-datetime"></p>
           </div>
         </div>
-      </div>
+        <div class="bottom-border"></div>
+      </header>
 
-      <!-- Fullscreen image overlay -->
-      <div id="fullscreen-overlay"
-        class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-60 cursor-zoom-out">
-        <img src="" alt="Fullscreen Snapshot" />
+      <div class="scrollbar-container">
+        <div style="width: 100%;">
+          <div class="search-input-group">
+            <input type="text" id="employee-search" class="search-input" placeholder="Search employee name" />
+            <img src="icons/search.png" alt="Search Icon" class="search-icon" />
+          </div>
+        </div>
+
+        <!-- Employees container -->
+        <section id="employees-container">
+          <!-- Employee cards will be injected here -->
+        </section>
+
+        <div id="snapshot-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+          <div class="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto p-6 relative">
+            <button id="modal-close-btn"
+              class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold">&times;</button>
+            <h3 id="modal-employee-name" class="text-xl font-semibold mb-4"></h3>
+            <div id="modal-snapshots-container">
+              <!-- Snapshot cards inserted here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Fullscreen image overlay -->
+        <div id="fullscreen-overlay"
+          class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-60 cursor-zoom-out">
+          <img src="" alt="Fullscreen Snapshot" />
+        </div>
       </div>
     </main>
   </div>

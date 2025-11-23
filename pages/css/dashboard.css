@@ -1,7 +1,14 @@
 /* Import custom font */
 @font-face {
-  font-family: "Bowlby One";
-  src: url("../fonts/BowlbyOne-Regular.ttf") format("truetype");
+  font-family: "Inter";
+  src: url("../fonts/static/Inter_28pt-Bold.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Inter-normal";
+  src: url("../fonts/static/Inter_18pt-Regular.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
@@ -9,33 +16,35 @@
 /* General body and container styling */
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: "Inter-normal", Arial, Helvetica, sans-serif;
+  font-weight: normal;
   background-color: #f0f2f5;
   color: #333;
   box-sizing: border-box;
 }
 
-body::-webkit-scrollbar {
+main::-webkit-scrollbar {
     width: 8px;
+    height: 8px;
 }
 
-body::-webkit-scrollbar-button {
+main::-webkit-scrollbar-button {
     width: 0;
     height: 0;
     display: block;
     background: transparent;
 }
 
-body::-webkit-scrollbar-track {
+main::-webkit-scrollbar-track {
     background: #ffffff;
 }
 
-body::-webkit-scrollbar-thumb {
+main::-webkit-scrollbar-thumb {
     background-color: #8b95c9;
     border-radius: 4px;
 }
 
-body::-webkit-scrollbar-thumb:hover {
+main::-webkit-scrollbar-thumb:hover {
     background-color: #cdd4ff;
 }
 
@@ -61,6 +70,7 @@ body::-webkit-scrollbar-thumb:hover {
   transition: transform 0.5s ease;
   box-shadow: 3px 0 6px rgba(0, 0, 0, 0.5);
   user-select: none;
+  z-index: 1000;
 }
 
 .sidebar-header {
@@ -82,7 +92,7 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .sidebar-header .app-name {
-  font-family: "Bowlby One";
+  font-family: "Inter";
   font-size: 1.2em;
 }
 
@@ -90,6 +100,7 @@ body::-webkit-scrollbar-thumb:hover {
   flex-grow: 1;
   padding: 20px;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -175,11 +186,19 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .main-content {
-  margin-left: 250px !important;
-  font-family: Arial, Helvetica, sans-serif;
+  position: fixed !important;
+  font-family: "Inter-normal", Arial, Helvetica, sans-serif;
   flex-grow: 1;
-  padding: 100px 30px 30px 30px !important;
+  top: 0;
+  left: 250px;
+  bottom: 0;
+  right: 0;
   transition: margin-left 0.5s ease, padding 0.5s ease;
+  overflow: auto;
+}
+
+.scrollbar-container {
+  padding: 30px !important;
 }
 
 .main-content button {
@@ -188,25 +207,33 @@ body::-webkit-scrollbar-thumb:hover {
 
 .dashboard-header {
   display: flex !important;
+  flex-direction: column;
   justify-content: space-between !important;
   align-items: end !important;
-  border-bottom: 2px solid rgba(136, 136, 136, 0.5) !important;
-  position: fixed !important;
+  position: sticky !important;
   top: 0 !important;
   left: 250px !important;
   right: 0 !important;
   height: auto !important;
-  z-index: 10 !important;
+  z-index: 999 !important;
   background-color: #f0f2f5 !important;
   padding-top: 30px !important;
-  margin: 0 30px !important;
   user-select: none !important;
+  font-family: "Inter", Arial, Helvetica, sans-serif !important;
+  padding-left: 30px !important;
+  padding-right: 30px !important;
+}
+
+.bottom-border {
+  border-bottom: 2px solid rgba(136, 136, 136, 0.5) !important;
+  height: 1px;
+  width: 100%;
 }
 
 .dashboard-header h2 {
   margin-top: -5px !important;
-  padding-bottom: 2px !important;
-  font-family: "Bowlby One" !important;
+  padding-bottom: 5px !important;
+  font-family: "Inter", Arial, Helvetica, sans-serif !important;
   font-size: 1.5em !important;
   color: #333 !important;
   margin: 0 !important;
@@ -217,6 +244,8 @@ body::-webkit-scrollbar-thumb:hover {
   color: #777 !important;
   margin: 0 !important;
   padding-bottom: 10px !important;
+  font-family: "Inter-normal", Arial, Helvetica, sans-serif !important;
+  font-weight: normal !important;
 } 
 
 /* Metrics cards styles */

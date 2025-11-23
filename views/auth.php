@@ -30,7 +30,18 @@ try {
     // Check if current page is restricted
     if (isset($restrictedPages[$currentPage])) {
         $allowedRoles = $restrictedPages[$currentPage];
-        if (!in_array($_SESSION['role'], $allowedRoles)) {
+        $userRoles = $_SESSION['roles'] ?? [];
+
+        // Check if user has any of the allowed roles
+        $hasAccess = false;
+        foreach ($allowedRoles as $allowedRole) {
+            if (in_array($allowedRole, $userRoles)) {
+                $hasAccess = true;
+                break;
+            }
+        }
+
+        if (!$hasAccess) {
             if ($isApiRequest) {
                 throw new Exception('Unauthorized: Insufficient role.');
             } else {

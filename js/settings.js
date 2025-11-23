@@ -3,17 +3,20 @@ let settingsData = {}; // Store loaded settings
 
 // Load settings on page load
 async function loadSettings() {
+  let response;
+  let responseText = "";
   try {
     console.log(
       "Loading settings from ../views/settings_handler.php?action=load"
     );
-    const response = await fetch("../views/settings_handler.php?action=load");
+    response = await fetch("../views/settings_handler.php?action=load");
+
+    responseText = await response.text();
 
     if (!response.ok) {
-      const errorText = await response.text();
       console.error(
         `HTTP Error: ${response.status} ${response.statusText}`,
-        errorText
+        responseText
       );
       showStatus(
         `Failed to load settings: ${response.status} ${response.statusText}. Check if settings_handler.php exists at ../views/settings_handler.php.`,
@@ -22,7 +25,7 @@ async function loadSettings() {
       return;
     }
 
-    const result = await response.json();
+    const result = JSON.parse(responseText);
     console.log("Settings loaded:", result);
 
     if (result.success) {
@@ -35,6 +38,7 @@ async function loadSettings() {
     }
   } catch (error) {
     console.error("Network or parsing error:", error);
+    console.log("Raw response text:", responseText);
     showStatus(
       "Error loading settings: " +
         error.message +
@@ -142,6 +146,8 @@ document
 
 // Save Functions
 async function saveSystemInfo() {
+  let response;
+  let responseText = "";
   const formData = new FormData();
   formData.append("action", "save_system_info");
   formData.append("system_name", document.getElementById("systemName").value);
@@ -149,16 +155,17 @@ async function saveSystemInfo() {
 
   try {
     console.log("Saving system info to ../views/settings_handler.php");
-    const response = await fetch("../views/settings_handler.php", {
+    response = await fetch("../views/settings_handler.php", {
       method: "POST",
       body: formData,
     });
 
+    responseText = await response.text();
+
     if (!response.ok) {
-      const errorText = await response.text();
       console.error(
         `HTTP Error: ${response.status} ${response.statusText}`,
-        errorText
+        responseText
       );
       showStatus(
         `Failed to save: ${response.status} ${response.statusText}. Check server or file path.`,
@@ -167,7 +174,7 @@ async function saveSystemInfo() {
       return;
     }
 
-    const result = await response.json();
+    const result = JSON.parse(responseText);
     console.log("Save result:", result);
 
     if (result.success) {
@@ -183,6 +190,7 @@ async function saveSystemInfo() {
     }
   } catch (error) {
     console.error("Network or parsing error:", error);
+    console.log("Raw response text:", responseText);
     showStatus(
       "Error saving: " + error.message + ". Check network or file path.",
       "error"
@@ -191,6 +199,8 @@ async function saveSystemInfo() {
 }
 
 async function saveTimeDateSettings() {
+  let response;
+  let responseText = "";
   const minutes = parseInt(document.getElementById("autoLogoutTime").value);
   const dateFormatVal = document.getElementById("dateFormat").value;
 
@@ -211,16 +221,17 @@ async function saveTimeDateSettings() {
 
   try {
     console.log("Saving time & date settings to ../views/settings_handler.php");
-    const response = await fetch("../views/settings_handler.php", {
+    response = await fetch("../views/settings_handler.php", {
       method: "POST",
       body: formData,
     });
 
+    responseText = await response.text();
+
     if (!response.ok) {
-      const errorText = await response.text();
       console.error(
         `HTTP Error: ${response.status} ${response.statusText}`,
-        errorText
+        responseText
       );
       showStatus(
         `Failed to save: ${response.status} ${response.statusText}. Check server or file path.`,
@@ -229,7 +240,7 @@ async function saveTimeDateSettings() {
       return;
     }
 
-    const result = await response.json();
+    const result = JSON.parse(responseText);
     console.log("Save result:", result);
 
     if (result.success) {
@@ -248,6 +259,7 @@ async function saveTimeDateSettings() {
     }
   } catch (error) {
     console.error("Network or parsing error:", error);
+    console.log("Raw response text:", responseText);
     showStatus(
       "Error saving: " + error.message + ". Check network or file path.",
       "error"
@@ -256,6 +268,8 @@ async function saveTimeDateSettings() {
 }
 
 async function savePayrollLeaveSettings() {
+  let response;
+  let responseText = "";
   const formData = new FormData();
   formData.append("action", "save_leave");
   formData.append(
@@ -268,21 +282,22 @@ async function savePayrollLeaveSettings() {
   );
   formData.append(
     "annual_sick_leave",
-    document.getElementById("annualSickLeaveDays").value
+    document.getElementById("sickLeaveDays").value
   );
 
   try {
     console.log("Saving leave settings to ../views/settings_handler.php");
-    const response = await fetch("../views/settings_handler.php", {
+    response = await fetch("../views/settings_handler.php", {
       method: "POST",
       body: formData,
     });
 
+    responseText = await response.text();
+
     if (!response.ok) {
-      const errorText = await response.text();
       console.error(
         `HTTP Error: ${response.status} ${response.statusText}`,
-        errorText
+        responseText
       );
       showStatus(
         `Failed to save: ${response.status} ${response.statusText}. Check server or file path.`,
@@ -291,26 +306,20 @@ async function savePayrollLeaveSettings() {
       return;
     }
 
-    const result = await response.json();
+    const result = JSON.parse(responseText);
     console.log("Save result:", result);
 
     if (result.success) {
       showStatus(result.message, "success");
-      // Update local settings
-      settingsData.leave = {
-        annual_unpaid_leave_days: parseInt(
-          document.getElementById("unpaidLeaveDays").value
-        ),
-        annual_sick_leave_days: parseInt(
-          document.getElementById("sickLeaveDays").value
-        ),
-      };
+      // Refresh the page to fetch updated data
+      setTimeout(() => location.reload(), 1000);
     } else {
       console.error("API Error:", result.message);
       showStatus("Failed to save: " + result.message, "error");
     }
   } catch (error) {
     console.error("Network or parsing error:", error);
+    console.log("Raw response text:", responseText);
     showStatus(
       "Error saving: " + error.message + ". Check network or file path.",
       "error"
@@ -319,6 +328,8 @@ async function savePayrollLeaveSettings() {
 }
 
 async function saveAttendanceSettings() {
+  let response;
+  let responseText = "";
   const formData = new FormData();
   formData.append("action", "save_attendance");
   formData.append(
@@ -340,16 +351,17 @@ async function saveAttendanceSettings() {
 
   try {
     console.log("Saving attendance settings to ../views/settings_handler.php");
-    const response = await fetch("../views/settings_handler.php", {
+    response = await fetch("../views/settings_handler.php", {
       method: "POST",
       body: formData,
     });
 
+    responseText = await response.text();
+
     if (!response.ok) {
-      const errorText = await response.text();
       console.error(
         `HTTP Error: ${response.status} ${response.statusText}`,
-        errorText
+        responseText
       );
       showStatus(
         `Failed to save: ${response.status} ${response.statusText}. Check server or file path.`,
@@ -358,7 +370,7 @@ async function saveAttendanceSettings() {
       return;
     }
 
-    const result = await response.json();
+    const result = JSON.parse(responseText);
     console.log("Save result:", result);
 
     if (result.success) {
@@ -384,6 +396,7 @@ async function saveAttendanceSettings() {
     }
   } catch (error) {
     console.error("Network or parsing error:", error);
+    console.log("Raw response text:", responseText);
     showStatus(
       "Error saving: " + error.message + ". Check network or file path.",
       "error"
