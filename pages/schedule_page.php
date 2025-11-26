@@ -67,6 +67,12 @@ require_once '../views/auth.php'; // path relative to the page
             </a>
           </li>
           <li>
+            <a href="leave_page.php">
+              <img src="icons/swap.png" alt="Leave" class="icon" />
+              Leave
+            </a>
+          </li>
+          <li>
             <a href="qr_codes_and_snapshots.php">
               <img src="icons/snapshot.png" alt="Qr&Snapshots" class="icon" />
               QR and Snapshots
@@ -125,46 +131,44 @@ require_once '../views/auth.php'; // path relative to the page
       </header>
       <div class="scrollbar-container">
         <!-- Schedule Management Section -->
-        <div class="max-w-7xl mx-auto bg-white p-6 rounded-xl shadow-lg">
-          <div class="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-gray-200 mb-6">
-            <div class="mb-4 sm:mb-0">
-              <h1 class="text-3xl font-bold text-gray-800">Add Schedules</h1>
-              <p class="text-gray-500 mt-1">Manage weekly schedules for employees.</p>
-            </div>
+        <div class="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-gray-200 mb-6">
+          <div class="mb-4 sm:mb-0">
+            <h1 class="text-3xl font-bold text-gray-800">Add Schedules</h1>
+            <p class="text-gray-500 mt-1">Manage weekly schedules for employees.</p>
           </div>
-          <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-4">
-            <div class="relative w-full sm:w-1/3 mb-2 sm:mb-0">
-              <input type="text" id="employee-search-input" placeholder="Search employees..."
-                class="w-full border border-gray-300 rounded-md focus:outline-none focus:ring-0" aria-label="Search employees" />
-              <button id="employee-search-btn" type="button"
-                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none bg-white"
-                aria-label="Search">
-                <img src="icons/search.png" alt="Search icon" class="w-5 h-5" />
-              </button>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-4">
+          <div class="relative w-full sm:w-1/3 mb-2 sm:mb-0">
+            <input type="text" id="employee-search-input" placeholder="Search employees..."
+              class="w-full border border-gray-300 rounded-md focus:outline-none focus:ring-0" aria-label="Search employees" />
+            <button id="employee-search-btn" type="button"
+              class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none bg-white"
+              aria-label="Search">
+              <img src="icons/search.png" alt="Search icon" class="w-5 h-5" />
+            </button>
 
-            </div>
-
-            <select id="filter-job-position" class="w-full sm:w-1/4 p-2 border border-gray-300 rounded-md mb-2 sm:mb-0"
-              aria-label="Filter by job position">
-              <option value="">All Job Positions</option>
-            </select>
-
-            <select id="filter-department" class="w-full sm:w-1/4 p-2 border border-gray-300 rounded-md"
-              aria-label="Filter by department">
-              <option value="">All Departments</option>
-            </select>
           </div>
 
-          <div class="mb-6">
-            <label for="employee-select" class="block text-sm font-medium text-gray-700 mb-1">Select Employee</label>
-            <select id="employee-select"
-              class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm">
-              <!-- Options will be added by JS -->
-            </select>
-          </div>
-          <div id="weekly-schedule-container" class="weekly-grid" aria-live="polite">
-            <!-- Day cards will be inserted here -->
-          </div>
+          <select id="filter-job-position" class="w-full sm:w-1/4 p-2 border border-gray-300 rounded-md mb-2 sm:mb-0"
+            aria-label="Filter by job position">
+            <option value="">All Job Positions</option>
+          </select>
+
+          <select id="filter-department" class="w-full sm:w-1/4 p-2 border border-gray-300 rounded-md"
+            aria-label="Filter by department">
+            <option value="">All Departments</option>
+          </select>
+        </div>
+
+        <div class="mb-6">
+          <label for="employee-select" class="block text-sm font-medium text-gray-700 mb-1">Select Employee</label>
+          <select id="employee-select"
+            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm">
+            <!-- Options will be added by JS -->
+          </select>
+        </div>
+        <div id="weekly-schedule-container" class="weekly-grid" aria-live="polite">
+          <!-- Day cards will be inserted here -->
         </div>
 
         <!-- Modal for Adding/Editing Shifts -->

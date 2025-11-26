@@ -605,8 +605,8 @@ switch ($action) {
             }
 
             // Update users table
-            $user_update = $mysqli->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, phone_number = ?, address = ?, department_id = ? WHERE id = ?");
-            $user_update->bind_param('sssssii', $first_name, $last_name, $email, $contact_number, $address, $department_id, $user_id);
+            $user_update = $mysqli->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, phone_number = ?, address = ?, department_id = ?, avatar_path = ? WHERE id = ?");
+            $user_update->bind_param('sssssisi', $first_name, $last_name, $email, $contact_number, $address, $department_id, $avatar_path, $user_id);
             $user_update->execute();
             $user_update->close();
 
@@ -775,6 +775,63 @@ switch ($action) {
         }
         break;
 
+    case 'check_last_head_admin':
+        $id = (int)($_GET['id'] ?? 0);
+        if (!$id) {
+            ob_end_clean();
+            echo json_encode(['success' => false, 'message' => 'Employee ID required']);
+            break;
+        }
+        try {
+            // Get user_id for the employee
+            $stmt = $mysqli->prepare("SELECT user_id FROM employees WHERE id = ?");
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $emp = $result->fetch_assoc();
+            $stmt->close();
+
+            if (!$emp || !$emp['user_id']) {
+                ob_end_clean();
+                echo json_encode(['success' => true, 'is_last_head_admin' => false]);
+                break;
+            }
+
+            $user_id = $emp['user_id'];
+
+            // Check if this user has head_admin role
+            $role_stmt = $mysqli->prepare("SELECT JSON_CONTAINS(roles, '\"head_admin\"') as is_head_admin FROM users WHERE id = ?");
+            $role_stmt->bind_param('i', $user_id);
+            $role_stmt->execute();
+            $role_result = $role_stmt->get_result();
+            $user = $role_result->fetch_assoc();
+            $role_stmt->close();
+
+            if (!$user || !$user['is_head_admin']) {
+                ob_end_clean();
+                echo json_encode(['success' => true, 'is_last_head_admin' => false]);
+                break;
+            }
+
+            // Check if there are other active head admins
+            $count_stmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users WHERE JSON_CONTAINS(roles, '\"head_admin\"') AND is_active = 1 AND id != ?");
+            $count_stmt->bind_param('i', $user_id);
+            $count_stmt->execute();
+            $count_result = $count_stmt->get_result();
+            $other_head_admins = $count_result->fetch_assoc()['count'];
+            $count_stmt->close();
+
+            $is_last = $other_head_admins === 0;
+
+            ob_end_clean();
+            echo json_encode(['success' => true, 'is_last_head_admin' => $is_last]);
+        } catch (Exception $e) {
+            error_log("Check Last Head Admin Error: " . $e->getMessage());
+            ob_end_clean();
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
+
     case 'departments':
         try {
             $query = "SELECT id, name FROM departments ORDER BY name";
@@ -846,6 +903,29 @@ switch ($action) {
             echo json_encode($response);
         } catch (Exception $e) {
             error_log("Check Email Error: " . $e->getMessage());
+            ob_end_clean();
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
+
+    case 'get_school_settings':
+        try {
+            $query = "SELECT annual_paid_leave_days, annual_unpaid_leave_days, annual_sick_leave_days FROM school_settings WHERE id = 1";
+            $result = $mysqli->query($query);
+            if (!$result) {
+                throw new Exception('Query failed: ' . $mysqli->error);
+            }
+            $settings = $result->fetch_assoc();
+            $result->free();
+
+            if (!$settings) {
+                throw new Exception('School settings not found');
+            }
+
+            ob_end_clean();
+            echo json_encode(['success' => true, 'data' => $settings], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        } catch (Exception $e) {
+            error_log("Get School Settings Error: " . $e->getMessage());
             ob_end_clean();
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }

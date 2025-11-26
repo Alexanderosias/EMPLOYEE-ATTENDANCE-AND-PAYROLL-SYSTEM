@@ -22,6 +22,7 @@ let currentPage = 1;
 let totalPages = 1;
 // RENDER USERS TABLE
 function renderUsersTable(users, limit) {
+  console.log("Rendering users:", users); // Debug log
   const tbody = document.getElementById("usersTableBody");
   tbody.innerHTML = "";
   totalPages = Math.ceil(users.length / limit);
@@ -37,10 +38,28 @@ function renderUsersTable(users, limit) {
   }
 
   paginatedUsers.forEach((user) => {
+    console.log("User roles_json:", user.roles_json); // Debug log
     const isActive = Number(user.is_active) === 1;
     const avatarSrc = user.avatar_path
       ? "/" + user.avatar_path
       : "img/user.jpg";
+
+    // Parse and format roles
+    let roles = [];
+    try {
+      roles = JSON.parse(user.roles_json || "[]");
+    } catch (e) {
+      console.error("Error parsing roles_json:", e);
+      roles = [];
+    }
+    const roleMap = {
+      employee: "Employee",
+      admin: "Administrator",
+      head_admin: "Head Administrator",
+    };
+    const roleDisplay =
+      roles.length > 0 ? roles.map((r) => roleMap[r] || r).join(" & ") : "N/A";
+
     const row = document.createElement("tr");
     row.className = "hover:bg-gray-50";
     row.innerHTML = `
@@ -59,9 +78,7 @@ function renderUsersTable(users, limit) {
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${
         user.department_name || "N/A"
       }</td>
-      <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${
-        user.role
-      }</td>
+      <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${roleDisplay}</td>
       <td class="px-6 py-3 whitespace-nowrap text-sm font-semibold ${
         isActive ? "text-green-600" : "text-red-600"
       }">
@@ -291,6 +308,40 @@ async function editUser(id) {
       // Enable avatar input
       const avatarInput = document.getElementById("edit-avatar-input");
       if (avatarInput) avatarInput.disabled = false;
+
+      // NEW: For non-linked users, disable Employee role checkbox
+      const empRoleCb = document.querySelector(
+        'input[name="edit-roles[]"][value="employee"]'
+      );
+      if (empRoleCb) {
+        empRoleCb.disabled = true;
+        empRoleCb.checked = false; // Ensure it's unchecked
+      }
+
+      // NEW: Enforce that at least one of Admin or Head Admin is selected
+      const adminCb = document.querySelector(
+        'input[name="edit-roles[]"][value="admin"]'
+      );
+      const headAdminCb = document.querySelector(
+        'input[name="edit-roles[]"][value="head_admin"]'
+      );
+
+      const enforceAtLeastOneAdmin = () => {
+        const adminChecked = adminCb.checked;
+        const headAdminChecked = headAdminCb.checked;
+        if (!adminChecked && !headAdminChecked) {
+          // If both are unchecked, check Admin by default
+          adminCb.checked = true;
+        }
+      };
+
+      // Add event listeners to prevent both from being unchecked
+      if (adminCb) {
+        adminCb.addEventListener("change", enforceAtLeastOneAdmin);
+      }
+      if (headAdminCb) {
+        headAdminCb.addEventListener("change", enforceAtLeastOneAdmin);
+      }
     }
 
     editUserForm.dataset.userId = id;

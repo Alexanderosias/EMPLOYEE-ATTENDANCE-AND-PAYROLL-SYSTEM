@@ -282,10 +282,8 @@ async function onDeleteClick(event) {
 
       const result = await response.json();
       if (result.success) {
-        // Remove from local data
-        attendanceData = attendanceData.filter((item) => item.id !== record.id);
-        filteredData = filteredData.filter((item) => item.id !== record.id);
-        renderTablePage(currentPage);
+        // Auto refresh the page after deletion
+        window.location.reload();
       } else {
         alert("Failed to delete: " + result.message);
       }

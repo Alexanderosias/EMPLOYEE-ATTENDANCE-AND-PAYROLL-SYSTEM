@@ -38,16 +38,16 @@ switch ($action) {
   case 'list_users':
     try {
       $query = "
-      SELECT u.id, u.first_name, u.last_name, u.email, u.phone_number, u.address,
-             d.name AS department_name, 
-             JSON_UNQUOTE(JSON_EXTRACT(u.roles, '$[0]')) AS role,  -- Extract first role from JSON array
-             u.is_active, u.created_at,
-             CASE WHEN JSON_CONTAINS(u.roles, '\"employee\"') THEN e.avatar_path ELSE u.avatar_path END AS avatar_path
-      FROM users u
-      LEFT JOIN departments d ON u.department_id = d.id
-      LEFT JOIN employees e ON u.id = e.user_id
-      ORDER BY u.created_at DESC
-    ";
+    SELECT u.id, u.first_name, u.last_name, u.email, u.phone_number, u.address,
+           d.name AS department_name, 
+           u.roles AS roles_json,  -- Ensure it's returned as string
+           u.is_active, u.created_at,
+           CASE WHEN JSON_CONTAINS(u.roles, '\"employee\"') THEN e.avatar_path ELSE u.avatar_path END AS avatar_path
+    FROM users u
+    LEFT JOIN departments d ON u.department_id = d.id
+    LEFT JOIN employees e ON u.id = e.user_id
+    ORDER BY u.created_at DESC
+  ";
       $result = $mysqli->query($query);
       if (!$result) {
         throw new Exception('Query failed: ' . $mysqli->error);

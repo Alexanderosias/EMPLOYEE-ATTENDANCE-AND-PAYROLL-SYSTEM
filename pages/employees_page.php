@@ -12,10 +12,14 @@ require_once '../views/auth.php'; // path relative to the page
   <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/employees.css">
+  <link rel="stylesheet" href="css/status-message.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 </head>
 
 <body>
+  <!-- Status Message (for feedback) -->
+  <div id="status-message" class="status-message"></div>
+
   <div class="dashboard-container">
     <aside class="sidebar">
       <a class="sidebar-header" href="#">
@@ -58,6 +62,12 @@ require_once '../views/auth.php'; // path relative to the page
             <a href="payroll_page.php">
               <img src="icons/cash.png" alt="Payroll" class="icon" />
               Payroll
+            </a>
+          </li>
+          <li>
+            <a href="leave_page.php">
+              <img src="icons/swap.png" alt="Leave" class="icon" />
+              Leave
             </a>
           </li>
           <li>
@@ -250,20 +260,17 @@ require_once '../views/auth.php'; // path relative to the page
 
                   <div class="form-group">
                     <label for="annual-paid-leave-days">Annual Paid Leave Days</label>
-                    <input type="number" id="annual-paid-leave-days" name="annual_paid_leave_days" min="0" step="1"
-                      required placeholder="Enter number of paid leave days" value="15" />
+                    <input type="number" id="annual-paid-leave-days" name="annual_paid_leave_days" min="0" step="1" required readonly />
                   </div>
 
                   <div class="form-group">
                     <label for="annual-unpaid-leave-days">Annual Unpaid Leave Days</label>
-                    <input type="number" id="annual-unpaid-leave-days" name="annual_unpaid_leave_days" min="0" step="1"
-                      required placeholder="Enter number of unpaid leave days" value="5" />
+                    <input type="number" id="annual-unpaid-leave-days" name="annual_unpaid_leave_days" min="0" step="1" required readonly />
                   </div>
 
                   <div class="form-group">
                     <label for="annual-sick-leave-days">Annual Sick Leave Days</label>
-                    <input type="number" id="annual-sick-leave-days" name="annual_sick_leave_days" min="0" step="1"
-                      required placeholder="Enter number of sick leave days" value="10" />
+                    <input type="number" id="annual-sick-leave-days" name="annual_sick_leave_days" min="0" step="1" required readonly />
                   </div>
 
                   <div class="emergency-contact-section">
@@ -393,20 +400,17 @@ require_once '../views/auth.php'; // path relative to the page
 
                   <div class="form-group">
                     <label for="update-annual-paid-leave-days">Annual Paid Leave Days</label>
-                    <input type="number" id="update-annual-paid-leave-days" name="annual_paid_leave_days" min="0" step="1"
-                      required placeholder="Enter number of paid leave days" value="15" />
+                    <input type="number" id="update-annual-paid-leave-days" name="annual_paid_leave_days" min="0" step="1" required readonly />
                   </div>
 
                   <div class="form-group">
                     <label for="update-annual-unpaid-leave-days">Annual Unpaid Leave Days</label>
-                    <input type="number" id="update-annual-unpaid-leave-days" name="annual_unpaid_leave_days" min="0"
-                      step="1" required placeholder="Enter number of unpaid leave days" value="5" />
+                    <input type="number" id="update-annual-unpaid-leave-days" name="annual_unpaid_leave_days" min="0" step="1" required readonly />
                   </div>
 
                   <div class="form-group">
                     <label for="update-annual-sick-leave-days">Annual Sick Leave Days</label>
-                    <input type="number" id="update-annual-sick-leave-days" name="annual_sick_leave_days" min="0" step="1"
-                      required placeholder="Enter number of sick leave days" value="10" />
+                    <input type="number" id="update-annual-sick-leave-days" name="annual_sick_leave_days" min="0" step="1" required readonly />
                   </div>
 
                   <div class="emergency-contact-section">

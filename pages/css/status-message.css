@@ -1,32 +1,35 @@
 .status-message {
-  display: none !important;
-  position: fixed !important;
-  top: 25px !important;
-  justify-self: center !important;
-  font-size: 1rem !important;
-  font-weight: 600 !important;
-  margin-bottom: 1rem !important;
-  color: #dc2626 !important;
-  padding: 20px 40px !important;
-  border: 2px solid rgb(216, 216, 216) !important;
-  background-color: rgb(245, 245, 245) !important;
-  border-radius: 10px !important;
-  z-index: 10000 !important;
-  max-width: 600px !important;
-  text-align: center !important;
-  line-height: 25px !important;
+  display: none;
+  position: fixed;
+  top: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #dc2626;
+  padding: 20px 40px;
+  border: 2px solid #d1d5db;
+  background-color: #f9fafb;
+  border-radius: 12px;
+  z-index: 10000;
+  max-width: 600px;
+  text-align: center;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
 }
 
 .status-message.success {
-  background-color: rgba(206, 255, 190, 0.9) !important;
-  color: #16a34a !important;
-  border: 1px solid #C3E6CB !important;
-  display: block !important;
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  display: block;
 }
 
 .status-message.error {
-  background-color: rgba(255, 200, 200, 0.9) !important;
-  color: #721C24 !important;
-  border: 1px solid #F5C6CB !important;
-  display: block !important;
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  display: block;
 }
