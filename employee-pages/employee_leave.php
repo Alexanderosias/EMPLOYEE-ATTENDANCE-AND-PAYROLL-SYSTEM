@@ -307,6 +307,12 @@
     </div>
   </div>
 
+  <!-- Image Lightbox Modal -->
+  <div style="z-index: 1550;" id="image-lightbox" class="fixed inset-0 bg-black bg-opacity-90 hidden z-50 flex items-center justify-center" onclick="this.classList.add('hidden')">
+    <button style="position: absolute; top: 10px; right: 10px;" class="text-white text-3xl hover:text-gray-300" onclick="document.getElementById('image-lightbox').classList.add('hidden')">&times;</button>
+    <img id="lightbox-image" src="" alt="Full size proof" class="max-w-full max-h-full object-contain" onclick="event.stopPropagation()">
+  </div>
+
   <script src="../js/dashboard.js"></script>
   <script src="../js/current_time.js"></script>
   <script src="../js/employee_leave.js"></script>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 29, 2025 at 09:01 AM
+-- Generation Time: Nov 30, 2025 at 04:51 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -83,7 +83,7 @@ CREATE TABLE `departments` (
 --
 
 INSERT INTO `departments` (`id`, `name`, `created_at`, `updated_at`) VALUES
-(7, 'Computer Engineering', '2025-11-08 04:44:38', '2025-11-08 04:44:38');
+(12, 'Computer Engineering', '2025-11-30 15:35:13', '2025-11-30 15:35:13');
 
 -- --------------------------------------------------------
 
@@ -117,13 +117,6 @@ CREATE TABLE `employees` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `employees`
---
-
-INSERT INTO `employees` (`id`, `user_id`, `first_name`, `last_name`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `rate_per_day`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`) VALUES
-(49, 88, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Father', '2025-11-28', 7, 16, 130.50, 1044.00, 7, 10, 10, 'uploads/avatars/emp_49_1764325198.jpg', '2025-11-28 10:13:17', '2025-11-28 14:30:59');
 
 -- --------------------------------------------------------
 
@@ -161,7 +154,7 @@ CREATE TABLE `job_positions` (
 --
 
 INSERT INTO `job_positions` (`id`, `name`, `working_hours_per_day`, `rate_per_day`, `rate_per_hour`, `payroll_frequency`, `created_at`, `updated_at`) VALUES
-(16, 'Cashier 1', 8.00, 1044.00, 130.50, 'bi-weekly', '2025-11-25 12:07:27', '2025-11-28 07:22:43');
+(25, 'System Administrator', 8.00, 120.00, 15.00, 'bi-weekly', '2025-11-30 15:41:04', '2025-11-30 15:41:04');
 
 -- --------------------------------------------------------
 
@@ -185,14 +178,6 @@ CREATE TABLE `leave_requests` (
   `proof_path` varchar(255) DEFAULT NULL,
   `admin_feedback` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `leave_requests`
---
-
-INSERT INTO `leave_requests` (`id`, `employee_id`, `leave_type`, `start_date`, `end_date`, `days`, `reason`, `status`, `deducted_from`, `submitted_at`, `approved_at`, `approved_by`, `proof_path`, `admin_feedback`) VALUES
-(28, 49, 'Paid', '2025-11-28', '2025-11-30', 3, 'dasf', 'Approved', 'Paid', '2025-11-28 13:39:57', '2025-11-28 14:30:59', 68, NULL, NULL),
-(33, 49, 'Paid', '2025-12-05', '2025-12-08', 4, 'leave lang ako sir', 'Rejected', NULL, '2025-11-28 17:38:59', '2025-11-29 05:25:20', 68, 'uploads/proofs/6929de3364b79_6929d1931fc66_System-Proposal-Automatic Sliding Roof Clothesline Protection System.docx', NULL);
 
 -- --------------------------------------------------------
 
@@ -252,13 +237,6 @@ CREATE TABLE `qr_codes` (
   `qr_image_path` varchar(500) NOT NULL,
   `generated_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `qr_codes`
---
-
-INSERT INTO `qr_codes` (`id`, `employee_id`, `qr_data`, `qr_image_path`, `generated_at`) VALUES
-(48, 49, 'ID:49|First:Alexander|Last:Osias|Position:Cashier 1|Joined:2025-11-28', 'qrcodes/AlexanderOsias.png', '2025-11-28 10:19:59');
 
 -- --------------------------------------------------------
 
@@ -415,8 +393,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `phone_number`, `address`, `department_id`, `password_hash`, `is_active`, `created_at`, `updated_at`, `avatar_path`, `roles`) VALUES
-(68, 'Admin', 'Admin', 'admin@gmail.com', '09305909175', 'So. Bugho\r\nBarangay Dampigan, Sta. Rita, Samar', 7, '$2y$10$eFmGsmOld4JDMgkJunzcx.IQo6gPwS8CvtMecl0rY21mm30oZgCYy', 1, '2025-11-25 09:15:54', '2025-11-25 12:10:08', 'uploads/avatars/user_68_1764072580.png', '[\"head_admin\"]'),
-(88, 'Alexander', 'Osias', 'alexanderosias123@gmail.com', '09305909175', 'So. Bugho', 7, '$2y$10$v9JwyTsHS333JHPadl/6BuIBbzMzgfHY5aa69vzZ2Tvx5AIKv5ZR6', 1, '2025-11-28 10:13:17', '2025-11-28 10:19:58', 'uploads/avatars/emp_49_1764325198.jpg', '[\"employee\"]');
+(68, 'Admin', 'Admin', 'admin@gmail.com', '09305909175', 'Tacloban City', 12, '$2y$10$eFmGsmOld4JDMgkJunzcx.IQo6gPwS8CvtMecl0rY21mm30oZgCYy', 1, '2025-11-25 09:15:54', '2025-11-30 15:35:43', 'uploads/avatars/user_68_1764516943.png', '[\"head_admin\"]');
 
 --
 -- Indexes for dumped tables
@@ -574,7 +551,7 @@ ALTER TABLE `backup_restore_settings`
 -- AUTO_INCREMENT for table `departments`
 --
 ALTER TABLE `departments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `employees`
@@ -586,19 +563,19 @@ ALTER TABLE `employees`
 -- AUTO_INCREMENT for table `holidays`
 --
 ALTER TABLE `holidays`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `job_positions`
 --
 ALTER TABLE `job_positions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `leave_requests`
 --
 ALTER TABLE `leave_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
@@ -640,7 +617,7 @@ ALTER TABLE `snapshots`
 -- AUTO_INCREMENT for table `special_events`
 --
 ALTER TABLE `special_events`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `tax_deduction_settings`

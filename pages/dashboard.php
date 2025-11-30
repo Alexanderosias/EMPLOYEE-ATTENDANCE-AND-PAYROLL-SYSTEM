@@ -139,10 +139,10 @@ require_once '../views/auth.php'; // Check login
 
             <div class="scrollbar-container">
                 <!-- Info Banners -->
-                <div class="info-banner" id="payroll-date-banner">
+                <!-- <div class="info-banner" id="payroll-date-banner">
                     Next Payroll Date: <span id="next-payroll-date">--</span> &nbsp;&nbsp;|&nbsp;&nbsp; Last Payroll Date:
                     <span id="last-payroll-date">--</span>
-                </div>
+                </div> -->
 
                 <div class="metrics-cards">
                     <div class="card card-blue">

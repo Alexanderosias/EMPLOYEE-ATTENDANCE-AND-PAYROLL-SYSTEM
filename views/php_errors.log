@@ -2548,3 +2548,183 @@ Stack trace:
 [30-Nov-2025 14:44:03 Europe/Berlin] Debug view_leave_request: requestId=33
 [30-Nov-2025 14:44:05 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
 [30-Nov-2025 14:44:05 Europe/Berlin] Debug view_leave_request: requestId=28
+[30-Nov-2025 14:48:00 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:00 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:00 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:00 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:00 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:00 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:00 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:00 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:02 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:02 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:06 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:16 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:16 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:17 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:18 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:18 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:18 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:18 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:18 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:29 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:29 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:29 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:33 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:47 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:47 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:58 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:58 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:48:59 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:49:14 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:49:21 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:49:21 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 14:58:53 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:58:57 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 14:58:57 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:04:25 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:04:31 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:04:31 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:05:26 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:05:26 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:05:33 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:05:33 Europe/Berlin] Debug view_leave_request: requestId=35
+[30-Nov-2025 15:05:38 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:05:38 Europe/Berlin] Debug view_leave_request: requestId=35
+[30-Nov-2025 15:07:21 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:07:21 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:07:25 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:07:25 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:18:16 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:18:18 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:18:18 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:26:07 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:26:11 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:26:11 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:27:13 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:27:13 Europe/Berlin] Debug view_leave_request: requestId=35
+[30-Nov-2025 15:27:42 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:27:44 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:27:44 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:27:52 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:27:52 Europe/Berlin] Debug view_leave_request: requestId=35
+[30-Nov-2025 15:27:59 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:27:59 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:28:35 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:28:35 Europe/Berlin] Debug view_leave_request: requestId=35
+[30-Nov-2025 15:28:49 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:28:49 Europe/Berlin] Debug view_leave_request: requestId=35
+[30-Nov-2025 15:29:19 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:29:19 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:32:26 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:32:28 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:32:28 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:32:37 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:32:37 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:32:40 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:32:40 Europe/Berlin] Debug view_leave_request: requestId=35
+[30-Nov-2025 15:32:43 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:32:43 Europe/Berlin] PHP Fatal error:  Uncaught Error: mysqli_stmt object is already closed in C:\xampp\htdocs\eaaps\views\leave_handler.php:157
+Stack trace:
+#0 C:\xampp\htdocs\eaaps\views\leave_handler.php(157): mysqli_stmt->close()
+#1 {main}
+  thrown in C:\xampp\htdocs\eaaps\views\leave_handler.php on line 157
+[30-Nov-2025 15:32:43 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:32:44 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:32:44 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:35:58 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:35:59 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:35:59 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:37:21 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:37:22 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:37:22 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:37:46 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:37:48 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:37:48 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:38:21 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:38:22 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:38:22 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:38:40 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:38:41 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:38:41 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:38:52 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:38:52 Europe/Berlin] Debug view_leave_request: requestId=35
+[30-Nov-2025 15:38:55 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:38:55 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:39:05 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:39:05 Europe/Berlin] Debug view_leave_request: requestId=35
+[30-Nov-2025 15:39:52 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:39:53 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:39:53 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:39:55 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:39:55 Europe/Berlin] Debug view_leave_request: requestId=35
+[30-Nov-2025 15:47:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:09 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:09 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:10 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:10 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:15 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:15 Europe/Berlin] Debug view_leave_request: userId=88, requestId=36
+[30-Nov-2025 15:47:22 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:47:22 Europe/Berlin] Debug view_leave_request: userId=88, requestId=36
+[30-Nov-2025 15:52:04 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:52:06 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:52:06 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:53:44 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:53:46 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:53:46 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:54:04 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:54:05 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:54:05 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:57:57 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:57:57 Europe/Berlin] Debug view_leave_request: requestId=36
+[30-Nov-2025 15:58:11 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:11 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:11 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:11 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:11 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:11 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:11 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:11 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:14 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:14 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:15 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 15:58:15 Europe/Berlin] Debug view_leave_request: userId=88, requestId=36
+[30-Nov-2025 16:16:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:16:09 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:16:09 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:16:09 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:16:09 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:16:09 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:16:09 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:16:09 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:17:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:17:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:17:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:17:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:17:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:17:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:17:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:17:08 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:17:11 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:19:38 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:19:38 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:19:38 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:19:38 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:19:38 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:19:38 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:19:38 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:19:38 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:19:40 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:27:25 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:30:48 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:32:00 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:32:00 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:32:57 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:40:14 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db
+[30-Nov-2025 16:50:58 Europe/Berlin] EAAPS MySQL connected successfully to eaaps_db

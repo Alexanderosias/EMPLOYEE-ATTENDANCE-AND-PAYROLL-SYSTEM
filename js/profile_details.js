@@ -309,11 +309,10 @@ function showStatus(message, type) {
   const statusDiv = document.getElementById("status-message");
   statusDiv.textContent = message;
   statusDiv.className = `status-message ${type}`;
-  statusDiv.style.display = "block";
+  statusDiv.classList.add("show");
   setTimeout(() => {
-    statusDiv.style.display = "none";
-    statusDiv.className = "status-message";
-  }, 5000);
+    statusDiv.classList.remove("show");
+  }, 3000);
 }
 
 // Load profile on page load

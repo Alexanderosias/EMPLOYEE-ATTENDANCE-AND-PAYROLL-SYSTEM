@@ -1,5 +1,5 @@
 .status-message {
-  display: none;
+  visibility: hidden;
   position: fixed;
   top: 25px;
   left: 50%;
@@ -21,7 +21,7 @@
 }
 
 .status-message.show {
-  display: block;
+  visibility: visible;
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }

@@ -150,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (requests.length === 0) {
       tableBody.innerHTML = `
         <tr>
-            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+            <td colspan="8" class="px-6 py-12 text-center text-gray-500">
               <div style="padding: 2rem 0;" class="flex flex-col items-center justify-center">
                 <i class="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
                 <p class="text-lg font-medium">Nothing to show</p>
@@ -173,11 +173,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 req.avatar_path
               }" alt="Avatar">
             </div>
-            <div id="name-container" class="ml-4">
-              <div class="text-sm font-medium text-gray-900">${
+            <div id="name-container" class="ml-4 overflow-hidden">
+              <div class="text-sm font-medium text-gray-900 truncate" title="${
                 req.first_name
-              } ${req.last_name}</div>
-              <div class="text-sm text-gray-500">${req.email}</div>
+              } ${req.last_name}">${
+          (req.first_name + " " + req.last_name).length > 20
+            ? (req.first_name + " " + req.last_name).substring(0, 20) + "..."
+            : req.first_name + " " + req.last_name
+        }</div>
+              <div class="text-sm text-gray-500 truncate" title="${
+                req.email
+              }">${
+          req.email.length > 25 ? req.email.substring(0, 25) + "..." : req.email
+        }</div>
             </div>
           </div>
         </td>
@@ -306,6 +314,13 @@ document.addEventListener("DOMContentLoaded", () => {
           if (isImage(req.proof_path)) {
             proofImg.src = "../" + req.proof_path;
             proofImg.classList.remove("hidden");
+            proofImg.style.cursor = "pointer";
+            proofImg.onclick = function () {
+              const lightbox = document.getElementById("image-lightbox");
+              const lightboxImg = document.getElementById("lightbox-image");
+              lightboxImg.src = this.src;
+              lightbox.classList.remove("hidden");
+            };
             proofLink.classList.add("hidden");
           } else {
             proofLink.href = "../" + req.proof_path;

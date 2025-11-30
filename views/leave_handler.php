@@ -37,7 +37,7 @@ try {
             $startDate = $_GET['start_date'] ?? '';
             $endDate = $_GET['end_date'] ?? '';
 
-            $query = "SELECT lr.id, lr.leave_type, lr.start_date, lr.end_date, lr.days, lr.reason, lr.status, lr.submitted_at, 
+            $query = "SELECT lr.id, lr.leave_type, lr.start_date, lr.end_date, lr.days, lr.reason, lr.proof_path, lr.status, lr.submitted_at, 
                              u.first_name, u.last_name, u.email, u.avatar_path 
                       FROM leave_requests lr 
                       JOIN employees e ON lr.employee_id = e.id 

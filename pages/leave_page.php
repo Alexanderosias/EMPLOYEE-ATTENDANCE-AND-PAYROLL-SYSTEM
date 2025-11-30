@@ -159,16 +159,16 @@ require_once '../views/auth.php';  // path relative to the page
 
                     <!-- Table -->
                     <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                        <table class="divide-y divide-gray-200">
+                        <table class="divide-y divide-gray-200 w-full table-fixed">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 28%;">Employee</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12px;">Type</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 14px;">Dates</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15px;">Reason</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8px;">Proof</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10px;">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 13px;">Actions</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%;">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 14%;">Dates</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%;">Reason</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%;">Proof</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%;">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 13%;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="leave-table-body" class="bg-white divide-y divide-gray-200">
@@ -217,21 +217,21 @@ require_once '../views/auth.php';  // path relative to the page
                             <p style="max-height: 250px; overflow-y: auto;" id="modal-reason" class="text-sm text-gray-900 bg-gray-50 p-3 rounded text-justify"></p>
                         </div>
                         <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Proof</label>
+                            <div class="mt-1">
+                                <img style="width: 80px; height: 80px;" id="view-modal-proof-img" class="w-20 h-20 rounded-md object-contain hidden" alt="Proof">
+                                <a id="view-modal-proof-link" href="#" target="_blank" download class="text-blue-600 hover:underline hidden">Download Proof</a>
+                                <span id="view-modal-proof-none" class="text-gray-500">No proof uploaded</span>
+                            </div>
+                        </div>
+                        <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</label>
                             <span id="modal-status" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800"></span>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: space-between; gap: 10px;" class="mt-6 flex justify-end gap-5">
-                        <button class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                        <button id="modal-decline-btn" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
                             Decline
-                        </button>
-                        <button class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300">
-                            Approve
-                        </button>
-                    </div>
-                    <div class="mt-2">
-                        <button id="close-modal-btn" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none">
-                            Close
                         </button>
                         <button id="modal-approve-btn" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300">
                             Approve
@@ -269,6 +269,12 @@ require_once '../views/auth.php';  // path relative to the page
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Image Lightbox Modal -->
+        <div style="z-index: 1550;" id="image-lightbox" class="fixed inset-0 bg-black bg-opacity-90 hidden z-50 flex items-center justify-center" onclick="this.classList.add('hidden')">
+            <button style="position: absolute; top: 10px; right: 10px;" class="text-white text-3xl hover:text-gray-300" onclick="document.getElementById('image-lightbox').classList.add('hidden')">&times;</button>
+            <img id="lightbox-image" src="" alt="Full size proof" class="max-w-full max-h-full object-contain" onclick="event.stopPropagation()">
         </div>
     </div>
 

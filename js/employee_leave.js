@@ -196,6 +196,13 @@ document.addEventListener("DOMContentLoaded", () => {
           if (isImage(req.proof_path)) {
             proofImg.src = "../" + req.proof_path; // Adjust path
             proofImg.classList.remove("hidden");
+            proofImg.style.cursor = "pointer";
+            proofImg.onclick = function () {
+              const lightbox = document.getElementById("image-lightbox");
+              const lightboxImg = document.getElementById("lightbox-image");
+              lightboxImg.src = this.src;
+              lightbox.classList.remove("hidden");
+            };
             proofLink.classList.add("hidden");
           } else {
             proofLink.href = "../" + req.proof_path;
@@ -334,7 +341,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }">${req.reason}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               ${
-                req.proof_path ? (isImage(req.proof_path) ? "🖼️" : "📎") : "N/A"
+                req.proof_path
+                  ? isImage(req.proof_path)
+                    ? '<i class="fas fa-image text-blue-600" title="Image proof"></i>'
+                    : '<i class="fas fa-file text-gray-600" title="File proof"></i>'
+                  : '<span class="text-gray-400">N/A</span>'
               }
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
