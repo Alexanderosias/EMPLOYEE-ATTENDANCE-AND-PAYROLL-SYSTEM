@@ -6,11 +6,80 @@ function showStatus(message, type) {
   }
   statusDiv.textContent = message;
   statusDiv.className = `status-message ${type}`;
-  statusDiv.style.display = "block";
+  statusDiv.classList.add("show");
+
+  // Auto-hide after 3 seconds
   setTimeout(() => {
-    statusDiv.style.display = "none";
-    statusDiv.className = "status-message";
-  }, 5000);
+    statusDiv.classList.remove("show");
+  }, 3000);
+}
+
+// Flexible confirmation modal function
+function showConfirmation(
+  message,
+  confirmText = "Confirm",
+  confirmColor = "blue"
+) {
+  return new Promise((resolve) => {
+    const confirmationModal = document.getElementById("confirmation-modal");
+    const confirmationMessage = document.getElementById("confirmation-message");
+    const confirmationConfirmBtn = document.getElementById(
+      "confirmation-confirm-btn"
+    );
+    const confirmationCancelBtn = document.getElementById(
+      "confirmation-cancel-btn"
+    );
+    const confirmationCloseX = document.getElementById("confirmation-close-x");
+
+    // Set message
+    confirmationMessage.textContent = message;
+
+    // Set button text and color
+    confirmationConfirmBtn.textContent = confirmText;
+    confirmationConfirmBtn.className = `px-4 py-2 bg-${confirmColor}-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-${confirmColor}-600 focus:outline-none focus:ring-2 focus:ring-${confirmColor}-300`;
+
+    // Show modal
+    confirmationModal.classList.remove("hidden");
+    confirmationModal.setAttribute("aria-hidden", "false");
+
+    // Handle confirm
+    const handleConfirm = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    // Handle cancel
+    const handleCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    // Cleanup function
+    const cleanup = () => {
+      confirmationModal.classList.add("hidden");
+      confirmationModal.setAttribute("aria-hidden", "true");
+      confirmationConfirmBtn.removeEventListener("click", handleConfirm);
+      confirmationCancelBtn.removeEventListener("click", handleCancel);
+      confirmationCloseX.removeEventListener("click", handleCancel);
+    };
+
+    // Attach event listeners
+    confirmationConfirmBtn.addEventListener("click", handleConfirm);
+    confirmationCancelBtn.addEventListener("click", handleCancel);
+    confirmationCloseX.addEventListener("click", handleCancel);
+
+    // Close on Escape
+    const handleEscape = (e) => {
+      if (
+        e.key === "Escape" &&
+        !confirmationModal.classList.contains("hidden")
+      ) {
+        handleCancel();
+        document.removeEventListener("keydown", handleEscape);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -126,7 +195,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Build rate map for quick lookup
       positionRateMap = {};
       jobPositions.forEach((pos) => {
-        positionRateMap[pos.id] = parseFloat(pos.rate_per_hour) || 0;
+        positionRateMap[pos.id] = {
+          rate_per_hour: parseFloat(pos.rate_per_hour) || 0,
+          rate_per_day: parseFloat(pos.rate_per_day) || 0,
+        };
       });
 
       filterDepartment.innerHTML =
@@ -321,6 +393,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <p class="expanded-item"><strong>Rate per Hour:</strong> ₱${rate.toFixed(
               2
             )}</p>
+            <p class="expanded-item"><strong>Rate per Day:</strong> ₱${(
+              parseFloat(emp.rate_per_day) || 0
+            ).toFixed(2)}</p>
             <p class="expanded-item"><strong>Contact Number:</strong> ${formattedContact}</p>
             <p class="expanded-item"><strong>Emergency Contact:</strong> ${formattedEmergency}</p>
             <p class="expanded-item"><strong>Annual Paid Leave Days:</strong> ${paidLeave}</p>
@@ -365,7 +440,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Auto-set rate based on current job position
     const currentPosId = employeeData.job_position_id;
     document.getElementById("update-rate-per-hour").value =
-      positionRateMap[currentPosId] || 0.0;
+      positionRateMap[currentPosId]?.rate_per_hour || 0.0;
+    document.getElementById("update-rate-per-day").value =
+      positionRateMap[currentPosId]?.rate_per_day || 0.0;
     document.getElementById("update-gender").value = employeeData.gender || "";
     document.getElementById("update-marital-status").value =
       employeeData.marital_status || "Single";
@@ -531,11 +608,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const employeeCard = event.target.closest(".employee-card");
       const employeeId = employeeCard.dataset.id;
       console.log("Delete clicked for ID:", employeeId);
-      if (
-        confirm(
-          "Are you sure you want to delete this employee? This action cannot be undone."
-        )
-      ) {
+      const confirmed = await showConfirmation(
+        "Are you sure you want to delete this employee? This action cannot be undone.",
+        "Delete Employee",
+        "red"
+      );
+      if (confirmed) {
         await deleteEmployee(employeeId);
       }
     }
@@ -563,11 +641,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      if (
-        !confirm(
-          "Are you sure you want to delete this employee? This action cannot be undone."
-        )
-      ) {
+      const confirmed = await showConfirmation(
+        "Are you sure you want to delete this employee? This action cannot be undone.",
+        "Delete Employee",
+        "red"
+      );
+
+      if (!confirmed) {
         return;
       }
 
@@ -680,7 +760,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("job-position").addEventListener("change", (e) => {
     const selectedId = e.target.value;
     document.getElementById("rate-per-hour").value =
-      positionRateMap[selectedId] || 0.0;
+      positionRateMap[selectedId]?.rate_per_hour || 0.0;
+    document.getElementById("rate-per-day").value =
+      positionRateMap[selectedId]?.rate_per_day || 0.0;
   });
 
   addEmployeeForm.addEventListener("submit", async (e) => {
@@ -772,6 +854,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("marital-status").value = "Single";
         // Leave days are auto-filled, so no need to reset to hardcoded values
         document.getElementById("rate-per-hour").value = 0.0;
+        document.getElementById("rate-per-day").value = 0.0;
         document.getElementById("emergency-name").value = "";
         document.getElementById("emergency-phone").value = "";
         document.getElementById("emergency-relationship").value = "";
@@ -855,7 +938,9 @@ document.addEventListener("DOMContentLoaded", () => {
     .addEventListener("change", (e) => {
       const selectedId = e.target.value;
       document.getElementById("update-rate-per-hour").value =
-        positionRateMap[selectedId] || 0.0;
+        positionRateMap[selectedId]?.rate_per_hour || 0.0;
+      document.getElementById("update-rate-per-day").value =
+        positionRateMap[selectedId]?.rate_per_day || 0.0;
     });
 
   updateEmployeeForm.addEventListener("submit", async (e) => {
@@ -966,6 +1051,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("update-marital-status").value = "Single";
         // Leave days are auto-filled, so no need to reset to hardcoded values
         document.getElementById("update-rate-per-hour").value = 0.0;
+        document.getElementById("update-rate-per-day").value = 0.0;
         document.getElementById("update-emergency-name").value = "";
         document.getElementById("update-emergency-phone").value = "";
         document.getElementById("update-emergency-relationship").value = "";

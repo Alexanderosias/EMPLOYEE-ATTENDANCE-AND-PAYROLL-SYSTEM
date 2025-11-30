@@ -21,7 +21,12 @@ if (!in_array('admin', $userRoles) && !in_array('head_admin', $userRoles)) {
     exit;
 }
 
-$action = $_GET['action'] ?? '';
+$action = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+} else {
+    $action = $_GET['action'] ?? '';
+}
 
 try {
     switch ($action) {
@@ -111,8 +116,8 @@ try {
 
         case 'approve_leave':
             $requestId = (int)$_POST['id'];
-            // First, get the leave_type to set deducted_from
-            $stmt = $mysqli->prepare("SELECT leave_type FROM leave_requests WHERE id = ? AND status = 'Pending'");
+            // Get leave_type, days, and employee_id
+            $stmt = $mysqli->prepare("SELECT leave_type, days, employee_id FROM leave_requests WHERE id = ? AND status = 'Pending'");
             $stmt->bind_param('i', $requestId);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -122,12 +127,29 @@ try {
                 throw new Exception('Request not found or not pending');
             }
             $leaveType = $req['leave_type'];
+            $days = $req['days'];
+            $employeeId = $req['employee_id'];
 
-            // Update with deducted_from
+            // Update status and fields
             $stmt = $mysqli->prepare("UPDATE leave_requests SET status = 'Approved', deducted_from = ?, approved_at = NOW(), approved_by = ? WHERE id = ? AND status = 'Pending'");
             $stmt->bind_param('sii', $leaveType, $_SESSION['user_id'], $requestId);
             $stmt->execute();
             if ($stmt->affected_rows > 0) {
+                // Deduct from employee balance
+                $balanceColumn = '';
+                if ($leaveType === 'Paid') {
+                    $balanceColumn = 'annual_paid_leave_days';
+                } elseif ($leaveType === 'Unpaid') {
+                    $balanceColumn = 'annual_unpaid_leave_days';
+                } elseif ($leaveType === 'Sick') {
+                    $balanceColumn = 'annual_sick_leave_days';
+                }
+                if ($balanceColumn) {
+                    $stmt = $mysqli->prepare("UPDATE employees SET $balanceColumn = $balanceColumn - ? WHERE id = ?");
+                    $stmt->bind_param('ii', $days, $employeeId);
+                    $stmt->execute();
+                    $stmt->close();
+                }
                 echo json_encode(['success' => true, 'message' => 'Request approved']);
             } else {
                 throw new Exception('Failed to approve');

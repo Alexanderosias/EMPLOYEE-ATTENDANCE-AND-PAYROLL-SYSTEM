@@ -24,6 +24,94 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewCloseX = document.getElementById("view-close-modal-x");
   const cancelRequestBtn = document.getElementById("cancel-request-btn");
 
+  // Confirmation modal elements
+  const confirmationModal = document.getElementById("confirmation-modal");
+  const confirmationMessage = document.getElementById("confirmation-message");
+  const confirmationConfirmBtn = document.getElementById(
+    "confirmation-confirm-btn"
+  );
+  const confirmationCancelBtn = document.getElementById(
+    "confirmation-cancel-btn"
+  );
+  const confirmationCloseX = document.getElementById("confirmation-close-x");
+
+  // Flexible confirmation function
+  function showConfirmation(
+    message,
+    confirmText = "Confirm",
+    confirmColor = "blue"
+  ) {
+    return new Promise((resolve) => {
+      // Set message
+      confirmationMessage.textContent = message;
+
+      // Set button text and color
+      confirmationConfirmBtn.textContent = confirmText;
+      confirmationConfirmBtn.className = `px-4 py-2 bg-${confirmColor}-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-${confirmColor}-600 focus:outline-none focus:ring-2 focus:ring-${confirmColor}-300`;
+
+      // Show modal
+      confirmationModal.classList.remove("hidden");
+      confirmationModal.setAttribute("aria-hidden", "false");
+
+      // Handle confirm
+      const handleConfirm = () => {
+        cleanup();
+        resolve(true);
+      };
+
+      // Handle cancel
+      const handleCancel = () => {
+        cleanup();
+        resolve(false);
+      };
+
+      // Cleanup function
+      const cleanup = () => {
+        confirmationModal.classList.add("hidden");
+        confirmationModal.setAttribute("aria-hidden", "true");
+        confirmationConfirmBtn.removeEventListener("click", handleConfirm);
+        confirmationCancelBtn.removeEventListener("click", handleCancel);
+        confirmationCloseX.removeEventListener("click", handleCancel);
+      };
+
+      // Attach event listeners
+      confirmationConfirmBtn.addEventListener("click", handleConfirm);
+      confirmationCancelBtn.addEventListener("click", handleCancel);
+      confirmationCloseX.addEventListener("click", handleCancel);
+
+      // Close on Escape
+      const handleEscape = (e) => {
+        if (
+          e.key === "Escape" &&
+          !confirmationModal.classList.contains("hidden")
+        ) {
+          handleCancel();
+          document.removeEventListener("keydown", handleEscape);
+        }
+      };
+      document.addEventListener("keydown", handleEscape);
+    });
+  }
+
+  // Status message function
+  function showStatus(message, type = "success") {
+    const statusDiv = document.getElementById("status-message");
+    statusDiv.textContent = message;
+    statusDiv.className = `status-message ${type}`;
+    statusDiv.classList.add("show");
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      statusDiv.classList.remove("show");
+    }, 3000);
+  }
+
+  // Helper function for image check
+  function isImage(filename) {
+    const ext = filename.split(".").pop().toLowerCase();
+    return ["jpg", "jpeg", "png", "gif"].includes(ext);
+  }
+
   // Load data
   loadLeaveBalances();
   loadLeaveRequests();
@@ -34,6 +122,10 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.setAttribute("aria-hidden", "false");
     closeModalX.focus();
     resetForm();
+    // Set min date to today for start and end dates
+    const today = new Date().toISOString().split("T")[0];
+    startDateInput.setAttribute("min", today);
+    endDateInput.setAttribute("min", today);
   }
 
   function closeModal() {
@@ -60,6 +152,26 @@ document.addEventListener("DOMContentLoaded", () => {
     viewModal.setAttribute("aria-hidden", "true");
   }
 
+  async function checkOverlap(startDate, endDate) {
+    try {
+      const response = await fetch(
+        `${API_BASE}?action=check_overlap&start=${startDate}&end=${endDate}`
+      );
+      const result = await response.json();
+      if (result.success) {
+        return result.overlap
+          ? "The selected dates overlap with an existing leave request."
+          : null;
+      } else {
+        console.error("Overlap check error:", result.message);
+        return null; // Don't block if check fails
+      }
+    } catch (error) {
+      console.error("Overlap check fetch error:", error);
+      return null;
+    }
+  }
+
   async function viewLeaveRequest(requestId) {
     try {
       const response = await fetch(
@@ -72,9 +184,37 @@ document.addEventListener("DOMContentLoaded", () => {
           req.first_name + " " + req.last_name;
         document.getElementById("view-modal-email").textContent = req.email;
         let avatarPath = req.avatar_path || "img/user.jpg";
-        // Fix path if it's from uploads (assuming uploads is in root)
+
         if (avatarPath.startsWith("uploads/")) {
           avatarPath = "../" + avatarPath;
+        }
+        if (req.proof_path) {
+          const proofImg = document.getElementById("view-modal-proof-img");
+          const proofLink = document.getElementById("view-modal-proof-link");
+          const proofNone = document.getElementById("view-modal-proof-none");
+          proofNone.classList.add("hidden");
+          if (isImage(req.proof_path)) {
+            proofImg.src = "../" + req.proof_path; // Adjust path
+            proofImg.classList.remove("hidden");
+            proofLink.classList.add("hidden");
+          } else {
+            proofLink.href = "../" + req.proof_path;
+            proofLink.textContent = `Download ${req.proof_path
+              .split("/")
+              .pop()}`;
+            proofLink.classList.remove("hidden");
+            proofImg.classList.add("hidden");
+          }
+        } else {
+          document
+            .getElementById("view-modal-proof-none")
+            .classList.remove("hidden");
+          document
+            .getElementById("view-modal-proof-img")
+            .classList.add("hidden");
+          document
+            .getElementById("view-modal-proof-link")
+            .classList.add("hidden");
         }
         // Add cache buster
         document.getElementById("view-modal-avatar").src =
@@ -96,10 +236,10 @@ document.addEventListener("DOMContentLoaded", () => {
         cancelRequestBtn.setAttribute("data-id", requestId);
         openViewModal();
       } else {
-        alert("Error: " + result.message);
+        showStatus(result.message, "error");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      showStatus("Error: " + error.message, "error");
     }
   }
 
@@ -154,6 +294,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const result = await response.json();
     if (result.success) {
       const tbody = document.getElementById("leave-requests-table");
+
+      // Check if there are no requests
+      if (!result.data || result.data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+              <div class="flex flex-col items-center justify-center">
+                <i class="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
+                <p class="text-lg font-medium">No leave requests to show</p>
+                <p class="text-sm">You haven't submitted any leave requests yet.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return; // Exit early since there's nothing to process
+      }
+
       tbody.innerHTML = result.data
         .map(
           (req) => `
@@ -175,6 +332,11 @@ document.addEventListener("DOMContentLoaded", () => {
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title="${
               req.reason
             }">${req.reason}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              ${
+                req.proof_path ? (isImage(req.proof_path) ? "🖼️" : "📎") : "N/A"
+              }
+            </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(
                 req.status
@@ -211,7 +373,13 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".cancel-request-btn-table").forEach((btn) => {
         btn.addEventListener("click", async (e) => {
           const requestId = e.currentTarget.getAttribute("data-id");
-          if (confirm("Are you sure you want to cancel this request?")) {
+          const confirmed = await showConfirmation(
+            "Are you sure you want to cancel this leave request?",
+            "Cancel Request",
+            "red"
+          );
+
+          if (confirmed) {
             try {
               const formData = new FormData();
               formData.append("action", "cancel_leave_request");
@@ -222,14 +390,14 @@ document.addEventListener("DOMContentLoaded", () => {
               });
               const result = await response.json();
               if (result.success) {
-                alert("Request canceled successfully");
+                showStatus("Request canceled successfully", "success");
                 loadLeaveRequests(); // Refresh table
                 loadLeaveBalances(); // Refresh balances
               } else {
-                alert("Error: " + result.message);
+                showStatus(result.message, "error");
               }
             } catch (error) {
-              alert("Error: " + error.message);
+              showStatus("Error: " + error.message, "error");
             }
           }
         });
@@ -276,7 +444,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   cancelRequestBtn.addEventListener("click", async () => {
     const requestId = cancelRequestBtn.getAttribute("data-id");
-    if (confirm("Are you sure you want to cancel this request?")) {
+    const confirmed = await showConfirmation(
+      "Are you sure you want to cancel this leave request? This action cannot be undone.",
+      "Cancel Request",
+      "red"
+    );
+
+    if (confirmed) {
       try {
         const formData = new FormData();
         formData.append("action", "cancel_leave_request");
@@ -287,15 +461,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         const result = await response.json();
         if (result.success) {
-          alert("Request canceled successfully");
+          showStatus("Request canceled successfully", "success");
           closeViewModal();
           loadLeaveRequests(); // Refresh table
           loadLeaveBalances(); // Refresh balances
         } else {
-          alert("Error: " + result.message);
+          showStatus(result.message, "error");
         }
       } catch (error) {
-        alert("Error: " + error.message);
+        showStatus("Error: " + error.message, "error");
       }
     }
   });
@@ -312,12 +486,10 @@ document.addEventListener("DOMContentLoaded", () => {
     rows.forEach((row) => {
       const type = row.cells[0].textContent.toLowerCase();
       const reason = row.cells[4].textContent.toLowerCase();
-      const status = row.cells[5].textContent.trim();
-
+      const status = row.cells[6].textContent.trim(); // Updated to 6
       const matchesSearch =
         type.includes(searchTerm) || reason.includes(searchTerm);
       const matchesStatus = statusValue === "all" || status === statusValue;
-
       row.style.display = matchesSearch && matchesStatus ? "" : "none";
     });
   }
@@ -370,7 +542,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Validation function
-  function validateForm() {
+  async function validateForm() {
     const selectedType = leaveTypeSelect.value;
     const start = startDateInput.value;
     const end = endDateInput.value;
@@ -381,9 +553,19 @@ document.addEventListener("DOMContentLoaded", () => {
     let error = "";
     if (!selectedType) error = "Please select a leave type.";
     else if (!start || !end) error = "Please select start and end dates.";
-    else if (new Date(start) > new Date(end))
-      error = "Start date must be before or equal to end date.";
-    else if (totalDays <= 0) error = "Total days must be greater than 0.";
+    else {
+      const today = new Date().toISOString().split("T")[0];
+      if (start < today) error = "Start date cannot be in the past.";
+      else if (end < today) error = "End date cannot be in the past.";
+      else if (new Date(start) > new Date(end))
+        error = "Start date must be before or equal to end date.";
+      else {
+        // Check for overlap
+        const overlapError = await checkOverlap(start, end);
+        if (overlapError) error = overlapError;
+      }
+    }
+    if (totalDays <= 0) error = "Total days must be greater than 0.";
     else if (totalDays > available)
       error = `Requested days (${totalDays}) exceed your available ${selectedType} balance (${available}).`;
     else if (!reason) error = "Please provide a reason.";
@@ -413,6 +595,13 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       if (submitBtn.disabled) return; // Prevent if invalid
 
+      const proofFile = document.getElementById("leave-proof").files[0];
+      if (proofFile && proofFile.size > 10 * 1024 * 1024) {
+        // 10MB
+        showStatus("Proof file must be less than 10MB.", "error");
+        return;
+      }
+
       const formData = new FormData(e.target);
       formData.append("action", "request_leave");
 
@@ -423,7 +612,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         const result = await response.json();
         if (result.success) {
-          alert("Leave requested successfully");
+          showStatus("Leave request submitted successfully", "success");
           closeModal();
           loadLeaveRequests(); // Refresh table
           loadLeaveBalances(); // Refresh balances

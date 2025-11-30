@@ -72,7 +72,7 @@ try {
       $employeeId = $emp['id'];
 
       // Fetch leave requests using employee_id, and alias leave_type as type
-      $stmt = $mysqli->prepare("SELECT id, leave_type AS type, start_date, end_date, days, reason, status FROM leave_requests WHERE employee_id = ? ORDER BY submitted_at DESC");
+      $stmt = $mysqli->prepare("SELECT id, leave_type AS type, start_date, end_date, days, reason, status, proof_path FROM leave_requests WHERE employee_id = ? ORDER BY submitted_at DESC");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -108,6 +108,18 @@ try {
       $startDate = $_POST['leave-start'] ?? '';
       $endDate = $_POST['leave-end'] ?? '';
       $reason = $_POST['leave-reason'] ?? '';
+      $proofPath = null;
+      if (isset($_FILES['leave-proof']) && $_FILES['leave-proof']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = '../uploads/proofs/'; // Adjust path
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+        $fileName = uniqid() . '_' . basename($_FILES['leave-proof']['name']);
+        $targetPath = $uploadDir . $fileName;
+        if (move_uploaded_file($_FILES['leave-proof']['tmp_name'], $targetPath)) {
+          $proofPath = 'uploads/proofs/' . $fileName;
+        } else {
+          throw new Exception('Failed to upload proof.');
+        }
+      }
 
       if (!$type || !$startDate || !$endDate || !$reason) {
         throw new Exception('All fields are required');
@@ -119,16 +131,49 @@ try {
       $days = $start->diff($end)->days + 1; // Inclusive
 
       // Insert request
-      $stmt = $mysqli->prepare("INSERT INTO leave_requests (employee_id, leave_type, start_date, end_date, days, reason, status) VALUES (?, ?, ?, ?, ?, ?, 'Pending')");
+      $stmt = $mysqli->prepare("INSERT INTO leave_requests (employee_id, leave_type, start_date, end_date, days, reason, status, proof_path) VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?)");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
-      $stmt->bind_param('isssis', $employeeId, $type, $startDate, $endDate, $days, $reason);
+      $stmt->bind_param('isssiss', $employeeId, $type, $startDate, $endDate, $days, $reason, $proofPath);
       if (!$stmt->execute()) {
         throw new Exception('Failed to insert leave request: ' . $stmt->error);
       }
       $stmt->close();
       echo json_encode(['success' => true, 'message' => 'Leave request submitted successfully']);
+      break;
+
+    case 'check_overlap':
+      if (!isset($_SESSION['user_id'])) {
+        throw new Exception('User not authenticated');
+      }
+      $userId = $_SESSION['user_id'];
+      $startDate = $_GET['start'] ?? '';
+      $endDate = $_GET['end'] ?? '';
+
+      if (!$startDate || !$endDate) {
+        throw new Exception('Start and end dates required');
+      }
+
+      // Get employee ID
+      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ?");
+      $stmt->bind_param('i', $userId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $emp = $result->fetch_assoc();
+      $stmt->close();
+      if (!$emp) throw new Exception('Employee not found');
+      $employeeId = $emp['id'];
+
+      // Check for overlaps with Approved or Pending requests
+      $stmt = $mysqli->prepare("SELECT id FROM leave_requests WHERE employee_id = ? AND status IN ('Approved', 'Pending') AND ((start_date <= ? AND end_date >= ?) OR (start_date <= ? AND end_date >= ?))");
+      $stmt->bind_param('issss', $employeeId, $endDate, $startDate, $startDate, $endDate);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $overlap = $result->num_rows > 0;
+      $stmt->close();
+
+      echo json_encode(['success' => true, 'overlap' => $overlap]);
       break;
 
     case 'view_leave_request':
@@ -142,12 +187,12 @@ try {
 
       // Check if the request exists and belongs to the user via proper joins
       $stmt = $mysqli->prepare("
-    SELECT lr.id 
-    FROM leave_requests lr 
-    JOIN employees e ON lr.employee_id = e.id 
-    JOIN users u ON e.user_id = u.id 
-    WHERE lr.id = ? AND u.id = ?
-  ");
+        SELECT lr.*, u.first_name, u.last_name, u.email, u.avatar_path 
+        FROM leave_requests lr 
+        JOIN employees e ON lr.employee_id = e.id 
+        JOIN users u ON e.user_id = u.id 
+        WHERE lr.id = ? AND u.id = ?
+      ");
       $stmt->bind_param('ii', $requestId, $userId);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -161,12 +206,12 @@ try {
 
       // Fetch full details
       $stmt = $mysqli->prepare("
-    SELECT lr.*, u.first_name, u.last_name, u.email, u.avatar_path 
-    FROM leave_requests lr 
-    JOIN employees e ON lr.employee_id = e.id 
-    JOIN users u ON e.user_id = u.id 
-    WHERE lr.id = ? AND u.id = ?
-  ");
+        SELECT lr.*, u.first_name, u.last_name, u.email, u.avatar_path 
+        FROM leave_requests lr 
+        JOIN employees e ON lr.employee_id = e.id 
+        JOIN users u ON e.user_id = u.id 
+        WHERE lr.id = ? AND u.id = ?
+      ");
       $stmt->bind_param('ii', $requestId, $userId);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -190,6 +235,18 @@ try {
       }
       $userId = $_SESSION['user_id'];
       $requestId = (int)$_POST['id']; // JS sends via POST body
+
+      // Move file deletion here, after $requestId is defined
+      $stmt = $mysqli->prepare("SELECT proof_path FROM leave_requests WHERE id = ?");
+      $stmt->bind_param('i', $requestId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $req = $result->fetch_assoc();
+      if ($req && $req['proof_path'] && file_exists('../' . $req['proof_path'])) {
+        unlink('../' . $req['proof_path']);
+      }
+      $stmt->close();
+
       // Get employee ID
       $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ?");
       $stmt->bind_param('i', $userId);
@@ -199,6 +256,7 @@ try {
       $stmt->close();
       if (!$emp) throw new Exception('Employee not found');
       $employeeId = $emp['id'];
+
       // Check if request is Pending and belongs to user
       $stmt = $mysqli->prepare("SELECT status FROM leave_requests WHERE id = ? AND employee_id = ?");
       $stmt->bind_param('ii', $requestId, $employeeId);
@@ -208,6 +266,7 @@ try {
       $stmt->close();
       if (!$req) throw new Exception('Request not found or access denied');
       if ($req['status'] !== 'Pending') throw new Exception('Only pending requests can be canceled');
+
       // Delete the request
       $stmt = $mysqli->prepare("DELETE FROM leave_requests WHERE id = ?");
       $stmt->bind_param('i', $requestId);

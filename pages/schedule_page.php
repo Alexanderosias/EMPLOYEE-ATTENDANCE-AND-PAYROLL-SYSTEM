@@ -11,15 +11,15 @@ require_once '../views/auth.php'; // path relative to the page
   <title>EAAPS Schedule Page</title>
   <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/status-message.css">
   <link rel="stylesheet" href="css/schedule.css">
   <link rel="stylesheet" href="src/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
-  <div id="successMessageBox" style="display: none;">
-    Login successful!
-  </div>
+  <!-- Status Message (for feedback) -->
+  <div id="status-message" class="status-message"></div>
 
   <div class="dashboard-container">
     <!-- Sidebar -->
@@ -72,6 +72,17 @@ require_once '../views/auth.php'; // path relative to the page
               Leave
             </a>
           </li>
+          <?php
+          $userRoles = $_SESSION['roles'] ?? [];
+          if (in_array('head_admin', $userRoles)):
+          ?>
+            <li>
+              <a href="holidays_events_page.php">
+                <img src="icons/holiday.png" alt="Holidays and Events" class="icon" />
+                Holidays and Events
+              </a>
+            </li>
+          <?php endif; ?>
           <li>
             <a href="qr_codes_and_snapshots.php">
               <img src="icons/snapshot.png" alt="Qr&Snapshots" class="icon" />
@@ -131,34 +142,34 @@ require_once '../views/auth.php'; // path relative to the page
       </header>
       <div class="scrollbar-container">
         <!-- Schedule Management Section -->
-        <div class="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-gray-200 mb-6">
-          <div class="mb-4 sm:mb-0">
+        <div style="width: 100%; justify-content: space-between; align-items: center;" class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div class="flex flex-col mb-2">
             <h1 class="text-3xl font-bold text-gray-800">Add Schedules</h1>
             <p class="text-gray-500 mt-1">Manage weekly schedules for employees.</p>
           </div>
-        </div>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-4">
-          <div class="relative w-full sm:w-1/3 mb-2 sm:mb-0">
-            <input type="text" id="employee-search-input" placeholder="Search employees..."
-              class="w-full border border-gray-300 rounded-md focus:outline-none focus:ring-0" aria-label="Search employees" />
-            <button id="employee-search-btn" type="button"
-              class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none bg-white"
-              aria-label="Search">
-              <img src="icons/search.png" alt="Search icon" class="w-5 h-5" />
-            </button>
+          <div style="width: 70%; justify-content: end; align-items: center;" class="flex space-x-2 mt-2 sm:mt-0">
+            <div class="relative w-full sm:w-1/3 mb-2 sm:mb-0">
+              <input type="text" id="employee-search-input" placeholder="Search employees..."
+                class="w-full border border-gray-300 rounded-md focus:outline-none focus:ring-0" aria-label="Search employees" />
+              <button id="employee-search-btn" type="button"
+                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none bg-white"
+                aria-label="Search">
+                <img src="icons/search.png" alt="Search icon" class="w-5 h-5" />
+              </button>
+            </div>
 
+            <select id="filter-job-position" class="w-full sm:w-1/4 p-2 border border-gray-300 rounded-md mb-2 sm:mb-0"
+              aria-label="Filter by job position">
+              <option value="">All Job Positions</option>
+            </select>
+
+            <select id="filter-department" class="w-full sm:w-1/4 p-2 border border-gray-300 rounded-md"
+              aria-label="Filter by department">
+              <option value="">All Departments</option>
+            </select>
           </div>
-
-          <select id="filter-job-position" class="w-full sm:w-1/4 p-2 border border-gray-300 rounded-md mb-2 sm:mb-0"
-            aria-label="Filter by job position">
-            <option value="">All Job Positions</option>
-          </select>
-
-          <select id="filter-department" class="w-full sm:w-1/4 p-2 border border-gray-300 rounded-md"
-            aria-label="Filter by department">
-            <option value="">All Departments</option>
-          </select>
         </div>
+
 
         <div class="mb-6">
           <label for="employee-select" class="block text-sm font-medium text-gray-700 mb-1">Select Employee</label>
@@ -170,53 +181,114 @@ require_once '../views/auth.php'; // path relative to the page
         <div id="weekly-schedule-container" class="weekly-grid" aria-live="polite">
           <!-- Day cards will be inserted here -->
         </div>
+      </div>
+    </main>
 
-        <!-- Modal for Adding/Editing Shifts -->
-        <div id="schedule-modal" class="modal-overlay hidden">
-          <div class="modal-content relative">
-            <button id="close-modal-btn" class="modal-close-btn">&times;</button>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4" id="modal-title">Add Class</h2>
-            <div class="flex flex-col space-y-4">
-              <div>
-                <label for="modal-employee-name" class="block text-sm font-medium text-gray-700">Employee</label>
-                <input type="text" id="modal-employee-name"
-                  class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1 bg-gray-100" readonly>
-              </div>
-              <div>
-                <label for="modal-day-of-week" class="block text-sm font-medium text-gray-700">Day of Week</label>
-                <input type="text" id="modal-day-of-week"
-                  class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1 bg-gray-100" readonly>
-              </div>
-              <div>
-                <label for="modal-shift-details" class="block text-sm font-medium text-gray-700">Shift/Class
-                  Name</label>
-                <input type="text" id="modal-shift-details" placeholder="e.g., Algebra 101"
-                  class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
-              </div>
-              <div>
-                <label for="modal-shift-start" class="block text-sm font-medium text-gray-700">Start Time</label>
-                <input type="time" id="modal-shift-start"
-                  class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
-              </div>
-              <div>
-                <label for="modal-shift-end" class="block text-sm font-medium text-gray-700">End Time</label>
-                <input type="time" id="modal-shift-end"
-                  class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
-              </div>
+    <!-- Modal for Adding/Editing Shifts -->
+    <div id="schedule-modal" class="modal-overlay hidden" style="user-select: none;">
+      <div class="modal-content relative">
+        <button id="close-modal-btn" class="modal-close-btn">&times;</button>
 
-              <button id="save-shift-btn"
-                class="w-full px-4 py-2 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200">
-                Save Class
-              </button>
-              <button id="delete-shift-btn"
-                class="w-full px-4 py-2 bg-red-600 text-white rounded-md shadow-md hover:bg-red-700 transition-colors duration-200 hidden">
-                Delete Class
-              </button>
+        <h2 class="text-2xl font-bold text-gray-800 mb-4" id="modal-title">Add Class</h2>
+
+        <div class="flex flex-col space-y-4">
+
+          <!-- Employee -->
+          <div>
+            <label for="modal-employee-name" class="block text-sm font-medium text-gray-700">Employee</label>
+            <input type="text" id="modal-employee-name"
+              class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1 bg-gray-100" readonly>
+          </div>
+
+          <!-- Day of Week -->
+          <div>
+            <label for="modal-day-of-week" class="block text-sm font-medium text-gray-700">Day of Week</label>
+            <input type="text" id="modal-day-of-week"
+              class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1 bg-gray-100" readonly>
+          </div>
+
+          <!-- Working or Break -->
+          <div style="margin-bottom: 15px;">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <div style="gap: 20px; background-color: #f9f9f9; padding: 10px; border-radius: 5px;" class="flex items-center space-x-4">
+
+              <label class="flex items-center space-x-1 cursor-pointer">
+                <input type="radio" style="margin-right: 5px;" name="shift-type" value="working" checked
+                  class="h-4 w-4 text-blue-600 border-gray-300">
+                <span class="text-sm text-gray-700">Working</span>
+              </label>
+
+              <label class="flex items-center space-x-1 cursor-pointer">
+                <input type="radio" style="margin-right: 5px;" name="shift-type" value="break"
+                  class="h-4 w-4 text-red-600 border-gray-300">
+                <span class="text-sm text-gray-700">Break</span>
+              </label>
+
             </div>
+          </div>
+
+          <!-- Class / Shift Name -->
+          <div>
+            <label for="modal-shift-details" class="block text-sm font-medium text-gray-700">
+              Shift/Class Name
+            </label>
+            <input type="text" id="modal-shift-details" placeholder="e.g., Algebra 101"
+              class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
+          </div>
+
+          <!-- Start Time -->
+          <div>
+            <label for="modal-shift-start" class="block text-sm font-medium text-gray-700">Start Time</label>
+            <input type="time" id="modal-shift-start"
+              class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
+          </div>
+
+          <!-- End Time -->
+          <div>
+            <label for="modal-shift-end" class="block text-sm font-medium text-gray-700">End Time</label>
+            <input type="time" id="modal-shift-end"
+              class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
+          </div>
+
+          <button id="save-shift-btn"
+            class="w-full px-4 py-2 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200">
+            Save Class
+          </button>
+
+          <button id="delete-shift-btn"
+            class="w-full px-4 py-2 bg-red-600 text-white rounded-md shadow-md hover:bg-red-700 transition-colors duration-200 hidden">
+            Delete Class
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div style="background-color: rgba(0, 0, 0, 0.5);" id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-40 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center" role="dialog" aria-labelledby="confirmation-title" aria-modal="true" aria-hidden="true">
+      <div style="padding: 20px;" class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="confirmation-title">Confirm Action</h3>
+            <button id="confirmation-close-x" class="text-gray-400 hover:text-gray-500 focus:outline-none" aria-label="Close modal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="mt-2">
+            <p class="text-sm text-gray-600" id="confirmation-message">Are you sure you want to proceed?</p>
+          </div>
+          <div style="display: flex; gap: 10px;" class="mt-6 flex justify-end gap-3">
+            <button id="confirmation-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none">
+              Cancel
+            </button>
+            <button id="confirmation-confirm-btn" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+              Confirm
+            </button>
           </div>
         </div>
       </div>
-    </main>
+    </div>
+
   </div>
 
   <script src="../js/dashboard.js"></script>

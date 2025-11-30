@@ -13,6 +13,88 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load initial data
   loadLeaveRequests();
 
+  // Status message function
+  function showStatus(message, type = "success") {
+    const statusDiv = document.getElementById("status-message");
+    if (!statusDiv) return;
+
+    statusDiv.textContent = message;
+    statusDiv.className = `status-message ${type}`;
+    statusDiv.classList.add("show");
+
+    setTimeout(() => {
+      statusDiv.classList.remove("show");
+    }, 3000);
+  }
+
+  // Helper function for image check
+  function isImage(filename) {
+    if (!filename) return false;
+    const ext = filename.split(".").pop().toLowerCase();
+    return ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext);
+  }
+
+  // Confirmation modal function
+  function showConfirmation(
+    message,
+    confirmText = "Confirm",
+    confirmColor = "blue"
+  ) {
+    return new Promise((resolve) => {
+      const confirmationModal = document.getElementById("confirmation-modal");
+      const confirmationMessage = document.getElementById(
+        "confirmation-message"
+      );
+      const confirmationConfirmBtn = document.getElementById(
+        "confirmation-confirm-btn"
+      );
+      const confirmationCancelBtn = document.getElementById(
+        "confirmation-cancel-btn"
+      );
+      const confirmationCloseX = document.getElementById(
+        "confirmation-close-x"
+      );
+
+      confirmationMessage.textContent = message;
+      confirmationConfirmBtn.textContent = confirmText;
+      confirmationConfirmBtn.className = `px-4 py-2 bg-${confirmColor}-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-${confirmColor}-600 focus:outline-none focus:ring-2 focus:ring-${confirmColor}-300`;
+
+      confirmationModal.classList.remove("hidden");
+      confirmationModal.setAttribute("aria-hidden", "false");
+
+      const handleConfirm = () => {
+        cleanup();
+        resolve(true);
+      };
+      const handleCancel = () => {
+        cleanup();
+        resolve(false);
+      };
+      const cleanup = () => {
+        confirmationModal.classList.add("hidden");
+        confirmationModal.setAttribute("aria-hidden", "true");
+        confirmationConfirmBtn.removeEventListener("click", handleConfirm);
+        confirmationCancelBtn.removeEventListener("click", handleCancel);
+        confirmationCloseX.removeEventListener("click", handleCancel);
+      };
+
+      confirmationConfirmBtn.addEventListener("click", handleConfirm);
+      confirmationCancelBtn.addEventListener("click", handleCancel);
+      confirmationCloseX.addEventListener("click", handleCancel);
+
+      const handleEscape = (e) => {
+        if (
+          e.key === "Escape" &&
+          !confirmationModal.classList.contains("hidden")
+        ) {
+          handleCancel();
+          document.removeEventListener("keydown", handleEscape);
+        }
+      };
+      document.addEventListener("keydown", handleEscape);
+    });
+  }
+
   // Modal functions
   function openModal() {
     modal.classList.remove("hidden");
@@ -65,6 +147,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function populateTable(requests) {
+    if (requests.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+              <div style="padding: 2rem 0;" class="flex flex-col items-center justify-center">
+                <i class="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
+                <p class="text-lg font-medium">Nothing to show</p>
+                <p class="text-sm">There are no requests at the moment.</p>
+              </div>
+            </td>
+          </tr>
+      `;
+      return;
+    }
+
     tableBody.innerHTML = requests
       .map(
         (req) => `
@@ -100,6 +197,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 : req.reason
             }
           </span>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+          ${
+            req.proof_path
+              ? isImage(req.proof_path)
+                ? '<i class="fas fa-image text-blue-600" title="Image proof"></i>'
+                : '<i class="fas fa-file text-gray-600" title="File proof"></i>'
+              : '<span class="text-gray-400">N/A</span>'
+          }
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
           <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(
@@ -151,6 +257,23 @@ document.addEventListener("DOMContentLoaded", () => {
         handleAction(id, "decline_leave", "Request declined");
       });
     });
+
+    // Modal approve/decline buttons
+    document
+      .getElementById("modal-approve-btn")
+      .addEventListener("click", (e) => {
+        const id = e.currentTarget.getAttribute("data-id");
+        handleAction(id, "approve_leave", "Request approved");
+        // Remove closeModal() here to allow overlay
+      });
+
+    document
+      .getElementById("modal-decline-btn")
+      .addEventListener("click", (e) => {
+        const id = e.currentTarget.getAttribute("data-id");
+        handleAction(id, "decline_leave", "Request declined");
+        // Remove closeModal() here to allow overlay
+      });
   }
 
   async function viewLeaveRequest(id) {
@@ -172,31 +295,79 @@ document.addEventListener("DOMContentLoaded", () => {
           "modal-dates"
         ).textContent = `${req.start_date} - ${req.end_date} (${req.days} Days)`;
         document.getElementById("modal-reason").textContent = req.reason;
+
+        // Handle proof display
+        if (req.proof_path) {
+          const proofImg = document.getElementById("view-modal-proof-img");
+          const proofLink = document.getElementById("view-modal-proof-link");
+          const proofNone = document.getElementById("view-modal-proof-none");
+          proofNone.classList.add("hidden");
+
+          if (isImage(req.proof_path)) {
+            proofImg.src = "../" + req.proof_path;
+            proofImg.classList.remove("hidden");
+            proofLink.classList.add("hidden");
+          } else {
+            proofLink.href = "../" + req.proof_path;
+            proofLink.textContent = `Download ${req.proof_path
+              .split("/")
+              .pop()}`;
+            proofLink.classList.remove("hidden");
+            proofImg.classList.add("hidden");
+          }
+        } else {
+          document
+            .getElementById("view-modal-proof-none")
+            .classList.remove("hidden");
+          document
+            .getElementById("view-modal-proof-img")
+            .classList.add("hidden");
+          document
+            .getElementById("view-modal-proof-link")
+            .classList.add("hidden");
+        }
+
         document.getElementById("modal-status").textContent = req.status;
         document.getElementById(
           "modal-status"
         ).className = `px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(
           req.status
         )}`;
+        // Hide approve/decline buttons if not Pending
+        const approveBtn = document.getElementById("modal-approve-btn");
+        const declineBtn = document.getElementById("modal-decline-btn");
+        if (req.status !== "Pending") {
+          approveBtn.style.display = "none";
+          declineBtn.style.display = "none";
+        } else {
+          approveBtn.style.display = "block";
+          declineBtn.style.display = "block";
+        }
+
         openModal(); // Now called successfully
+        document
+          .getElementById("modal-approve-btn")
+          .setAttribute("data-id", id);
+        document
+          .getElementById("modal-decline-btn")
+          .setAttribute("data-id", id);
       } else {
-        alert("Error: " + result.message);
+        showStatus("Error: " + result.message, "error");
       }
     } catch (error) {
       console.error("Error in viewLeaveRequest:", error);
-      alert("Error: " + error.message);
+      showStatus("Error: " + error.message, "error");
     }
   }
 
   async function handleAction(id, action, successMsg) {
-    if (
-      !confirm(
-        `Are you sure you want to ${
-          action === "approve_leave" ? "approve" : "decline"
-        } this request?`
-      )
-    )
-      return;
+    const actionText = action === "approve_leave" ? "approve" : "decline";
+    const confirmed = await showConfirmation(
+      `Are you sure you want to ${actionText} this request?`,
+      `Confirm ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}`,
+      action === "approve_leave" ? "green" : "red"
+    );
+    if (!confirmed) return;
 
     const formData = new FormData();
     formData.append("action", action);
@@ -209,13 +380,15 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const result = await response.json();
       if (result.success) {
-        alert(successMsg);
+        showStatus(successMsg, "success");
         loadLeaveRequests(); // Refresh table
+        closeModal(); // Close leave modal after action
+        // Confirmation modal is already closed by showConfirmation
       } else {
-        alert("Error: " + result.message);
+        showStatus("Error: " + result.message, "error");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      showStatus("Error: " + error.message, "error");
     }
   }
 

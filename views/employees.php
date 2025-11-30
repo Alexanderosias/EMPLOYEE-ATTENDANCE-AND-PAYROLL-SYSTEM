@@ -193,6 +193,7 @@ switch ($action) {
                 $emp['department_id'] = (int)($emp['department_id'] ?? 0);
                 $emp['job_position_id'] = (int)($emp['job_position_id'] ?? 0);
                 $emp['rate_per_hour'] = (float)($emp['rate_per_hour'] ?? 0);
+                $emp['rate_per_day'] = (float)($emp['rate_per_day'] ?? 0);
                 $emp['annual_paid_leave_days'] = (int)($emp['annual_paid_leave_days'] ?? 15);
                 $emp['annual_unpaid_leave_days'] = (int)($emp['annual_unpaid_leave_days'] ?? 5);
                 $emp['annual_sick_leave_days'] = (int)($emp['annual_sick_leave_days'] ?? 10);
@@ -264,6 +265,7 @@ switch ($action) {
             $emp['department_id'] = (int)$emp['department_id'];
             $emp['job_position_id'] = (int)$emp['job_position_id'];
             $emp['rate_per_hour'] = (float)$emp['rate_per_hour'];
+            $emp['rate_per_day'] = (float)($emp['rate_per_day'] ?? 0);
             $emp['annual_paid_leave_days'] = (int)($emp['annual_paid_leave_days'] ?? 15);
             $emp['annual_unpaid_leave_days'] = (int)($emp['annual_unpaid_leave_days'] ?? 5);
             $emp['annual_sick_leave_days'] = (int)($emp['annual_sick_leave_days'] ?? 10);
@@ -336,7 +338,7 @@ switch ($action) {
             }
             $dept_check->close();
 
-            $pos_check = $mysqli->prepare("SELECT id, rate_per_hour FROM job_positions WHERE id = ?");
+            $pos_check = $mysqli->prepare("SELECT id, rate_per_hour, rate_per_day FROM job_positions WHERE id = ?");
             $pos_check->bind_param('i', $job_position_id);
             $pos_check->execute();
             $pos_result = $pos_check->get_result();
@@ -345,6 +347,7 @@ switch ($action) {
             }
             $pos_data = $pos_result->fetch_assoc();
             $rate_per_hour = (float)($pos_data['rate_per_hour'] ?? 0);
+            $rate_per_day = (float)($pos_data['rate_per_day'] ?? 0);
             $pos_check->close();
 
             // Handle avatar upload
@@ -376,15 +379,15 @@ switch ($action) {
 
             // Insert into employees
             $query = "INSERT INTO employees (
-                user_id, first_name, last_name, address, gender, marital_status, status, email,
-                contact_number, emergency_contact_name, emergency_contact_phone,
-                emergency_contact_relationship, date_joined, department_id, job_position_id,
-                rate_per_hour, annual_paid_leave_days, annual_unpaid_leave_days,
-                annual_sick_leave_days, avatar_path
-            ) VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?)";
+            user_id, first_name, last_name, address, gender, marital_status, status, email,
+            contact_number, emergency_contact_name, emergency_contact_phone,
+            emergency_contact_relationship, date_joined, department_id, job_position_id,
+            rate_per_hour, rate_per_day, annual_paid_leave_days, annual_unpaid_leave_days,
+            annual_sick_leave_days, avatar_path
+            ) VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $mysqli->prepare($query);
-            $types = 'issssssssssiidiiis';
+            $types = 'issssssssssiiddiiis';
             $params = [
                 $user_id,
                 $first_name,
@@ -400,6 +403,7 @@ switch ($action) {
                 $department_id,
                 $job_position_id,
                 $rate_per_hour,
+                $rate_per_day,
                 $annual_paid_leave_days,
                 $annual_unpaid_leave_days,
                 $annual_sick_leave_days,
@@ -529,7 +533,7 @@ switch ($action) {
             $date_joined = getUpdateValue('date_joined', $current_employee['date_joined']);
 
             // Fetch rate_per_hour based on selected job_position_id
-            $pos_check = $mysqli->prepare("SELECT rate_per_hour FROM job_positions WHERE id = ?");
+            $pos_check = $mysqli->prepare("SELECT rate_per_hour, rate_per_day FROM job_positions WHERE id = ?");
             $pos_check->bind_param('i', $job_position_id);
             $pos_check->execute();
             $pos_result = $pos_check->get_result();
@@ -538,6 +542,7 @@ switch ($action) {
             }
             $pos_data = $pos_result->fetch_assoc();
             $rate_per_hour = (float)($pos_data['rate_per_hour'] ?? 0);
+            $rate_per_day = (float)($pos_data['rate_per_day'] ?? 0);
             $pos_check->close();
 
             // Check if QR needs regeneration
@@ -615,11 +620,11 @@ switch ($action) {
                 first_name = ?, last_name = ?, address = ?, gender = ?, marital_status = ?,
                 email = ?, contact_number = ?, emergency_contact_name = ?, emergency_contact_phone = ?,
                 emergency_contact_relationship = ?, department_id = ?, job_position_id = ?,
-                rate_per_hour = ?, annual_paid_leave_days = ?, annual_unpaid_leave_days = ?,
+                rate_per_hour = ?, rate_per_day = ?, annual_paid_leave_days = ?, annual_unpaid_leave_days = ?,
                 annual_sick_leave_days = ?, date_joined = ?, avatar_path = ?
                 WHERE id = ?";
             $stmt = $mysqli->prepare($query);
-            $types = 'ssssssssssiidiiissi';
+            $types = 'ssssssssssiiddiiissi';
             $params = [
                 $first_name,
                 $last_name,
@@ -634,6 +639,7 @@ switch ($action) {
                 $department_id,
                 $job_position_id,
                 $rate_per_hour,
+                $rate_per_day,
                 $annual_paid_leave_days,
                 $annual_unpaid_leave_days,
                 $annual_sick_leave_days,
@@ -751,6 +757,16 @@ switch ($action) {
                 // Delete QR
                 deleteQRCode($mysqli, $id);
 
+                // Delete leave requests associated with this employee
+                $stmt = $mysqli->prepare("DELETE FROM leave_requests WHERE employee_id = ?");
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $deleted_requests = $stmt->affected_rows;
+                $stmt->close();
+                if ($deleted_requests > 0) {
+                    error_log("Deleted $deleted_requests leave request(s) for Employee ID $id");
+                }
+
                 // Delete from employees
                 $stmt = $mysqli->prepare("DELETE FROM employees WHERE id = ?");
                 $stmt->bind_param('i', $id);
@@ -852,7 +868,7 @@ switch ($action) {
 
     case 'positions':
         try {
-            $query = "SELECT id, name, rate_per_hour FROM job_positions ORDER BY name";
+            $query = "SELECT id, name, rate_per_hour, rate_per_day FROM job_positions ORDER BY name";
             $result = $mysqli->query($query);
             if (!$result) {
                 throw new Exception('Query failed: ' . $mysqli->error);

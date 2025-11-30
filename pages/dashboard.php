@@ -69,6 +69,17 @@ require_once '../views/auth.php'; // Check login
                             Leave
                         </a>
                     </li>
+                    <?php
+                    $userRoles = $_SESSION['roles'] ?? [];
+                    if (in_array('head_admin', $userRoles)):
+                    ?>
+                        <li>
+                            <a href="holidays_events_page.php">
+                                <img src="icons/holiday.png" alt="Holidays and Events" class="icon" />
+                                Holidays and Events
+                            </a>
+                        </li>
+                    <?php endif; ?>
                     <li>
                         <a href="qr_codes_and_snapshots.php">
                             <img src="icons/snapshot.png" alt="Qr&Snapshots" class="icon" />

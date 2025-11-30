@@ -24,7 +24,7 @@
 }
 
 .section-box h3 {
-  font-family: "Bowlby One", cursive;
+  font-family: "Inter", sans-serif;
   margin-bottom: 1rem;
   font-size: 1.5rem;
   color: var(--main-font-color, #333);
@@ -157,12 +157,13 @@ ul.item-list li:last-child {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  margin-bottom: 20px;
 }
 
 .modal-header h4 {
   margin: 0;
-  font-family: "Bowlby One", cursive;
-  font-size: 1.25rem;
+  font-family: "Inter", sans-serif;
+  font-size: 1.50rem;
 }
 
 .modal-close-btn {

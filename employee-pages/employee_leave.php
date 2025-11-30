@@ -4,15 +4,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EAAPS Employee Leave</title>
+  <title>Request Leave</title>
   <link rel="icon" href="../pages/img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="../pages/css/dashboard.css">
   <link rel="stylesheet" href="css/employee_leave.css">
+  <link rel="stylesheet" href="css/status-message.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
-<body class="flex bg-gray-100">
+<body>
+  <!-- Status Message (for feedback) -->
+  <div id="status-message" class="status-message"></div>
+
   <!-- Sidebar (Preserved with Custom CSS) -->
   <aside class="sidebar">
     <a class="sidebar-header" href="#">
@@ -135,12 +139,16 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proof</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th> <!-- New column -->
             </tr>
           </thead>
           <tbody id="leave-requests-table" class="bg-white divide-y divide-gray-200">
             <!-- Dynamic rows -->
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              ${req.proof_path ? (isImage(req.proof_path) ? '🖼️' : '📎') : 'N/A'}
+            </td>
           </tbody>
         </table>
       </div>
@@ -189,6 +197,16 @@
             <label for="leave-reason" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Reason</label>
             <textarea style="resize: vertical; min-height: 100px; max-height: 250px;" id="leave-reason" name="leave-reason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
           </div>
+          <div>
+            <label for="leave-proof" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Proof (optional)</label>
+            <input
+              type="file"
+              id="leave-proof"
+              name="leave-proof"
+              accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+            <p class="text-gray-400 text-xs mt-1">Accepted: images (jpg, png, gif), PDF, Word (doc, docx)</p>
+          </div>
           <div id="error-message" class="text-red-600 text-sm hidden"></div>
           <div class="flex flex-col gap-3">
             <div class="flex gap-3">
@@ -201,6 +219,31 @@
             </div>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-40 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center" role="dialog" aria-labelledby="confirmation-title" aria-modal="true" aria-hidden="true">
+    <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg leading-6 font-medium text-gray-900" id="confirmation-title">Confirm Action</h3>
+          <button id="confirmation-close-x" class="text-gray-400 hover:text-gray-500 focus:outline-none" aria-label="Close modal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mt-2">
+          <p class="text-sm text-gray-600" id="confirmation-message">Are you sure you want to proceed?</p>
+        </div>
+        <div class="mt-6 flex justify-end gap-3">
+          <button id="confirmation-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none">
+            Cancel
+          </button>
+          <button id="confirmation-confirm-btn" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+            Confirm
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -236,6 +279,14 @@
           <div>
             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Reason</label>
             <p style="max-height: 250px; overflow-y: auto;" class="text-sm text-gray-900 bg-gray-50 p-3 rounded text-justify" id="view-modal-reason"></p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Proof</label>
+            <div class="mt-1">
+              <img id="view-modal-proof-img" class="w-20 h-20 rounded-md object-contain hidden" alt="Proof">
+              <a id="view-modal-proof-link" href="#" target="_blank" download class="text-blue-600 hover:underline hidden">Download Proof</a>
+              <span id="view-modal-proof-none" class="text-gray-500">No proof uploaded</span>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</label>

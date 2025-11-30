@@ -22,6 +22,7 @@ try {
     $restrictedPages = [
         'user_page.php' => ['head_admin'], // Only head_admin can access
         'settings_page.php' => ['head_admin'],
+        'holidays_events_page.php' => ['head_admin'],
     ];
 
     // Get current page name

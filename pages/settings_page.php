@@ -11,6 +11,7 @@ require_once '../views/auth.php';  // path relative to the page
   <title>EAAPS Settings Page</title>
   <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="src/styles.css">
   <link rel="stylesheet" href="css/status-message.css">
   <link rel="stylesheet" href="css/settings_page.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -73,6 +74,17 @@ require_once '../views/auth.php';  // path relative to the page
               Leave
             </a>
           </li>
+          <?php
+          $userRoles = $_SESSION['roles'] ?? [];
+          if (in_array('head_admin', $userRoles)):
+          ?>
+            <li>
+              <a href="holidays_events_page.php">
+                <img src="icons/holiday.png" alt="Holidays and Events" class="icon" />
+                Holidays and Events
+              </a>
+            </li>
+          <?php endif; ?>
           <li>
             <a href="qr_codes_and_snapshots.php">
               <img src="icons/snapshot.png" alt="Qr&Snapshots" class="icon" />
@@ -223,6 +235,63 @@ require_once '../views/auth.php';  // path relative to the page
                 <img src="icons/save.png" alt="Save" class="btn-icon" />
                 Save Leave Settings
               </button>
+            </div>
+          </div>
+
+          <div id="working-hours-modal" class="modal-overlay hidden">
+            <div class="modal-content relative">
+              <button id="wh-close-btn" class="modal-close-btn">&times;</button>
+
+              <h2 class="text-2xl font-bold text-gray-800 mb-4" id="wh-modal-title">
+                Add Working Hours Rule
+              </h2>
+
+              <div class="flex flex-col space-y-4">
+
+                <!-- Position -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Position</label>
+                  <select id="wh-position"
+                    class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
+                  </select>
+                </div>
+
+                <!-- Hours per Day -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Working Hours (per day)</label>
+                  <input type="number" min="1" max="24" id="wh-hours"
+                    class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
+                </div>
+
+                <!-- Break Minutes -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Break Deduction (minutes)</label>
+                  <input type="number" min="0" max="180" id="wh-break"
+                    class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
+                </div>
+
+                <!-- Effective Dates -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Effective Start Date (optional)</label>
+                  <input type="date" id="wh-start" class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Effective End Date (optional)</label>
+                  <input type="date" id="wh-end" class="w-full rounded-md border-gray-300 shadow-sm p-2 text-sm mt-1">
+                </div>
+
+                <button id="wh-save-btn"
+                  class="w-full px-4 py-2 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700">
+                  Save Working Hours Rule
+                </button>
+
+                <button id="wh-delete-btn"
+                  class="w-full px-4 py-2 bg-red-600 text-white rounded-md shadow-md hover:bg-red-700 hidden">
+                  Delete Rule
+                </button>
+
+              </div>
             </div>
           </div>
         </div>

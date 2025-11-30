@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 26, 2025 at 11:07 AM
+-- Generation Time: Nov 29, 2025 at 09:01 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -42,13 +42,6 @@ CREATE TABLE `attendance_logs` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `attendance_logs`
---
-
-INSERT INTO `attendance_logs` (`id`, `employee_id`, `date`, `time_in`, `time_out`, `expected_start_time`, `expected_end_time`, `status`, `snapshot_path`, `check_type`, `is_synced`, `created_at`, `updated_at`) VALUES
-(66, 43, '2025-11-25', NULL, NULL, '13:30:00', '15:00:00', 'Absent', NULL, 'in', 0, '2025-11-25 15:18:42', '2025-11-25 15:18:42');
 
 -- --------------------------------------------------------
 
@@ -90,8 +83,7 @@ CREATE TABLE `departments` (
 --
 
 INSERT INTO `departments` (`id`, `name`, `created_at`, `updated_at`) VALUES
-(7, 'Computer Engineering', '2025-11-08 04:44:38', '2025-11-08 04:44:38'),
-(11, 'Education', '2025-11-23 18:28:17', '2025-11-23 18:28:17');
+(7, 'Computer Engineering', '2025-11-08 04:44:38', '2025-11-08 04:44:38');
 
 -- --------------------------------------------------------
 
@@ -117,6 +109,7 @@ CREATE TABLE `employees` (
   `department_id` int(11) NOT NULL,
   `job_position_id` int(11) NOT NULL,
   `rate_per_hour` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `rate_per_day` decimal(10,2) DEFAULT 0.00,
   `annual_paid_leave_days` int(11) DEFAULT 15,
   `annual_unpaid_leave_days` int(11) DEFAULT 5,
   `annual_sick_leave_days` int(11) DEFAULT 10,
@@ -129,10 +122,22 @@ CREATE TABLE `employees` (
 -- Dumping data for table `employees`
 --
 
-INSERT INTO `employees` (`id`, `user_id`, `first_name`, `last_name`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`) VALUES
-(43, 76, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Father', '2025-11-25', 7, 11, 120.00, 10, 5, 10, 'uploads/avatars/emp_43_1764077433.jpg', '2025-11-25 13:27:25', '2025-11-25 13:31:42'),
-(44, 77, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosi123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Wife', '2025-11-25', 7, 11, 120.00, 10, 10, 10, NULL, '2025-11-25 13:51:52', '2025-11-25 13:51:52'),
-(45, 78, 'Kietaro', 'Shigaraki', 'So. Bugho', 'Male', 'Single', 'Active', 'alexander@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Wife', '2025-11-26', 11, 16, 130.50, 10, 10, 10, NULL, '2025-11-25 19:55:45', '2025-11-25 19:55:45');
+INSERT INTO `employees` (`id`, `user_id`, `first_name`, `last_name`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `rate_per_day`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`) VALUES
+(49, 88, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Father', '2025-11-28', 7, 16, 130.50, 1044.00, 7, 10, 10, 'uploads/avatars/emp_49_1764325198.jpg', '2025-11-28 10:13:17', '2025-11-28 14:30:59');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `holidays`
+--
+
+CREATE TABLE `holidays` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `type` enum('regular','special_non_working','special_working') NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -143,6 +148,8 @@ INSERT INTO `employees` (`id`, `user_id`, `first_name`, `last_name`, `address`, 
 CREATE TABLE `job_positions` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
+  `working_hours_per_day` decimal(5,2) NOT NULL DEFAULT 8.00,
+  `rate_per_day` decimal(10,2) NOT NULL DEFAULT 0.00,
   `rate_per_hour` decimal(10,2) DEFAULT 0.00,
   `payroll_frequency` enum('daily','weekly','bi-weekly','monthly') DEFAULT 'bi-weekly',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -153,11 +160,8 @@ CREATE TABLE `job_positions` (
 -- Dumping data for table `job_positions`
 --
 
-INSERT INTO `job_positions` (`id`, `name`, `rate_per_hour`, `payroll_frequency`, `created_at`, `updated_at`) VALUES
-(11, 'Cashier', 120.00, 'bi-weekly', '2025-11-08 09:48:47', '2025-11-08 09:48:47'),
-(12, 'Dean', 150.00, 'bi-weekly', '2025-11-10 05:24:52', '2025-11-10 05:24:52'),
-(13, 'Instructor', 100.00, 'bi-weekly', '2025-11-10 12:56:32', '2025-11-10 12:56:32'),
-(16, 'Cashier 1', 130.50, 'bi-weekly', '2025-11-25 12:07:27', '2025-11-25 12:07:27');
+INSERT INTO `job_positions` (`id`, `name`, `working_hours_per_day`, `rate_per_day`, `rate_per_hour`, `payroll_frequency`, `created_at`, `updated_at`) VALUES
+(16, 'Cashier 1', 8.00, 1044.00, 130.50, 'bi-weekly', '2025-11-25 12:07:27', '2025-11-28 07:22:43');
 
 -- --------------------------------------------------------
 
@@ -177,8 +181,18 @@ CREATE TABLE `leave_requests` (
   `deducted_from` enum('Paid','Unpaid','Sick') DEFAULT NULL,
   `submitted_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `approved_at` timestamp NULL DEFAULT NULL,
-  `approved_by` int(11) DEFAULT NULL
+  `approved_by` int(11) DEFAULT NULL,
+  `proof_path` varchar(255) DEFAULT NULL,
+  `admin_feedback` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `leave_requests`
+--
+
+INSERT INTO `leave_requests` (`id`, `employee_id`, `leave_type`, `start_date`, `end_date`, `days`, `reason`, `status`, `deducted_from`, `submitted_at`, `approved_at`, `approved_by`, `proof_path`, `admin_feedback`) VALUES
+(28, 49, 'Paid', '2025-11-28', '2025-11-30', 3, 'dasf', 'Approved', 'Paid', '2025-11-28 13:39:57', '2025-11-28 14:30:59', 68, NULL, NULL),
+(33, 49, 'Paid', '2025-12-05', '2025-12-08', 4, 'leave lang ako sir', 'Rejected', NULL, '2025-11-28 17:38:59', '2025-11-29 05:25:20', 68, 'uploads/proofs/6929de3364b79_6929d1931fc66_System-Proposal-Automatic Sliding Roof Clothesline Protection System.docx', NULL);
 
 -- --------------------------------------------------------
 
@@ -244,9 +258,7 @@ CREATE TABLE `qr_codes` (
 --
 
 INSERT INTO `qr_codes` (`id`, `employee_id`, `qr_data`, `qr_image_path`, `generated_at`) VALUES
-(40, 43, 'ID:43|First:Alexander|Last:Osias|Position:Cashier|Joined:2025-11-25', 'qrcodes/AlexanderOsias.png', '2025-11-25 13:27:25'),
-(41, 44, 'ID:44|First:Alexander|Last:Osias|Position:Cashier|Joined:2025-11-25', 'qrcodes/AlexanderOsias_44_1.png', '2025-11-25 13:51:52'),
-(42, 45, 'ID:45|First:Kietaro|Last:Shigaraki|Position:Cashier 1|Joined:2025-11-26', 'qrcodes/KietaroShigaraki.png', '2025-11-25 19:55:45');
+(48, 49, 'ID:49|First:Alexander|Last:Osias|Position:Cashier 1|Joined:2025-11-28', 'qrcodes/AlexanderOsias.png', '2025-11-28 10:19:59');
 
 -- --------------------------------------------------------
 
@@ -261,16 +273,11 @@ CREATE TABLE `schedules` (
   `shift_name` varchar(100) NOT NULL,
   `start_time` time NOT NULL,
   `end_time` time NOT NULL,
+  `break_minutes` int(11) NOT NULL DEFAULT 0,
+  `is_working` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `schedules`
---
-
-INSERT INTO `schedules` (`id`, `employee_id`, `day_of_week`, `shift_name`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
-(55, 43, 'Tuesday', 'ITP 101 - Lab 3', '13:30:00', '15:00:00', '2025-11-25 15:17:56', '2025-11-25 15:17:56');
 
 -- --------------------------------------------------------
 
@@ -294,7 +301,7 @@ CREATE TABLE `school_settings` (
 --
 
 INSERT INTO `school_settings` (`id`, `logo_path`, `system_name`, `created_at`, `updated_at`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`) VALUES
-(1, 'uploads/logos/logo_1763922067.jpg', 'EAAPS Admin', '2025-11-21 12:44:20', '2025-11-25 13:50:32', 10, 10, 10);
+(1, 'uploads/logos/logo_1763922067.jpg', 'EAAPS Admins', '2025-11-21 12:44:20', '2025-11-27 17:45:32', 10, 10, 10);
 
 -- --------------------------------------------------------
 
@@ -307,6 +314,21 @@ CREATE TABLE `snapshots` (
   `attendance_log_id` int(11) NOT NULL,
   `image_path` varchar(500) NOT NULL,
   `captured_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `special_events`
+--
+
+CREATE TABLE `special_events` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `paid` enum('yes','no','partial') NOT NULL,
+  `description` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -364,7 +386,7 @@ CREATE TABLE `time_date_settings` (
 --
 
 INSERT INTO `time_date_settings` (`id`, `default_timezone`, `date_format`, `auto_logout_time_hours`, `created_at`, `updated_at`) VALUES
-(1, 'PHST', 'DD/MM/YYYY', 0.00000, '2025-11-21 12:44:20', '2025-11-25 11:56:53');
+(1, 'PHST', 'DD/MM/YYYY', 0.00000, '2025-11-21 12:44:20', '2025-11-27 17:49:22');
 
 -- --------------------------------------------------------
 
@@ -394,9 +416,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `phone_number`, `address`, `department_id`, `password_hash`, `is_active`, `created_at`, `updated_at`, `avatar_path`, `roles`) VALUES
 (68, 'Admin', 'Admin', 'admin@gmail.com', '09305909175', 'So. Bugho\r\nBarangay Dampigan, Sta. Rita, Samar', 7, '$2y$10$eFmGsmOld4JDMgkJunzcx.IQo6gPwS8CvtMecl0rY21mm30oZgCYy', 1, '2025-11-25 09:15:54', '2025-11-25 12:10:08', 'uploads/avatars/user_68_1764072580.png', '[\"head_admin\"]'),
-(76, 'Alexander', 'Osias', 'alexanderosias123@gmail.com', '09305909175', 'So. Bugho', 7, '$2y$10$EtbM490mu4mZUfDIx5.goud3sboAF5FnSlU.i6by7LH8xtE81xj56', 1, '2025-11-25 13:27:25', '2025-11-25 19:59:12', NULL, '[\"employee\",\"admin\"]'),
-(77, 'Alexander', 'Osias', 'alexanderosi123@gmail.com', '09305909175', 'So. Bugho', 7, '$2y$10$66Q7dEzvIQwDD3ity80Z1.aHW8kJSQe5jfRS7YwL.UjM2T55RDMwC', 1, '2025-11-25 13:51:52', '2025-11-25 13:51:52', NULL, '[\"employee\"]'),
-(78, 'Kietaro', 'Shigaraki', 'alexander@gmail.com', '09305909175', 'So. Bugho', 11, '$2y$10$zjo7MxTVF0zic/oD.EXrIeENKna6dgqvWzEBW6I80UJ/B/2ktqkcm', 1, '2025-11-25 19:55:45', '2025-11-25 19:55:45', NULL, '[\"employee\"]');
+(88, 'Alexander', 'Osias', 'alexanderosias123@gmail.com', '09305909175', 'So. Bugho', 7, '$2y$10$v9JwyTsHS333JHPadl/6BuIBbzMzgfHY5aa69vzZ2Tvx5AIKv5ZR6', 1, '2025-11-28 10:13:17', '2025-11-28 10:19:58', 'uploads/avatars/emp_49_1764325198.jpg', '[\"employee\"]');
 
 --
 -- Indexes for dumped tables
@@ -438,6 +458,12 @@ ALTER TABLE `employees`
   ADD KEY `idx_marital_status` (`marital_status`),
   ADD KEY `idx_emergency_contact` (`emergency_contact_phone`),
   ADD KEY `fk_employees_user` (`user_id`);
+
+--
+-- Indexes for table `holidays`
+--
+ALTER TABLE `holidays`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `job_positions`
@@ -502,6 +528,12 @@ ALTER TABLE `snapshots`
   ADD KEY `idx_attendance` (`attendance_log_id`);
 
 --
+-- Indexes for table `special_events`
+--
+ALTER TABLE `special_events`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `tax_deduction_settings`
 --
 ALTER TABLE `tax_deduction_settings`
@@ -548,19 +580,25 @@ ALTER TABLE `departments`
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+
+--
+-- AUTO_INCREMENT for table `holidays`
+--
+ALTER TABLE `holidays`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `job_positions`
 --
 ALTER TABLE `job_positions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `leave_requests`
 --
 ALTER TABLE `leave_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
@@ -578,13 +616,13 @@ ALTER TABLE `payroll`
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT for table `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
 
 --
 -- AUTO_INCREMENT for table `school_settings`
@@ -597,6 +635,12 @@ ALTER TABLE `school_settings`
 --
 ALTER TABLE `snapshots`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+
+--
+-- AUTO_INCREMENT for table `special_events`
+--
+ALTER TABLE `special_events`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tax_deduction_settings`
@@ -614,7 +658,7 @@ ALTER TABLE `time_date_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=89;
 
 --
 -- Constraints for dumped tables

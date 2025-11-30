@@ -7,6 +7,10 @@
     transform: translateY(-5px);
   }
 
+  #confirmation-modal {
+    z-index: 1002;
+  }
+
   #view-leave-modal {
     background-color: rgba(0, 0, 0, 0.6);
     z-index: 1001;
@@ -17,8 +21,10 @@
   }
 
   #view-modal-avatar {
-    width: 100px !important;
-    height: 100px !important;
+    width: 80px !important;
+    height: 80px !important;
+    border-radius: 50%;
+    overflow: hidden;
   }
 
   #view-leave-modal-content {
