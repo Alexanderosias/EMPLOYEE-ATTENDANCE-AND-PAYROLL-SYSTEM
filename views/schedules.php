@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   exit;
 }
 
-require_once 'conn.php';  
+require_once 'conn.php';
 
 define('BASE_PATH', ''); // Change to '' for localhost:8000, or '/newpath' for Hostinger
 
@@ -76,7 +76,7 @@ switch ($action) {
       break;
     }
     try {
-      $query = "SELECT id, employee_id, day_of_week, shift_name, start_time, end_time FROM schedules WHERE employee_id = ? ORDER BY day_of_week, start_time";
+      $query = "SELECT id, employee_id, day_of_week, shift_name, start_time, end_time, is_working, break_minutes FROM schedules WHERE employee_id = ? ORDER BY day_of_week, start_time";
       $stmt = $mysqli->prepare($query);
       $stmt->bind_param('i', $employeeId);
       $stmt->execute();
@@ -112,6 +112,8 @@ switch ($action) {
       $shiftName = trim($_POST['shift_name'] ?? '');
       $startTime = $_POST['start_time'] ?? '';
       $endTime = $_POST['end_time'] ?? '';
+      $isWorking = (int)($_POST['is_working'] ?? 1);
+      $breakMinutes = (int)($_POST['break_minutes'] ?? 0);
 
       if (!$employeeId) {
         throw new Exception('Employee ID is required.');
@@ -147,9 +149,9 @@ switch ($action) {
       $stmt->close();
 
       // Insert the schedule
-      $query = "INSERT INTO schedules (employee_id, day_of_week, shift_name, start_time, end_time) VALUES (?, ?, ?, ?, ?)";
+      $query = "INSERT INTO schedules (employee_id, day_of_week, shift_name, start_time, end_time, is_working, break_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)";
       $stmt = $mysqli->prepare($query);
-      $stmt->bind_param('issss', $employeeId, $dayOfWeek, $shiftName, $startTime, $endTime);
+      $stmt->bind_param('issssii', $employeeId, $dayOfWeek, $shiftName, $startTime, $endTime, $isWorking, $breakMinutes);
       if (!$stmt->execute()) {
         throw new Exception('Insert failed: ' . $stmt->error);
       }
@@ -213,6 +215,8 @@ switch ($action) {
       $shiftName = trim($_POST['shift_name'] ?? '');
       $startTime = trim($_POST['start_time'] ?? '');
       $endTime = trim($_POST['end_time'] ?? '');
+      $isWorking = (int)($_POST['is_working'] ?? 1);
+      $breakMinutes = (int)($_POST['break_minutes'] ?? 0);
 
       if (!$employeeId) {
         throw new Exception('Employee ID is required.');
@@ -247,9 +251,9 @@ switch ($action) {
       }
       $stmt->close();
 
-      $query = "UPDATE schedules SET employee_id = ?, day_of_week = ?, shift_name = ?, start_time = ?, end_time = ? WHERE id = ?";
+      $query = "UPDATE schedules SET employee_id = ?, day_of_week = ?, shift_name = ?, start_time = ?, end_time = ?, is_working = ?, break_minutes = ? WHERE id = ?";
       $stmt = $mysqli->prepare($query);
-      $stmt->bind_param('issssi', $employeeId, $dayOfWeek, $shiftName, $startTime, $endTime, $id);
+      $stmt->bind_param('issssiii', $employeeId, $dayOfWeek, $shiftName, $startTime, $endTime, $isWorking, $breakMinutes, $id);
       $stmt->execute();
       $affected = $stmt->affected_rows;
       $stmt->close();

@@ -1,0 +1,33 @@
+#cards {
+    transform: translateY(0px);
+    transition: transform 0.3s ease;
+  }
+
+  #cards:hover {
+    transform: translateY(-5px);
+  }
+
+  #confirmation-modal {
+    z-index: 1002;
+  }
+
+  #view-leave-modal {
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1001;
+  }
+
+  #name-container {
+    margin-left: 12px;
+  }
+
+  #view-modal-avatar {
+    width: 80px !important;
+    height: 80px !important;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  #view-leave-modal-content {
+    padding: 20px;
+    width: 400px !important;
+  }

@@ -63,15 +63,47 @@ switch ($action) {
 
     case 'list_positions':
         try {
+            // First, check what columns exist in job_positions table
+            $checkColumns = $mysqli->query("DESCRIBE job_positions");
+            $columns = [];
+            if ($checkColumns) {
+                while ($row = $checkColumns->fetch_assoc()) {
+                    $columns[] = $row['Field'];
+                }
+                $checkColumns->free();
+            }
+
+            // Build SELECT based on available columns
+            $selectFields = "jp.id, jp.name";
+            if (in_array('rate_per_day', $columns)) {
+                $selectFields .= ", jp.rate_per_day";
+            } else {
+                $selectFields .= ", 0 as rate_per_day";
+            }
+            if (in_array('rate_per_hour', $columns)) {
+                $selectFields .= ", jp.rate_per_hour";
+            } else {
+                $selectFields .= ", 0 as rate_per_hour";
+            }
+            if (in_array('working_hours_per_day', $columns)) {
+                $selectFields .= ", jp.working_hours_per_day";
+            } else {
+                $selectFields .= ", 8 as working_hours_per_day";
+            }
+
             $query = "
-                SELECT jp.id, jp.name, jp.rate_per_hour, COALESCE(COUNT(e.id), 0) AS employee_count
+                SELECT $selectFields, COALESCE(COUNT(e.id), 0) AS employee_count
                 FROM job_positions jp
                 LEFT JOIN employees e ON jp.id = e.job_position_id
-                GROUP BY jp.id, jp.name, jp.rate_per_hour
+                GROUP BY jp.id
                 ORDER BY jp.name
             ";
+
+            error_log("List Positions Query: " . $query);
+
             $result = $mysqli->query($query);
             if (!$result) {
+                error_log("MySQL Error: " . $mysqli->error);
                 throw new Exception('Query failed: ' . $mysqli->error);
             }
             $positions = $result->fetch_all(MYSQLI_ASSOC);
@@ -135,13 +167,15 @@ switch ($action) {
         }
         try {
             $name = trim($_POST['name'] ?? '');
-            $ratePerHour = floatval($_POST['rate_per_hour'] ?? 0);
+            $ratePerDay = floatval($_POST['rate_per_day'] ?? 0);
+
             if (empty($name)) {
                 throw new Exception('Job position name is required.');
             }
-            if ($ratePerHour < 0) {
-                throw new Exception('Rate per hour must be a non-negative number.');
+            if ($ratePerDay < 0) {
+                throw new Exception('Rate per day must be a non-negative number.');
             }
+
             // Check for duplicates (case-insensitive)
             $checkStmt = $mysqli->prepare("SELECT id FROM job_positions WHERE LOWER(name) = LOWER(?)");
             $checkStmt->bind_param('s', $name);
@@ -150,9 +184,17 @@ switch ($action) {
                 throw new Exception('Job position name already exists.');
             }
             $checkStmt->close();
-            // Insert
-            $stmt = $mysqli->prepare("INSERT INTO job_positions (name, rate_per_hour) VALUES (?, ?)");
-            $stmt->bind_param('sd', $name, $ratePerHour);
+
+            // Get default working_hour_per_day (8 hours if not set)
+            // This will be updated later from settings page
+            $workingHourPerDay = 8; // Default value
+
+            // Compute rate_per_hour = rate_per_day / working_hour_per_day
+            $ratePerHour = $workingHourPerDay > 0 ? $ratePerDay / $workingHourPerDay : 0;
+
+            // Insert with all three fields
+            $stmt = $mysqli->prepare("INSERT INTO job_positions (name, rate_per_day, rate_per_hour, working_hours_per_day) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param('sddd', $name, $ratePerDay, $ratePerHour, $workingHourPerDay);
             if (!$stmt->execute()) {
                 throw new Exception('Insert failed: ' . $stmt->error);
             }

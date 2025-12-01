@@ -64,6 +64,23 @@ require_once '../views/auth.php'; // Check login
                         </a>
                     </li>
                     <li>
+                        <a href="leave_page.php">
+                            <img src="icons/swap.png" alt="Leave" class="icon" />
+                            Leave
+                        </a>
+                    </li>
+                    <?php
+                    $userRoles = $_SESSION['roles'] ?? [];
+                    if (in_array('head_admin', $userRoles)):
+                    ?>
+                        <li>
+                            <a href="holidays_events_page.php">
+                                <img src="icons/holiday.png" alt="Holidays and Events" class="icon" />
+                                Holidays and Events
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                    <li>
                         <a href="qr_codes_and_snapshots.php">
                             <img src="icons/snapshot.png" alt="Qr&Snapshots" class="icon" />
                             QR and Snapshots
@@ -122,10 +139,10 @@ require_once '../views/auth.php'; // Check login
 
             <div class="scrollbar-container">
                 <!-- Info Banners -->
-                <div class="info-banner" id="payroll-date-banner">
+                <!-- <div class="info-banner" id="payroll-date-banner">
                     Next Payroll Date: <span id="next-payroll-date">--</span> &nbsp;&nbsp;|&nbsp;&nbsp; Last Payroll Date:
                     <span id="last-payroll-date">--</span>
-                </div>
+                </div> -->
 
                 <div class="metrics-cards">
                     <div class="card card-blue">

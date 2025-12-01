@@ -66,6 +66,23 @@ require_once '../views/auth.php'; // path relative to the page
             </a>
           </li>
           <li>
+            <a href="leave_page.php">
+              <img src="icons/swap.png" alt="Leave" class="icon" />
+              Leave
+            </a>
+          </li>
+          <?php
+          $userRoles = $_SESSION['roles'] ?? [];
+          if (in_array('head_admin', $userRoles)):
+          ?>
+            <li>
+              <a href="holidays_events_page.php">
+                <img src="icons/holiday.png" alt="Holidays and Events" class="icon" />
+                Holidays and Events
+              </a>
+            </li>
+          <?php endif; ?>
+          <li>
             <a href="qr_codes_and_snapshots.php">
               <img src="icons/snapshot.png" alt="Qr&Snapshots" class="icon" />
               QR and Snapshots
@@ -178,149 +195,174 @@ require_once '../views/auth.php'; // path relative to the page
             </div>
           </div>
         </section>
+      </div>
+    </main>
 
-        <!-- Add User Modal -->
-        <div class="modal-overlay" id="add-user-modal-overlay" role="dialog" aria-modal="true"
-          aria-labelledby="add-user-modal-title">
-          <div class="modal">
-            <h3 id="add-user-modal-title">Add New User</h3>
-            <form id="add-user-form">
-              <!-- Avatar Upload Section -->
-              <div class="avatar-upload-section">
-                <div class="avatar-preview">
-                  <img id="add-avatar-preview" src="img/user.jpg" alt="Avatar Preview" class="avatar-circle" />
-                </div>
-                <button type="button" id="add-upload-avatar-btn" class="upload-avatar-btn">Upload Avatar</button>
-                <input type="file" id="add-avatar-input" name="avatar" accept="image/*" style="display: none;" />
-              </div>
-
-              <label for="email">Email</label>
-              <input type="email" id="email" name="email" required />
-
-              <div style="display: flex; gap: 1rem;">
-                <div style="flex: 1;">
-                  <label for="first-name">First Name</label>
-                  <input type="text" id="first-name" name="firstName" required />
-                </div>
-                <div style="flex: 1;">
-                  <label for="last-name">Last Name</label>
-                  <input type="text" id="last-name" name="lastName" required />
-                </div>
-              </div>
-
-              <label for="phone">Phone Number</label>
-              <input type="text" id="phone" name="phone" />
-
-              <label for="address">Address</label>
-              <textarea id="address" name="address"></textarea>
-
-              <label for="department">Department</label>
-              <select id="department" name="departmentId" required>
-                <!-- Options populated by JS -->
-              </select>
-
-              <div class="role-active-row">
-                <div>
-                  <label for="roles">Roles</label>
-                  <div>
-                    <label><input type="checkbox" name="roles[]" value="employee"> Employee</label>
-                    <label><input type="checkbox" name="roles[]" value="admin"> Admin</label>
-                    <label><input type="checkbox" name="roles[]" value="head_admin"> Head Admin</label>
-                  </div>
-                </div>
-                <div>
-                  <label for="add-is-active-display">Status</label>
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="text" id="add-is-active-display" readonly style="flex: 1;" />
-                    <input type="checkbox" id="add-is-active" name="isActive" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Password Field -->
-              <div class="password-row">
-                <label for="add-password" class="form-label">Password</label>
-                <input id="add-password" type="password" name="password" placeholder=" " required>
-                <!-- Password Toggle Icon -->
-                <button type="button" id="add-password-toggle"
-                  class="eye-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.575 3.01 9.963 7.173a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
-              </div>
-
-              <div class="modal-buttons">
-                <button type="button" class="cancel-btn" id="add-user-cancel-btn">Cancel</button>
-                <button type="submit" class="save-btn">Add User</button>
-              </div>
-            </form>
+    <!-- Add User Modal -->
+    <div class="modal-overlay" id="add-user-modal-overlay" role="dialog" aria-modal="true"
+      aria-labelledby="add-user-modal-title">
+      <div class="modal">
+        <h3 id="add-user-modal-title">Add New User</h3>
+        <form id="add-user-form">
+          <!-- Avatar Upload Section -->
+          <div class="avatar-upload-section">
+            <div class="avatar-preview">
+              <img id="add-avatar-preview" src="img/user.jpg" alt="Avatar Preview" class="avatar-circle" />
+            </div>
+            <button type="button" id="add-upload-avatar-btn" class="upload-avatar-btn">Upload Avatar</button>
+            <input type="file" id="add-avatar-input" name="avatar" accept="image/*" style="display: none;" />
           </div>
-        </div>
 
-        <!-- Edit User Modal -->
-        <div class="modal-overlay" id="edit-user-modal-overlay">
-          <div class="modal">
-            <h3 id="edit-user-modal-title">Edit User</h3>
-            <form id="edit-user-form">
-              <!-- Avatar Upload Section -->
-              <div class="avatar-upload-section">
-                <div class="avatar-preview">
-                  <img id="edit-avatar-preview" src="img/user.jpg" alt="Avatar Preview" class="avatar-circle" />
-                </div>
-                <button type="button" id="edit-upload-avatar-btn" class="upload-avatar-btn">Upload Avatar</button>
-                <input type="file" id="edit-avatar-input" name="avatar" accept="image/*" style="display: none;" />
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required />
+
+          <div style="display: flex; gap: 1rem;">
+            <div style="flex: 1;">
+              <label for="first-name">First Name</label>
+              <input type="text" id="first-name" name="firstName" required />
+            </div>
+            <div style="flex: 1;">
+              <label for="last-name">Last Name</label>
+              <input type="text" id="last-name" name="lastName" required />
+            </div>
+          </div>
+
+          <label for="phone">Phone Number</label>
+          <input type="text" id="phone" name="phone" />
+
+          <label for="address">Address</label>
+          <textarea id="address" name="address"></textarea>
+
+          <label for="department">Department</label>
+          <select id="department" name="departmentId" required>
+            <!-- Options populated by JS -->
+          </select>
+
+          <div class="role-active-row">
+            <div>
+              <label for="roles">Roles</label>
+              <div>
+                <label><input type="checkbox" name="roles[]" value="employee"> Employee</label>
+                <label><input type="checkbox" name="roles[]" value="admin"> Admin</label>
+                <label><input type="checkbox" name="roles[]" value="head_admin"> Head Admin</label>
               </div>
-              <div class="name-fields">
-                <div>
-                  <label for="edit-first-name">First Name</label>
-                  <input type="text" id="edit-first-name" name="firstName" required />
-                </div>
-                <div>
-                  <label for="edit-last-name">Last Name</label>
-                  <input type="text" id="edit-last-name" name="lastName" required />
-                </div>
+            </div>
+            <div>
+              <label for="add-is-active-display">Status</label>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="text" id="add-is-active-display" readonly style="flex: 1;" />
+                <input type="checkbox" id="add-is-active" name="isActive" />
               </div>
-              <label for="edit-email">Email</label>
-              <input type="email" id="edit-email" name="email" required />
-              <label for="edit-phone">Phone Number</label>
-              <input type="text" id="edit-phone" name="phone" />
-              <label for="edit-address">Address</label>
-              <textarea id="edit-address" name="address"></textarea>
-              <label for="edit-department">Department</label>
-              <select id="edit-department" name="departmentId" required>
-                <!-- Options populated by JS -->
-              </select>
-              <div class="role-active-row">
-                <div>
-                  <label for="edit-roles">Roles</label>
-                  <div>
-                    <label><input type="checkbox" name="edit-roles[]" value="employee"> Employee</label>
-                    <label><input type="checkbox" name="edit-roles[]" value="admin"> Admin</label>
-                    <label><input type="checkbox" name="edit-roles[]" value="head_admin"> Head Admin</label>
-                  </div>
-                </div>
-                <div>
-                  <label for="edit-is-active-display">Status</label>
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="text" id="edit-is-active-display" readonly style="flex: 1;" />
-                    <input type="checkbox" id="edit-is-active" name="isActive" />
-                  </div>
-                </div>
+            </div>
+          </div>
+
+          <!-- Password Field -->
+          <div class="password-row">
+            <label for="add-password" class="form-label">Password</label>
+            <input id="add-password" type="password" name="password" placeholder=" " required>
+            <!-- Password Toggle Icon -->
+            <button type="button" id="add-password-toggle"
+              class="eye-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.575 3.01 9.963 7.173a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.575-3.01-9.963-7.173z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="modal-buttons">
+            <button type="button" class="cancel-btn" id="add-user-cancel-btn">Cancel</button>
+            <button type="submit" class="save-btn">Add User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal-overlay" id="edit-user-modal-overlay">
+      <div class="modal">
+        <h3 id="edit-user-modal-title">Edit User</h3>
+        <form id="edit-user-form">
+          <!-- Avatar Upload Section -->
+          <div class="avatar-upload-section">
+            <div class="avatar-preview">
+              <img id="edit-avatar-preview" src="img/user.jpg" alt="Avatar Preview" class="avatar-circle" />
+            </div>
+            <button type="button" id="edit-upload-avatar-btn" class="upload-avatar-btn">Upload Avatar</button>
+            <input type="file" id="edit-avatar-input" name="avatar" accept="image/*" style="display: none;" />
+          </div>
+          <div class="name-fields">
+            <div>
+              <label for="edit-first-name">First Name</label>
+              <input type="text" id="edit-first-name" name="firstName" required />
+            </div>
+            <div>
+              <label for="edit-last-name">Last Name</label>
+              <input type="text" id="edit-last-name" name="lastName" required />
+            </div>
+          </div>
+          <label for="edit-email">Email</label>
+          <input type="email" id="edit-email" name="email" required />
+          <label for="edit-phone">Phone Number</label>
+          <input type="text" id="edit-phone" name="phone" />
+          <label for="edit-address">Address</label>
+          <textarea id="edit-address" name="address"></textarea>
+          <label for="edit-department">Department</label>
+          <select id="edit-department" name="departmentId" required>
+            <!-- Options populated by JS -->
+          </select>
+          <div class="role-active-row">
+            <div>
+              <label for="edit-roles">Roles</label>
+              <div>
+                <label><input type="checkbox" name="edit-roles[]" value="employee"> Employee</label>
+                <label><input type="checkbox" name="edit-roles[]" value="admin"> Admin</label>
+                <label><input type="checkbox" name="edit-roles[]" value="head_admin"> Head Admin</label>
               </div>
-              <div class="modal-buttons">
-                <button type="button" class="cancel-btn" id="edit-user-cancel-btn">Cancel</button>
-                <button type="submit" class="save-btn">Update</button>
+            </div>
+            <div>
+              <label for="edit-is-active-display">Status</label>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="text" id="edit-is-active-display" readonly style="flex: 1;" />
+                <input type="checkbox" id="edit-is-active" name="isActive" />
               </div>
-            </form>
+            </div>
+          </div>
+          <div class="modal-buttons">
+            <button type="button" class="cancel-btn" id="edit-user-cancel-btn">Cancel</button>
+            <button type="submit" class="save-btn">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div style="background-color: rgba(0, 0, 0, 0.5);" id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-40 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center" role="dialog" aria-labelledby="confirmation-title" aria-modal="true" aria-hidden="true">
+      <div style="padding: 20px;" class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="confirmation-title">Confirm Action</h3>
+            <button id="confirmation-close-x" class="text-gray-400 hover:text-gray-500 focus:outline-none" aria-label="Close modal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="mt-2">
+            <p class="text-sm text-gray-600" id="confirmation-message">Are you sure you want to proceed?</p>
+          </div>
+          <div style="display: flex; gap: 10px;" class="mt-6 flex justify-end gap-3">
+            <button id="confirmation-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none">
+              Cancel
+            </button>
+            <button id="confirmation-confirm-btn" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+              Confirm
+            </button>
           </div>
         </div>
       </div>
+    </div>
 
-    </main>
   </div>
 
   <script src="../js/dashboard.js"></script>

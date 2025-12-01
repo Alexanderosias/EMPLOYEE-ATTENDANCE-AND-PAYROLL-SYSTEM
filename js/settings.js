@@ -423,33 +423,127 @@ async function createBackup() {
 }
 
 async function restoreBackup() {
-  if (
-    confirm(
-      "Are you sure you want to restore from backup? This may overwrite current data."
-    )
-  ) {
-    try {
-      const response = await fetch(
-        "../views/settings_handler.php?action=restore_backup",
-        { method: "POST" }
-      );
-      const result = await response.json();
-      showStatus(result.message, result.success ? "success" : "error");
-    } catch (error) {
-      showStatus("Error restoring backup.", "error");
-    }
+  const confirmed = await showConfirmation(
+    "Are you sure you want to restore from backup? This may overwrite current data.",
+    "Restore Backup",
+    "red"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(
+      "../views/settings_handler.php?action=restore_backup",
+      { method: "POST" }
+    );
+    const result = await response.json();
+    showStatus(result.message, result.success ? "success" : "error");
+  } catch (error) {
+    showStatus("Error restoring backup.", "error");
   }
 }
 
 function showStatus(message, type) {
   const statusDiv = document.getElementById("status-message");
+  if (!statusDiv) return;
+
   statusDiv.textContent = message;
   statusDiv.className = `status-message ${type}`;
-  statusDiv.style.display = "block";
+  statusDiv.classList.add("show");
+
   setTimeout(() => {
-    statusDiv.style.display = "none";
-    statusDiv.className = "status-message";
-  }, 5000);
+    statusDiv.classList.remove("show");
+  }, 3000);
+}
+
+// Flexible confirmation modal function
+function showConfirmation(
+  message,
+  confirmText = "Confirm",
+  confirmColor = "blue"
+) {
+  return new Promise((resolve) => {
+    const confirmationModal = document.getElementById("confirmation-modal");
+    const confirmationMessage = document.getElementById("confirmation-message");
+    const confirmationConfirmBtn = document.getElementById(
+      "confirmation-confirm-btn"
+    );
+    const confirmationCancelBtn = document.getElementById(
+      "confirmation-cancel-btn"
+    );
+    const confirmationCloseX = document.getElementById("confirmation-close-x");
+
+    if (!confirmationModal) {
+      console.error("Confirmation modal not found");
+      resolve(false);
+      return;
+    }
+
+    // Set message
+    confirmationMessage.textContent = message;
+
+    // Set button text and color
+    confirmationConfirmBtn.textContent = confirmText;
+
+    // Reset classes and add new ones based on color
+    confirmationConfirmBtn.className = `px-4 py-2 text-white text-base font-medium rounded-md shadow-sm focus:outline-none focus:ring-2`;
+
+    if (confirmColor === "red") {
+      confirmationConfirmBtn.classList.add(
+        "bg-red-600",
+        "hover:bg-red-700",
+        "focus:ring-red-500"
+      );
+    } else {
+      confirmationConfirmBtn.classList.add(
+        "bg-blue-600",
+        "hover:bg-blue-700",
+        "focus:ring-blue-500"
+      );
+    }
+
+    // Show modal
+    confirmationModal.classList.remove("hidden");
+    confirmationModal.setAttribute("aria-hidden", "false");
+
+    // Handle confirm
+    const handleConfirm = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    // Handle cancel
+    const handleCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    // Cleanup function
+    const cleanup = () => {
+      confirmationModal.classList.add("hidden");
+      confirmationModal.setAttribute("aria-hidden", "true");
+      confirmationConfirmBtn.removeEventListener("click", handleConfirm);
+      confirmationCancelBtn.removeEventListener("click", handleCancel);
+      confirmationCloseX.removeEventListener("click", handleCancel);
+      document.removeEventListener("keydown", handleEscape);
+    };
+
+    // Attach event listeners
+    confirmationConfirmBtn.addEventListener("click", handleConfirm);
+    confirmationCancelBtn.addEventListener("click", handleCancel);
+    confirmationCloseX.addEventListener("click", handleCancel);
+
+    // Close on Escape
+    const handleEscape = (e) => {
+      if (
+        e.key === "Escape" &&
+        !confirmationModal.classList.contains("hidden")
+      ) {
+        handleCancel();
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+  });
 }
 
 // Load settings on DOM ready

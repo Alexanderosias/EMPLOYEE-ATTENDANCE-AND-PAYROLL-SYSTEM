@@ -22,6 +22,7 @@ let currentPage = 1;
 let totalPages = 1;
 // RENDER USERS TABLE
 function renderUsersTable(users, limit) {
+  console.log("Rendering users:", users); // Debug log
   const tbody = document.getElementById("usersTableBody");
   tbody.innerHTML = "";
   totalPages = Math.ceil(users.length / limit);
@@ -37,10 +38,28 @@ function renderUsersTable(users, limit) {
   }
 
   paginatedUsers.forEach((user) => {
+    console.log("User roles_json:", user.roles_json); // Debug log
     const isActive = Number(user.is_active) === 1;
     const avatarSrc = user.avatar_path
       ? "/" + user.avatar_path
       : "img/user.jpg";
+
+    // Parse and format roles
+    let roles = [];
+    try {
+      roles = JSON.parse(user.roles_json || "[]");
+    } catch (e) {
+      console.error("Error parsing roles_json:", e);
+      roles = [];
+    }
+    const roleMap = {
+      employee: "Employee",
+      admin: "Administrator",
+      head_admin: "Head Administrator",
+    };
+    const roleDisplay =
+      roles.length > 0 ? roles.map((r) => roleMap[r] || r).join(" & ") : "N/A";
+
     const row = document.createElement("tr");
     row.className = "hover:bg-gray-50";
     row.innerHTML = `
@@ -59,9 +78,7 @@ function renderUsersTable(users, limit) {
       <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${
         user.department_name || "N/A"
       }</td>
-      <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${
-        user.role
-      }</td>
+      <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${roleDisplay}</td>
       <td class="px-6 py-3 whitespace-nowrap text-sm font-semibold ${
         isActive ? "text-green-600" : "text-red-600"
       }">
@@ -291,6 +308,40 @@ async function editUser(id) {
       // Enable avatar input
       const avatarInput = document.getElementById("edit-avatar-input");
       if (avatarInput) avatarInput.disabled = false;
+
+      // NEW: For non-linked users, disable Employee role checkbox
+      const empRoleCb = document.querySelector(
+        'input[name="edit-roles[]"][value="employee"]'
+      );
+      if (empRoleCb) {
+        empRoleCb.disabled = true;
+        empRoleCb.checked = false; // Ensure it's unchecked
+      }
+
+      // NEW: Enforce that at least one of Admin or Head Admin is selected
+      const adminCb = document.querySelector(
+        'input[name="edit-roles[]"][value="admin"]'
+      );
+      const headAdminCb = document.querySelector(
+        'input[name="edit-roles[]"][value="head_admin"]'
+      );
+
+      const enforceAtLeastOneAdmin = () => {
+        const adminChecked = adminCb.checked;
+        const headAdminChecked = headAdminCb.checked;
+        if (!adminChecked && !headAdminChecked) {
+          // If both are unchecked, check Admin by default
+          adminCb.checked = true;
+        }
+      };
+
+      // Add event listeners to prevent both from being unchecked
+      if (adminCb) {
+        adminCb.addEventListener("change", enforceAtLeastOneAdmin);
+      }
+      if (headAdminCb) {
+        headAdminCb.addEventListener("change", enforceAtLeastOneAdmin);
+      }
     }
 
     editUserForm.dataset.userId = id;
@@ -303,20 +354,22 @@ async function editUser(id) {
 
 // DELETE USER
 async function deleteUser(id) {
-  if (
-    !confirm(
-      "Are you sure you want to delete this user? This action cannot be undone."
-    )
-  )
-    return;
+  const confirmed = await showConfirmation(
+    "Are you sure you want to delete this user? This action cannot be undone.",
+    "Delete User",
+    "red"
+  );
+
+  if (!confirmed) return;
 
   if (id == currentUserId) {
-    if (
-      !confirm(
-        "You are attempting to delete your own account. Are you certain you want to continue?"
-      )
-    )
-      return;
+    const selfDeleteConfirmed = await showConfirmation(
+      "You are attempting to delete your own account. Are you certain you want to continue?",
+      "Delete Account",
+      "red"
+    );
+
+    if (!selfDeleteConfirmed) return;
   }
 
   try {
@@ -567,13 +620,105 @@ editUserForm.onsubmit = async (e) => {
 // SHOW STATUS MESSAGE
 function showStatus(message, type) {
   const statusDiv = document.getElementById("status-message");
+  if (!statusDiv) return;
+
   statusDiv.textContent = message;
   statusDiv.className = `status-message ${type}`;
-  statusDiv.style.display = "block";
+  statusDiv.classList.add("show");
+
   setTimeout(() => {
-    statusDiv.style.display = "none";
-    statusDiv.className = "status-message";
-  }, 5000);
+    statusDiv.classList.remove("show");
+  }, 3000);
+}
+
+// Flexible confirmation modal function
+function showConfirmation(
+  message,
+  confirmText = "Confirm",
+  confirmColor = "blue"
+) {
+  return new Promise((resolve) => {
+    const confirmationModal = document.getElementById("confirmation-modal");
+    const confirmationMessage = document.getElementById("confirmation-message");
+    const confirmationConfirmBtn = document.getElementById(
+      "confirmation-confirm-btn"
+    );
+    const confirmationCancelBtn = document.getElementById(
+      "confirmation-cancel-btn"
+    );
+    const confirmationCloseX = document.getElementById("confirmation-close-x");
+
+    if (!confirmationModal) {
+      console.error("Confirmation modal not found");
+      resolve(false);
+      return;
+    }
+
+    // Set message
+    confirmationMessage.textContent = message;
+
+    // Set button text and color
+    confirmationConfirmBtn.textContent = confirmText;
+
+    // Reset classes and add new ones based on color
+    confirmationConfirmBtn.className = `px-4 py-2 text-white text-base font-medium rounded-md shadow-sm focus:outline-none focus:ring-2`;
+
+    if (confirmColor === "red") {
+      confirmationConfirmBtn.classList.add(
+        "bg-red-600",
+        "hover:bg-red-700",
+        "focus:ring-red-500"
+      );
+    } else {
+      confirmationConfirmBtn.classList.add(
+        "bg-blue-600",
+        "hover:bg-blue-700",
+        "focus:ring-blue-500"
+      );
+    }
+
+    // Show modal
+    confirmationModal.classList.remove("hidden");
+    confirmationModal.setAttribute("aria-hidden", "false");
+
+    // Handle confirm
+    const handleConfirm = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    // Handle cancel
+    const handleCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    // Cleanup function
+    const cleanup = () => {
+      confirmationModal.classList.add("hidden");
+      confirmationModal.setAttribute("aria-hidden", "true");
+      confirmationConfirmBtn.removeEventListener("click", handleConfirm);
+      confirmationCancelBtn.removeEventListener("click", handleCancel);
+      confirmationCloseX.removeEventListener("click", handleCancel);
+      document.removeEventListener("keydown", handleEscape);
+    };
+
+    // Attach event listeners
+    confirmationConfirmBtn.addEventListener("click", handleConfirm);
+    confirmationCancelBtn.addEventListener("click", handleCancel);
+    confirmationCloseX.addEventListener("click", handleCancel);
+
+    // Close on Escape
+    const handleEscape = (e) => {
+      if (
+        e.key === "Escape" &&
+        !confirmationModal.classList.contains("hidden")
+      ) {
+        handleCancel();
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+  });
 }
 
 // INIT

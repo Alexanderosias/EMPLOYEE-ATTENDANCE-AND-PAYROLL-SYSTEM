@@ -64,6 +64,23 @@ require_once '../views/auth.php'; // path relative to the page
             </a>
           </li>
           <li>
+            <a href="leave_page.php">
+              <img src="icons/swap.png" alt="Leave" class="icon" />
+              Leave
+            </a>
+          </li>
+          <?php
+          $userRoles = $_SESSION['roles'] ?? [];
+          if (in_array('head_admin', $userRoles)):
+          ?>
+            <li>
+              <a href="holidays_events_page.php">
+                <img src="icons/holiday.png" alt="Holidays and Events" class="icon" />
+                Holidays and Events
+              </a>
+            </li>
+          <?php endif; ?>
+          <li>
             <a href="qr_codes_and_snapshots.php">
               <img src="icons/snapshot.png" alt="Qr&Snapshots" class="icon" />
               QR and Snapshots
