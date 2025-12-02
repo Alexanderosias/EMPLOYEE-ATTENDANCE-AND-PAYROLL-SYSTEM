@@ -1,7 +1,6 @@
 <?php
 require_once '../views/auth.php'; // path relative to the page
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -12,6 +11,7 @@ require_once '../views/auth.php'; // path relative to the page
   <link rel="icon" href="img/adfc_logo.png" type="image/x-icon">
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/attendance_logs.css" />
+  <link rel="stylesheet" href="css/qr_and_snapshots.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <link rel="stylesheet" href="src/styles.css" />
 </head>
@@ -157,12 +157,12 @@ require_once '../views/auth.php'; // path relative to the page
 
             <div class="flex space-x-2 items-center">
               <!-- Import Attendance Control -->
-              <div class="import-attendance-container" title="Import Attendance Excel File">
+              <div class="import-attendance-container" title="Import Attendance Package (.zip)">
                 <label for="import-attendance-file">
                   <img src="icons/import.png" alt="Import Icon" />
-                  Import Attendance
+                  Import Attendance (.zip)
                 </label>
-                <input type="file" id="import-attendance-file" accept=".xls,.xlsx" />
+                <input type="file" id="import-attendance-file" accept=".zip" />
               </div>
             </div>
           </div>
@@ -183,6 +183,9 @@ require_once '../views/auth.php'; // path relative to the page
                     Time Out</th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Snapshot
+                  </th>
                   <th scope="col"
                     class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider actions-header">
                     Actions
@@ -223,6 +226,21 @@ require_once '../views/auth.php'; // path relative to the page
         </div>
       </form>
     </div>
+  </div>
+
+  <div style="z-index: 1550;" id="snapshot-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto p-6 relative">
+      <button id="modal-close-btn"
+        class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold">&times;</button>
+      <h3 id="modal-employee-name" class="text-xl font-semibold mb-4"></h3>
+      <div id="modal-snapshots-container">
+      </div>
+    </div>
+  </div>
+
+  <div style="z-index: 1550;" id="fullscreen-overlay"
+    class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-60 cursor-zoom-out">
+    <img src="" alt="Fullscreen Snapshot" />
   </div>
 
   <script src="../js/dashboard.js"></script>

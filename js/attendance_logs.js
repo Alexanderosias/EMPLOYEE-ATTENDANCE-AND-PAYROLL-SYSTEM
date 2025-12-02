@@ -20,6 +20,12 @@ const editTimeIn = document.getElementById("edit-time-in");
 const editTimeOut = document.getElementById("edit-time-out");
 const editStatus = document.getElementById("edit-status");
 const editCancelBtn = document.getElementById("edit-cancel-btn");
+const snapshotModal = document.getElementById("snapshot-modal");
+const snapshotModalCloseBtn = document.getElementById("modal-close-btn");
+const snapshotModalEmployeeName = document.getElementById("modal-employee-name");
+const snapshotModalContainer = document.getElementById("modal-snapshots-container");
+const fullscreenOverlay = document.getElementById("fullscreen-overlay");
+const fullscreenImage = fullscreenOverlay ? fullscreenOverlay.querySelector("img") : null;
 
 let currentEditIndex = null;
 
@@ -47,7 +53,7 @@ async function fetchAttendanceData() {
   } catch (error) {
     console.error("Error fetching attendance data:", error);
     tableBody.innerHTML =
-      '<tr><td colspan="7" class="text-center py-4 text-red-500">Error loading data</td></tr>';
+      '<tr><td colspan="8" class="text-center py-4 text-red-500">Error loading data</td></tr>';
   }
 }
 
@@ -66,7 +72,7 @@ function renderTablePage(page) {
 
   if (pageData.length === 0) {
     tableBody.innerHTML =
-      '<tr><td colspan="7" class="text-center py-4 text-gray-500">No records found</td></tr>';
+      '<tr><td colspan="8" class="text-center py-4 text-gray-500">No records found</td></tr>';
     pageInfo.textContent = `Page 0`;
     updatePaginationButtons();
     return;
@@ -108,6 +114,13 @@ function renderTablePage(page) {
               ? "text-yellow-600"
               : "text-green-600"
           }">${log.status}</td>
+          <td class="px-6 py-3 whitespace-nowrap text-center text-sm">
+            ${
+              log.hasSnapshot
+                ? `<i class="fas fa-eye text-blue-600 cursor-pointer snapshot-icon" data-index="${start + index}"></i>`
+                : "N/A"
+            }
+          </td>
           <td class="px-6 py-3 whitespace-nowrap text-center text-sm actions-cell">
             <div class="flex justify-center items-center h-full space-x-2" style="transform: translateY(18px);">
               <img src="icons/update.png" alt="Edit" class="edit-icon" title="Edit Attendance" data-index="${
@@ -133,6 +146,14 @@ function renderTablePage(page) {
   // Attach event listeners for delete icon
   document.querySelectorAll(".delete-icon").forEach((icon) => {
     icon.addEventListener("click", onDeleteClick);
+  });
+  document.querySelectorAll(".snapshot-icon").forEach((icon) => {
+    icon.addEventListener("click", (event) => {
+      const index = parseInt(event.currentTarget.getAttribute("data-index"), 10);
+      if (!Number.isNaN(index)) {
+        openSnapshotModal(index);
+      }
+    });
   });
 }
 
@@ -179,13 +200,58 @@ rowsPerPageSelect.addEventListener("change", (e) => {
   renderTablePage(currentPage);
 });
 
-importFileInput.addEventListener("change", (event) => {
+importFileInput.addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
-  alert(
-    `Selected file: ${file.name}\n\nImplement Excel parsing and data import here.`
-  );
-  importFileInput.value = "";
+
+  const name = file.name.toLowerCase();
+  if (!name.endsWith(".zip")) {
+    if (typeof showMessage === "function") {
+      showMessage("Please select a .zip package exported from the scanner.", "error");
+    } else {
+      alert("Please select a .zip package exported from the scanner.");
+    }
+    event.target.value = "";
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("action", "import_attendance");
+  formData.append("file", file);
+
+  try {
+    const response = await fetch("../views/attendance_logs_handler.php", {
+      method: "POST",
+      body: formData,
+    });
+    const result = await response.json();
+    if (result.success) {
+      if (typeof showMessage === "function") {
+        showMessage(
+          `Import completed. Imported ${result.imported || 0} logs.`,
+          "success"
+        );
+      } else {
+        alert(`Import completed. Imported ${result.imported || 0} logs.`);
+      }
+      await fetchAttendanceData();
+    } else {
+      const msg = result.message || "Import failed.";
+      if (typeof showMessage === "function") {
+        showMessage(msg, "error");
+      } else {
+        alert(msg);
+      }
+    }
+  } catch (e) {
+    if (typeof showMessage === "function") {
+      showMessage("Import failed: " + e.message, "error");
+    } else {
+      alert("Import failed: " + e.message);
+    }
+  } finally {
+    event.target.value = "";
+  }
 });
 
 function onEditClick(event) {
@@ -362,6 +428,88 @@ editForm.addEventListener("submit", async (e) => {
     showMessage("An error occurred while updating.", "error");
   }
 });
+
+if (snapshotModal && snapshotModalCloseBtn) {
+  snapshotModalCloseBtn.addEventListener("click", () => {
+    snapshotModal.classList.remove("flex");
+    snapshotModal.classList.add("hidden");
+  });
+  snapshotModal.addEventListener("click", (e) => {
+    if (e.target === snapshotModal) {
+      snapshotModal.classList.remove("flex");
+      snapshotModal.classList.add("hidden");
+    }
+  });
+}
+
+if (fullscreenOverlay && fullscreenImage) {
+  fullscreenOverlay.addEventListener("click", () => {
+    fullscreenOverlay.style.display = "none";
+    fullscreenImage.src = "";
+  });
+}
+
+function openSnapshotModal(index) {
+  const record = filteredData[index];
+  if (!record || !snapshotModal || !snapshotModalContainer || !snapshotModalEmployeeName) {
+    return;
+  }
+
+  snapshotModalEmployeeName.textContent = record.name || "";
+  snapshotModalContainer.innerHTML = "";
+
+  let snapshots = Array.isArray(record.snapshots) ? record.snapshots.slice() : [];
+  if ((!snapshots || snapshots.length === 0) && record.snapshot_path) {
+    snapshots = [{ image_path: record.snapshot_path, captured_at: null }];
+  }
+
+  if (!snapshots || snapshots.length === 0) {
+    snapshotModalContainer.innerHTML = "<p>No snapshots available.</p>";
+  } else {
+    snapshots
+      .filter((s) => s && s.image_path)
+      .sort((a, b) => {
+        const aTime = a.captured_at ? new Date(a.captured_at).getTime() : 0;
+        const bTime = b.captured_at ? new Date(b.captured_at).getTime() : 0;
+        return bTime - aTime;
+      })
+      .forEach((snap) => {
+        const snapCard = document.createElement("div");
+        snapCard.className = "modal-snapshot-card";
+
+        const snapImg = document.createElement("img");
+        snapImg.src = `../${snap.image_path}`;
+        snapImg.alt = "Snapshot";
+        snapImg.className = "modal-snapshot-img";
+        snapImg.style.width = "150px";
+        snapImg.style.height = "150px";
+        snapImg.style.objectFit = "cover";
+        snapImg.onerror = () => {
+          snapCard.innerHTML = "<p>Snapshot not found</p>";
+        };
+        snapCard.appendChild(snapImg);
+
+        const snapInfo = document.createElement("div");
+        snapInfo.className = "modal-snapshot-info";
+        snapInfo.innerHTML = snap.captured_at
+          ? `Captured: ${new Date(snap.captured_at).toLocaleString()}`
+          : "Captured: N/A";
+        snapCard.appendChild(snapInfo);
+
+        snapCard.addEventListener("click", () => {
+          if (fullscreenOverlay && fullscreenImage) {
+            fullscreenImage.src = `../${snap.image_path}`;
+            fullscreenOverlay.style.display = "flex";
+          }
+        });
+
+        snapshotModalContainer.appendChild(snapCard);
+      });
+  }
+
+  snapshotModal.classList.remove("hidden");
+  snapshotModal.classList.add("flex");
+}
 
 // Initial fetch
 fetchAttendanceData();

@@ -149,25 +149,23 @@ require_once '../views/auth.php'; // path relative to the page
         <section id="employees-container">
           <!-- Employee cards will be injected here -->
         </section>
-
-        <div id="snapshot-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-          <div class="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto p-6 relative">
-            <button id="modal-close-btn"
-              class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold">&times;</button>
-            <h3 id="modal-employee-name" class="text-xl font-semibold mb-4"></h3>
-            <div id="modal-snapshots-container">
-              <!-- Snapshot cards inserted here -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Fullscreen image overlay -->
-        <div id="fullscreen-overlay"
-          class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-60 cursor-zoom-out">
-          <img src="" alt="Fullscreen Snapshot" />
-        </div>
       </div>
     </main>
+  </div>
+
+  <div id="snapshot-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto p-6 relative">
+      <button id="modal-close-btn" class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold">&times;</button>
+        <h3 id="modal-employee-name" class="text-xl font-semibold mb-4"></h3>
+        <div id="modal-snapshots-container">
+          <!-- Snapshot cards inserted here -->
+        </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen image overlay -->
+  <div id="fullscreen-overlay" class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-60 cursor-zoom-out">
+    <img src="" alt="Fullscreen Snapshot" />
   </div>
 
   <script src="../js/dashboard.js"></script>

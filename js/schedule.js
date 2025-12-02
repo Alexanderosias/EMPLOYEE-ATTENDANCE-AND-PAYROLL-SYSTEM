@@ -495,3 +495,510 @@ searchBtn.addEventListener("click", () => {
   renderEmployeeOptions();
   searchInput.focus();
 });
+
+// ============================================
+// EXCEL IMPORT/EXPORT FUNCTIONALITY
+// ============================================
+
+// Download Excel Template
+document
+  .getElementById("download-template-btn")
+  ?.addEventListener("click", (e) => {
+    e.preventDefault();
+    downloadExcelTemplate();
+  });
+
+function downloadExcelTemplate() {
+  const template = [
+    [
+      "First Name",
+      "Last Name",
+      "Day of Week",
+      "Shift Name",
+      "Start Time",
+      "End Time",
+      "Is Working",
+      "Break Minutes",
+    ],
+    ["Juan", "Cruz", "Monday", "Morning Shift", "08:00", "17:00", "1", "0"],
+    ["Juan", "Cruz", "Monday", "Afternoon Shift", "13:00", "21:00", "1", "0"],
+    ["Juan", "Cruz", "Monday", "Break", "11:00", "12:00", "0", "60"],
+    ["", "", "", "", "", "", "", ""],
+    ["INSTRUCTIONS:", "", "", "", "", "", "", ""],
+    [
+      "- First Name: Employee first name (must match exactly)",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "- Last Name: Employee last name (must match exactly)",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "- Day of Week: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "- Start/End Time: Format as HH:MM (e.g., 08:00, 17:30)",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "- Is Working: 1 = Working shift, 0 = Break shift",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "- Break Minutes: Total break duration in minutes",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(template);
+
+  // Set column widths
+  ws["!cols"] = [
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 15 },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Schedule Template");
+  XLSX.writeFile(wb, "schedule_import_template.xlsx");
+
+  showStatus("Template downloaded successfully", "success");
+}
+
+// Import Excel File Handler
+document.getElementById("import-excel-btn")?.addEventListener("click", () => {
+  document.getElementById("import-excel-input").click();
+});
+
+document
+  .getElementById("import-excel-input")
+  ?.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.match(/\.(xlsx|xls)$/)) {
+      showStatus("Please select a valid Excel file (.xlsx or .xls)", "error");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      showStatus("Reading Excel file...", "success");
+      const data = await readExcelFile(file);
+      await processImportData(data);
+      e.target.value = ""; // Reset input
+    } catch (error) {
+      showStatus(error.message, "error");
+      e.target.value = "";
+    }
+  });
+
+// Read Excel File
+async function readExcelFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const workbook = XLSX.read(e.target.result, { type: "binary" });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(firstSheet, {
+          header: 1,
+          defval: "",
+        });
+        resolve(data);
+      } catch (error) {
+        reject(new Error("Failed to read Excel file: " + error.message));
+      }
+    };
+
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsBinaryString(file);
+  });
+}
+
+// Process and Validate Import Data
+async function processImportData(data) {
+  if (data.length < 2) {
+    throw new Error("Excel file is empty or has no data rows");
+  }
+
+  const headers = data[0].map((h) => h.toString().trim());
+  const rows = data.slice(1);
+
+  // Validate required headers
+  const requiredHeaders = [
+    "First Name",
+    "Last Name",
+    "Day of Week",
+    "Shift Name",
+    "Start Time",
+    "End Time",
+  ];
+  const missingHeaders = requiredHeaders.filter((h) => !headers.includes(h));
+
+  if (missingHeaders.length > 0) {
+    throw new Error(`Missing required columns: ${missingHeaders.join(", ")}`);
+  }
+
+  // Get column indices
+  const colMap = {};
+  headers.forEach((header, index) => {
+    colMap[header] = index;
+  });
+
+  // Fetch all employees to validate names
+  showStatus("Validating employee names...", "success");
+  let employeeList = [];
+  try {
+    const response = await fetch(`${API_BASE}?action=list_employees`);
+    const result = await response.json();
+    if (result.success) {
+      employeeList = result.data;
+    } else {
+      throw new Error("Failed to fetch employee list");
+    }
+  } catch (error) {
+    throw new Error("Cannot validate employees: " + error.message);
+  }
+
+  const schedules = [];
+  const errors = [];
+  const notFoundEmployees = new Set();
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2; // Excel row number (1-indexed + header)
+
+    // Skip empty rows
+    if (!row || row.every((cell) => !cell && cell !== 0)) continue;
+
+    // Skip instruction rows
+    if (row[0] && row[0].toString().toUpperCase().includes("INSTRUCTION"))
+      break;
+
+    try {
+      const firstName = row[colMap["First Name"]]?.toString().trim();
+      const lastName = row[colMap["Last Name"]]?.toString().trim();
+      const dayOfWeek = validateDayOfWeek(row[colMap["Day of Week"]]);
+      const shiftName = row[colMap["Shift Name"]]?.toString().trim();
+      const startTime = validateTime(row[colMap["Start Time"]]);
+      const endTime = validateTime(row[colMap["End Time"]]);
+      const isWorking =
+        row[colMap["Is Working"]] !== undefined &&
+        row[colMap["Is Working"]] !== ""
+          ? parseInt(row[colMap["Is Working"]])
+          : 1;
+      const breakMinutes =
+        row[colMap["Break Minutes"]] !== undefined &&
+        row[colMap["Break Minutes"]] !== ""
+          ? parseInt(row[colMap["Break Minutes"]])
+          : 0;
+
+      // Validate names
+      if (!firstName || !lastName) {
+        throw new Error("Missing name");
+      }
+
+      // Find employee by name (case-insensitive)
+      const employee = employeeList.find(
+        (emp) =>
+          emp.first_name.toLowerCase() === firstName.toLowerCase() &&
+          emp.last_name.toLowerCase() === lastName.toLowerCase()
+      );
+
+      if (!employee) {
+        notFoundEmployees.add(`${firstName} ${lastName}`);
+        throw new Error("Employee not found");
+      }
+
+      // Validate is_working and break_minutes relationship
+      if (isWorking === 1 && breakMinutes !== 0) {
+        throw new Error("Working shift cannot have break minutes");
+      }
+
+      // Auto-set shift name to "BREAK" if it's a break shift (is_working = 0)
+      let finalShiftName = shiftName;
+      if (isWorking === 0) {
+        finalShiftName = "BREAK";
+        // If no shift name provided for break shift, use default
+        if (!shiftName || shiftName === "") {
+          finalShiftName = "BREAK";
+        }
+      } else {
+        // For working shifts, shift name is required
+        if (!shiftName || shiftName === "") {
+          throw new Error("Shift name required");
+        }
+      }
+
+      // Validate times
+      if (startTime >= endTime) {
+        throw new Error("Invalid time range");
+      }
+
+      // Validate is_working
+      if (isWorking !== 0 && isWorking !== 1) {
+        throw new Error("Is Working must be 0 or 1");
+      }
+
+      schedules.push({
+        employee_id: employee.id,
+        employee_name: `${firstName} ${lastName}`,
+        day_of_week: dayOfWeek,
+        shift_name: finalShiftName,
+        start_time: startTime,
+        end_time: endTime,
+        is_working: isWorking,
+        break_minutes: breakMinutes,
+      });
+    } catch (error) {
+      errors.push(`Row ${rowNum}: ${error.message}`);
+    }
+  }
+
+  // Show validation errors
+  if (errors.length > 0) {
+    let errorMessage = `Import validation failed:\n\n${errors
+      .slice(0, 10)
+      .join("\n")}${
+      errors.length > 10 ? `\n\n...and ${errors.length - 10} more errors` : ""
+    }`;
+
+    if (notFoundEmployees.size > 0) {
+      errorMessage += `\n\n⚠️ Employees not found in database:\n${Array.from(
+        notFoundEmployees
+      ).join("\n")}`;
+      errorMessage += `\n\nPlease check spelling or add these employees first.`;
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  if (schedules.length === 0) {
+    throw new Error("No valid schedules found in file");
+  }
+
+  // Show confirmation with employee names
+  const uniqueEmployees = [...new Set(schedules.map((s) => s.employee_name))];
+  const confirmed = await showConfirmation(
+    `Found ${schedules.length} schedule(s) for ${
+      uniqueEmployees.length
+    } employee(s):\n\n${uniqueEmployees.join(
+      ", "
+    )}\n\nDuplicates and overlaps will be skipped. Continue?`,
+    "Import",
+    "green"
+  );
+
+  if (!confirmed) {
+    showStatus("Import cancelled", "error");
+    return;
+  }
+
+  await bulkImportSchedules(schedules);
+}
+
+// Validate Day of Week
+function validateDayOfWeek(day) {
+  const days = {
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+    sun: 0,
+    mon: 1,
+    tue: 2,
+    wed: 3,
+    thu: 4,
+    fri: 5,
+    sat: 6,
+  };
+
+  if (!day) throw new Error("Day required");
+
+  const normalized = day.toString().toLowerCase().trim();
+
+  if (days.hasOwnProperty(normalized)) {
+    return days[normalized];
+  }
+
+  throw new Error("Invalid day");
+}
+
+// Validate Time Format
+function validateTime(time) {
+  if (!time && time !== 0) throw new Error("Time required");
+
+  const timeStr = time.toString().trim();
+
+  // Handle HH:MM format
+  if (timeStr.includes(":")) {
+    const parts = timeStr.split(":");
+    if (parts.length === 2) {
+      const hours = parseInt(parts[0]);
+      const minutes = parseInt(parts[1]);
+
+      if (isNaN(hours) || isNaN(minutes)) {
+        throw new Error("Invalid time format");
+      }
+
+      if (hours < 0 || hours > 23) {
+        throw new Error("Invalid hours");
+      }
+
+      if (minutes < 0 || minutes > 59) {
+        throw new Error("Invalid minutes");
+      }
+
+      return `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}`;
+    }
+  }
+
+  // Handle Excel decimal time format (0.5 = 12:00 PM)
+  const decimal = parseFloat(timeStr);
+  if (!isNaN(decimal) && decimal >= 0 && decimal < 1) {
+    const totalMinutes = Math.round(decimal * 24 * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`;
+  }
+
+  throw new Error("Invalid time format");
+}
+
+// Bulk Import Schedules
+async function bulkImportSchedules(schedules) {
+  let imported = 0;
+  let skipped = 0;
+  let failed = 0;
+  const failedDetails = [];
+
+  showStatus(`Importing ${schedules.length} schedule(s)...`, "success");
+
+  for (let i = 0; i < schedules.length; i++) {
+    const schedule = schedules[i];
+
+    try {
+      const formData = new URLSearchParams({
+        employee_id: schedule.employee_id,
+        day_of_week: schedule.day_of_week,
+        shift_name: schedule.shift_name,
+        start_time: schedule.start_time,
+        end_time: schedule.end_time,
+        is_working: schedule.is_working,
+        break_minutes: schedule.break_minutes,
+      });
+
+      const response = await fetch(`${API_BASE}?action=add_schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        imported++;
+      } else {
+        // Check if it's a duplicate/overlap (expected) or real error
+        if (
+          result.message.includes("already exists") ||
+          result.message.includes("overlaps")
+        ) {
+          skipped++;
+        } else {
+          failed++;
+          failedDetails.push(
+            `Employee ${schedule.employee_id}, ${
+              DAY_NAMES[schedule.day_of_week]
+            }: ${result.message}`
+          );
+        }
+      }
+    } catch (error) {
+      failed++;
+      failedDetails.push(
+        `Employee ${schedule.employee_id}, ${
+          DAY_NAMES[schedule.day_of_week]
+        }: ${error.message}`
+      );
+    }
+  }
+
+  // Show detailed results
+  let message = `Import complete!\n\n`;
+  message += `✓ Imported: ${imported}\n`;
+  message += `⊘ Skipped (duplicates/overlaps): ${skipped}\n`;
+  message += `✗ Failed: ${failed}`;
+
+  if (failedDetails.length > 0 && failedDetails.length <= 5) {
+    message += `\n\nFailed imports:\n${failedDetails.join("\n")}`;
+  } else if (failedDetails.length > 5) {
+    message += `\n\nFailed imports (first 5):\n${failedDetails
+      .slice(0, 5)
+      .join("\n")}\n...and ${failedDetails.length - 5} more`;
+  }
+
+  showStatus(message, failed > 0 ? "error" : "success");
+
+  // Refresh current employee's schedule if viewing one
+  const selectedEmpId = parseInt(employeeSelect.value);
+  if (selectedEmpId) {
+    await fetchSchedules(selectedEmpId);
+  }
+
+  // Reload employee list in case new ones were added
+  await fetchEmployees();
+}

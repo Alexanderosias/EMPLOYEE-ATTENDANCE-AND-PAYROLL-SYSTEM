@@ -190,8 +190,9 @@
             </div>
           </div>
           <div>
-            <label for="total-days" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Days</label>
+            <label for="total-days" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Days (Deducted)</label>
             <input type="text" id="total-days" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" readonly>
+            <p id="days-breakdown" class="mt-1 text-xs text-gray-500 hidden"></p>
           </div>
           <div>
             <label for="leave-reason" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Reason</label>

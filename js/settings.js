@@ -70,6 +70,23 @@ function populateForm() {
   const dateFormatElem = document.getElementById("dateFormat");
   if (dateFormatElem)
     dateFormatElem.value = timeDate.date_format || "DD/MM/YYYY";
+  const graceInElem = document.getElementById("graceInMinutes");
+  if (graceInElem)
+    graceInElem.value = Number.isFinite(parseInt(timeDate.grace_in_minutes))
+      ? parseInt(timeDate.grace_in_minutes)
+      : 0;
+  const graceOutElem = document.getElementById("graceOutMinutes");
+  if (graceOutElem)
+    graceOutElem.value = Number.isFinite(parseInt(timeDate.grace_out_minutes))
+      ? parseInt(timeDate.grace_out_minutes)
+      : 0;
+  const companyHoursElem = document.getElementById("companyHoursPerDay");
+  if (companyHoursElem)
+    companyHoursElem.value = Number.isFinite(
+      parseFloat(timeDate.company_hours_per_day)
+    )
+      ? parseFloat(timeDate.company_hours_per_day)
+      : 8;
 
   // Leave Info
   const leave = settingsData.leave || {};
@@ -203,6 +220,15 @@ async function saveTimeDateSettings() {
   let responseText = "";
   const minutes = parseInt(document.getElementById("autoLogoutTime").value);
   const dateFormatVal = document.getElementById("dateFormat").value;
+  const graceInVal = parseInt(
+    document.getElementById("graceInMinutes").value
+  );
+  const graceOutVal = parseInt(
+    document.getElementById("graceOutMinutes").value
+  );
+  const companyHoursVal = parseFloat(
+    document.getElementById("companyHoursPerDay").value
+  );
 
   // 0 = disabled
   if (minutes === 0) {
@@ -214,10 +240,26 @@ async function saveTimeDateSettings() {
     return;
   }
 
+  if (graceInVal < 0 || graceInVal > 120) {
+    showStatus("Grace Period (Time In) must be 0–120 minutes.", "error");
+    return;
+  }
+  if (graceOutVal < 0 || graceOutVal > 120) {
+    showStatus("Grace Period (Time Out) must be 0–120 minutes.", "error");
+    return;
+  }
+  if (companyHoursVal < 1 || companyHoursVal > 24) {
+    showStatus("Total Working Hours per Day must be 1–24 hours.", "error");
+    return;
+  }
+
   const formData = new FormData();
   formData.append("action", "save_time_date");
   formData.append("auto_logout", minutes);
   formData.append("date_format", dateFormatVal);
+  formData.append("grace_in", graceInVal);
+  formData.append("grace_out", graceOutVal);
+  formData.append("company_hours_per_day", companyHoursVal);
 
   try {
     console.log("Saving time & date settings to ../views/settings_handler.php");
@@ -250,6 +292,9 @@ async function saveTimeDateSettings() {
       settingsData.time_date = {
         auto_logout_time_hours: decimal,
         date_format: dateFormatVal,
+        grace_in_minutes: graceInVal,
+        grace_out_minutes: graceOutVal,
+        company_hours_per_day: companyHoursVal,
       };
       // Auto-refresh to apply date format immediately
       setTimeout(() => location.reload(), 1000);

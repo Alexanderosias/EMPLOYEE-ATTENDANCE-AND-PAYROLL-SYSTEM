@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+require_once 'auth.php';
 require_once 'conn.php';  // Assumes this returns ['mysqli' => $mysqli]
 
 define('BASE_PATH', ''); // Change to '' for localhost:8000, or '/newpath' for Hostinger
@@ -127,6 +128,13 @@ switch ($action) {
             break;
         }
         try {
+            $userRoles = $_SESSION['roles'] ?? [];
+            if (!in_array('head_admin', $userRoles)) {
+                ob_end_clean();
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Only Head Admin can add departments']);
+                break;
+            }
             $name = trim($_POST['name'] ?? '');
             if (empty($name)) {
                 throw new Exception('Department name is required.');
@@ -166,6 +174,13 @@ switch ($action) {
             break;
         }
         try {
+            $userRoles = $_SESSION['roles'] ?? [];
+            if (!in_array('head_admin', $userRoles)) {
+                ob_end_clean();
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Only Head Admin can add job positions']);
+                break;
+            }
             $name = trim($_POST['name'] ?? '');
             $ratePerDay = floatval($_POST['rate_per_day'] ?? 0);
 
@@ -185,9 +200,10 @@ switch ($action) {
             }
             $checkStmt->close();
 
-            // Get default working_hour_per_day (8 hours if not set)
-            // This will be updated later from settings page
-            $workingHourPerDay = 8; // Default value
+            // Get default working_hour_per_day from settings (fallback 8)
+            $whRes = $mysqli->query("SELECT company_hours_per_day FROM time_date_settings LIMIT 1");
+            $whRow = $whRes ? $whRes->fetch_assoc() : null;
+            $workingHourPerDay = isset($whRow['company_hours_per_day']) ? (float)$whRow['company_hours_per_day'] : 8;
 
             // Compute rate_per_hour = rate_per_day / working_hour_per_day
             $ratePerHour = $workingHourPerDay > 0 ? $ratePerDay / $workingHourPerDay : 0;
@@ -216,6 +232,13 @@ switch ($action) {
             ob_end_clean();
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'DELETE required']);
+            break;
+        }
+        $userRoles = $_SESSION['roles'] ?? [];
+        if (!in_array('head_admin', $userRoles)) {
+            ob_end_clean();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Only Head Admin can delete departments']);
             break;
         }
         $id = (int)($_GET['id'] ?? 0);
@@ -264,6 +287,13 @@ switch ($action) {
             ob_end_clean();
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'DELETE required']);
+            break;
+        }
+        $userRoles = $_SESSION['roles'] ?? [];
+        if (!in_array('head_admin', $userRoles)) {
+            ob_end_clean();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Only Head Admin can delete job positions']);
             break;
         }
         $id = (int)($_GET['id'] ?? 0);

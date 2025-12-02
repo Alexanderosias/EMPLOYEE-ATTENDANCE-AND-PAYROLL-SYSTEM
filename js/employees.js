@@ -87,6 +87,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const API_BASE = BASE_PATH + "/views/employees.php";
 
+  const isHeadAdmin =
+    window.isHeadAdmin === true || window.isHeadAdmin === "true";
+
   let schoolSettings = {}; // Store school settings globally
 
   // Removed: checkAndSyncPending() and related Firebase sync logic
@@ -361,6 +364,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const avatarSrc = emp.avatar_path
         ? BASE_PATH + "/" + emp.avatar_path
         : BASE_PATH + "/img/user.jpg";
+      const deleteBtnHtml = isHeadAdmin
+        ? `<button class="action-btn action-btn-delete" title="Delete" aria-label="Delete">
+            <img src="icons/delete.png" alt="Delete" />
+          </button>`
+        : "";
       card.innerHTML = `
         <div class="card-index">${index + 1}</div>
         <div class="image-container employee-avatar">
@@ -410,9 +418,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <button class="action-btn action-btn-update" title="Update info" aria-label="Update info">
             <img src="icons/update.png" alt="Update info" />
           </button>
-          <button class="action-btn action-btn-delete" title="Delete" aria-label="Delete">
-            <img src="icons/delete.png" alt="Delete" />
-          </button>
+          ${deleteBtnHtml}
           <button class="action-btn action-btn-show-more" title="Expand/Collapse details" aria-label="Expand or collapse details">
             <img src="icons/down-arrow.png" alt="Expand or collapse details" />
           </button>
@@ -434,6 +440,12 @@ document.addEventListener("DOMContentLoaded", () => {
       employeeData.last_name || "";
     document.getElementById("update-address").value =
       employeeData.address || "";
+    // Populate Date of Birth if present (YYYY-MM-DD)
+    const dobInput = document.getElementById("update-date-of-birth");
+    if (dobInput) {
+      const dob = (employeeData.date_of_birth || "").split(" ")[0];
+      dobInput.value = dob || "";
+    }
     document.getElementById("update-email").value = employeeData.email || "";
     document.getElementById("update-contact-number").value =
       formatPhoneForDisplay(employeeData.contact_number || "") || "";
@@ -700,30 +712,32 @@ document.addEventListener("DOMContentLoaded", () => {
       autoFormatPhoneInput(addEmergencyPhoneInput)
     );
 
-  addEmployeeBtn.addEventListener("click", async () => {
-    // Add async
-    // Wait for settings to load if not already loaded
-    if (!schoolSettings.annual_paid_leave_days) {
-      await loadSchoolSettings();
-    }
-    addModal.setAttribute("aria-hidden", "false");
-    addEmployeeForm.reset();
-    document.getElementById("marital-status").value = "Single";
-    // Set leave days from schoolSettings (for new employees)
-    document.getElementById("annual-paid-leave-days").value =
-      schoolSettings.annual_paid_leave_days || 15;
-    document.getElementById("annual-unpaid-leave-days").value =
-      schoolSettings.annual_unpaid_leave_days || 5;
-    document.getElementById("annual-sick-leave-days").value =
-      schoolSettings.annual_sick_leave_days || 10;
-    document.getElementById("rate-per-hour").value = 0.0;
-    document.getElementById("emergency-name").value = "";
-    document.getElementById("emergency-phone").value = "";
-    document.getElementById("emergency-relationship").value = "";
-    addAvatarPreviewImg.src = "img/user.jpg";
-    addAvatarPreviewImg.alt = "Avatar preview";
-    addEmployeeForm.querySelector("input, select").focus();
-  });
+  if (addEmployeeBtn) {
+    addEmployeeBtn.addEventListener("click", async () => {
+      // Add async
+      // Wait for settings to load if not already loaded
+      if (!schoolSettings.annual_paid_leave_days) {
+        await loadSchoolSettings();
+      }
+      addModal.setAttribute("aria-hidden", "false");
+      addEmployeeForm.reset();
+      document.getElementById("marital-status").value = "Single";
+      // Set leave days from schoolSettings (for new employees)
+      document.getElementById("annual-paid-leave-days").value =
+        schoolSettings.annual_paid_leave_days || 15;
+      document.getElementById("annual-unpaid-leave-days").value =
+        schoolSettings.annual_unpaid_leave_days || 5;
+      document.getElementById("annual-sick-leave-days").value =
+        schoolSettings.annual_sick_leave_days || 10;
+      document.getElementById("rate-per-hour").value = 0.0;
+      document.getElementById("emergency-name").value = "";
+      document.getElementById("emergency-phone").value = "";
+      document.getElementById("emergency-relationship").value = "";
+      addAvatarPreviewImg.src = "img/user.jpg";
+      addAvatarPreviewImg.alt = "Avatar preview";
+      addEmployeeForm.querySelector("input, select").focus();
+    });
+  }
 
   addCloseButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -790,6 +804,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const jobPositionId = document.getElementById("job-position").value;
     const ratePerHour =
       parseFloat(document.getElementById("rate-per-hour").value) || 0;
+    const dateOfBirth = document.getElementById("date-of-birth").value;
 
     if (
       !firstName ||
@@ -826,6 +841,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const formData = new FormData(addEmployeeForm);
     formData.append("action", "add_employee");
+    if (dateOfBirth) formData.set("date_of_birth", dateOfBirth);
     const cleanedContact = cleanPhoneNumber(contactNumber);
     const cleanedEmergencyPhone = cleanPhoneNumber(emergencyPhone);
     formData.set("contact_number", cleanedContact);
@@ -979,6 +995,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const jobPositionId = document.getElementById("update-job-position").value;
     const ratePerHour =
       parseFloat(document.getElementById("update-rate-per-hour").value) || 0;
+    const updateDob = document.getElementById("update-date-of-birth").value;
 
     if (
       !firstName ||
@@ -1012,6 +1029,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const formData = new FormData(updateEmployeeForm);
     formData.append("action", "edit_employee");
     formData.append("id", id);
+    formData.set("date_of_birth", updateDob || "");
 
     const cleanedContact = contactNumber ? cleanPhoneNumber(contactNumber) : "";
     const cleanedEmergencyPhone = emergencyPhone

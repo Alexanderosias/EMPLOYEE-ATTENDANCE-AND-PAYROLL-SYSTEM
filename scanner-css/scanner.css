@@ -30,9 +30,9 @@ body {
   max-height: 80px;
   top: -10px;
   right: 5px;
-  background-color: rgba(248, 228, 185, 0.7);
-  color: rgb(173, 113, 0);
-  border-left: 5px solid rgb(255, 115, 0);
+  background-color: rgba(226, 239, 255, 0.9);
+  color: #0f172a;
+  border-left: 5px solid #2563eb;
   border-radius: 5px;
   padding: 0 60px 10px 10px;
   z-index: 152;
@@ -53,7 +53,7 @@ body {
 }
 
 .column {
-  color: rgb(231, 231, 231);
+  color: #dbeafe;
 }
 
 .top {
@@ -119,10 +119,10 @@ body {
 }
 
 .card .info-banner {
-  color: red;
+  color: #0f172a;
   margin-left: 0 20px;
-  background-color: rgb(231, 196, 183);
-  border-left: 3px solid red;
+  background-color: #dbeafe;
+  border-left: 3px solid #2563eb;
   position: relative;
   padding: 8px 8px 8px 35px;
   border-radius: 6px;
@@ -160,11 +160,11 @@ table {
 }
 
 .first .one h3 {
-  background-color: #D89B38;
+  background-color: #1842ed;
 }
 
 .first .two h3 {
-  background-color: #D21717;
+  background-color: #1e3a8a;
 }
 
 .card li {
@@ -191,7 +191,7 @@ table {
 }
 
 .sub-header {
-  background-color: #1842ED;
+  background-color: #1842ed;
   color: white;
   width: 100%;
   margin-bottom: 30px;
@@ -234,7 +234,7 @@ video {
   margin-top: 30px;
   padding: 10px 0;
   width: 100%;
-  background-color: #01C507;
+  background-color: #1842ed;
   text-align: center;
   border-radius: 10px 10px 0 0;
   z-index: 151;
@@ -255,10 +255,9 @@ table {
 }
 
 th {
-  background: linear-gradient(135deg, #4169E1, #27408B);
+  background: linear-gradient(135deg, #1842ed, #1e3a8a);
   color: #fff;
   width: 25%;
-
 }
 
 #nme {
@@ -298,7 +297,7 @@ th {
 }
 
 .third .card h3 {
-  background-color: #DB15CE;
+  background-color: #1e3a8a;
 }
 
 .third .card li {
@@ -320,7 +319,7 @@ th {
   margin-left: 20px;
   border: 1px solid rgb(230, 230, 230);
   border-radius: 10px;
-  background: linear-gradient(to right, rgb(57, 99, 226), #190CCD);
+  background: linear-gradient(to right, #1842ed, #1e3a8a);
   color: white;
   font-size: 16px;
   font-family: Arial, sans-serif;
@@ -345,7 +344,7 @@ th {
 }
 
 .export {
-  background: linear-gradient(to right, #0f962e, #0ac924);
+  background: linear-gradient(to right, #1d4ed8, #1e40af);
 }
 
 footer {

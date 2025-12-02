@@ -139,6 +139,18 @@ require_once '../views/auth.php'; // path relative to the page
             </header>
 
             <div class="scrollbar-container">
+                <!-- Summary cards -->
+                <div class="dp-summary-row">
+                    <div class="dp-summary-card">
+                        <h4>Total Departments</h4>
+                        <p id="summary-dept-count">0</p>
+                    </div>
+                    <div class="dp-summary-card">
+                        <h4>Total Job Positions</h4>
+                        <p id="summary-pos-count">0</p>
+                    </div>
+                </div>
+
                 <!-- Insert Departments and Job Positions container here -->
                 <div class="container">
                     <!-- Departments Section -->
@@ -147,10 +159,15 @@ require_once '../views/auth.php'; // path relative to the page
                         <ul id="departments-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
                             <!-- Dynamic items inserted by JS -->
                         </ul>
-                        <button id="add-department-btn" class="btn-add" aria-haspopup="dialog" aria-controls="add-department-modal">
-                            <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
-                            Add Department
-                        </button>
+                        <?php
+                        $userRoles = $_SESSION['roles'] ?? [];
+                        if (in_array('head_admin', $userRoles)):
+                        ?>
+                            <button id="add-department-btn" class="btn-add" aria-haspopup="dialog" aria-controls="add-department-modal">
+                                <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
+                                Add Department
+                            </button>
+                        <?php endif; ?>
                     </section>
 
                     <!-- Job Positions Section -->
@@ -159,11 +176,16 @@ require_once '../views/auth.php'; // path relative to the page
                         <ul id="job-positions-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
                             <!-- Dynamic items inserted by JS, e.g., <li>Instructor - $15.50/hr <button>Edit</button> <button>Delete</button></li> -->
                         </ul>
-                        <button id="add-job-position-btn" class="btn-add" aria-haspopup="dialog"
-                            aria-controls="add-job-position-modal">
-                            <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
-                            Add Job Position
-                        </button>
+                        <?php
+                        $userRoles = $_SESSION['roles'] ?? [];
+                        if (in_array('head_admin', $userRoles)):
+                        ?>
+                            <button id="add-job-position-btn" class="btn-add" aria-haspopup="dialog"
+                                aria-controls="add-job-position-modal">
+                                <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
+                                Add Job Position
+                            </button>
+                        <?php endif; ?>
                     </section>
                 </div>
 
@@ -230,6 +252,20 @@ require_once '../views/auth.php'; // path relative to the page
                         </footer>
                     </div>
                 </div>
+
+                <!-- Info panel -->
+                <div class="dp-info-panel">
+                    <h4>How departments and positions are used</h4>
+                    <p>
+                        Departments and job positions are used across EAAPS for organizing employees,
+                        computing payroll rates, generating reports, and validating leave. Avoid deleting
+                        items that are still actively used by employees unless you have reassigned them.
+                    </p>
+                    <p>
+                        Tip: Keep department and position names clear and consistent so reports remain
+                        easy to understand for HR and management.
+                    </p>
+                </div>
             </div>
         </main>
     </div>
@@ -237,6 +273,10 @@ require_once '../views/auth.php'; // path relative to the page
     <script src="../js/dashboard.js"></script>
     <script src="../js/sidebar_update.js"></script>
     <script src="../js/current_time.js"></script>
+    <script>
+        <?php $userRoles = $_SESSION['roles'] ?? []; ?>
+        window.isHeadAdmin = <?php echo in_array('head_admin', $userRoles) ? 'true' : 'false'; ?>;
+    </script>
     <script src="../js/department_position.js"></script>
     <script src="../js/auto_logout.js"></script>
 </body>

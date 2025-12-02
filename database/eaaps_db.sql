@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 30, 2025 at 04:51 PM
+-- Generation Time: Dec 02, 2025 at 06:01 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -42,6 +42,14 @@ CREATE TABLE `attendance_logs` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `attendance_logs`
+--
+
+INSERT INTO `attendance_logs` (`id`, `employee_id`, `date`, `time_in`, `time_out`, `expected_start_time`, `expected_end_time`, `status`, `snapshot_path`, `check_type`, `is_synced`, `created_at`, `updated_at`) VALUES
+(68, 50, '2025-12-01', NULL, NULL, '08:30:00', '10:00:00', 'Absent', NULL, 'in', 0, '2025-12-01 03:09:19', '2025-12-01 03:09:19'),
+(71, 50, '2025-12-02', NULL, NULL, '19:36:00', '20:40:00', 'Absent', NULL, 'in', 0, '2025-12-02 10:39:01', '2025-12-02 10:39:01');
 
 -- --------------------------------------------------------
 
@@ -118,6 +126,13 @@ CREATE TABLE `employees` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `employees`
+--
+
+INSERT INTO `employees` (`id`, `user_id`, `first_name`, `last_name`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `rate_per_day`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`) VALUES
+(50, 89, 'Francisco', 'Rivas', 'Dulag, Leyte', 'Male', 'Married', 'Active', 'francisrivas@gmail.com', '09093433343', 'Julius Rivas', '09548532432', 'Son', '2025-12-01', 12, 26, 15.00, 120.00, 7, 7, 10, 'uploads/avatars/emp_50_1764691913.jpg', '2025-12-01 01:22:59', '2025-12-02 16:11:53');
+
 -- --------------------------------------------------------
 
 --
@@ -131,6 +146,13 @@ CREATE TABLE `holidays` (
   `start_date` date NOT NULL,
   `end_date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `holidays`
+--
+
+INSERT INTO `holidays` (`id`, `name`, `type`, `start_date`, `end_date`) VALUES
+(9, 'Non Working Holiday', 'special_non_working', '2025-12-08', '2025-12-08');
 
 -- --------------------------------------------------------
 
@@ -154,7 +176,8 @@ CREATE TABLE `job_positions` (
 --
 
 INSERT INTO `job_positions` (`id`, `name`, `working_hours_per_day`, `rate_per_day`, `rate_per_hour`, `payroll_frequency`, `created_at`, `updated_at`) VALUES
-(25, 'System Administrator', 8.00, 120.00, 15.00, 'bi-weekly', '2025-11-30 15:41:04', '2025-11-30 15:41:04');
+(25, 'System Administrator', 8.00, 120.00, 15.00, 'bi-weekly', '2025-11-30 15:41:04', '2025-11-30 15:41:04'),
+(26, 'Instructor', 8.00, 120.00, 15.00, 'bi-weekly', '2025-12-01 01:20:56', '2025-12-01 01:20:56');
 
 -- --------------------------------------------------------
 
@@ -178,6 +201,13 @@ CREATE TABLE `leave_requests` (
   `proof_path` varchar(255) DEFAULT NULL,
   `admin_feedback` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `leave_requests`
+--
+
+INSERT INTO `leave_requests` (`id`, `employee_id`, `leave_type`, `start_date`, `end_date`, `days`, `reason`, `status`, `deducted_from`, `submitted_at`, `approved_at`, `approved_by`, `proof_path`, `admin_feedback`) VALUES
+(40, 50, 'Unpaid', '2025-12-08', '2025-12-12', 3, 'fdsaf', 'Approved', 'Unpaid', '2025-12-02 16:06:17', '2025-12-02 16:06:55', 68, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -238,6 +268,13 @@ CREATE TABLE `qr_codes` (
   `generated_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `qr_codes`
+--
+
+INSERT INTO `qr_codes` (`id`, `employee_id`, `qr_data`, `qr_image_path`, `generated_at`) VALUES
+(51, 50, 'ID:50|First:Francisco|Last:Rivas|Position:Instructor|Joined:2025-12-01', 'qrcodes/FranciscoRivas.png', '2025-12-02 07:16:26');
+
 -- --------------------------------------------------------
 
 --
@@ -256,6 +293,16 @@ CREATE TABLE `schedules` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `schedules`
+--
+
+INSERT INTO `schedules` (`id`, `employee_id`, `day_of_week`, `shift_name`, `start_time`, `end_time`, `break_minutes`, `is_working`, `created_at`, `updated_at`) VALUES
+(81, 50, 'Tuesday', 'PE', '19:36:00', '20:40:00', 0, 1, '2025-12-02 09:36:33', '2025-12-02 09:36:33'),
+(82, 50, 'Wednesday', 'ITP 101 - Lab 3', '13:34:00', '15:34:00', 0, 1, '2025-12-02 15:34:37', '2025-12-02 15:34:37'),
+(83, 50, 'Thursday', 'ITP 111 - Lab 3', '14:34:00', '17:34:00', 0, 1, '2025-12-02 15:34:51', '2025-12-02 15:34:51'),
+(84, 50, 'Monday', 'Ethics', '02:01:00', '04:01:00', 0, 1, '2025-12-02 16:01:46', '2025-12-02 16:01:46');
 
 -- --------------------------------------------------------
 
@@ -279,7 +326,7 @@ CREATE TABLE `school_settings` (
 --
 
 INSERT INTO `school_settings` (`id`, `logo_path`, `system_name`, `created_at`, `updated_at`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`) VALUES
-(1, 'uploads/logos/logo_1763922067.jpg', 'EAAPS Admins', '2025-11-21 12:44:20', '2025-11-27 17:45:32', 10, 10, 10);
+(1, 'uploads/logos/logo_1763922067.jpg', 'EAAPS Admin', '2025-11-21 12:44:20', '2025-12-01 08:48:04', 10, 10, 10);
 
 -- --------------------------------------------------------
 
@@ -364,7 +411,7 @@ CREATE TABLE `time_date_settings` (
 --
 
 INSERT INTO `time_date_settings` (`id`, `default_timezone`, `date_format`, `auto_logout_time_hours`, `created_at`, `updated_at`) VALUES
-(1, 'PHST', 'DD/MM/YYYY', 0.00000, '2025-11-21 12:44:20', '2025-11-27 17:49:22');
+(1, 'PHST', 'DD/MM/YYYY', 0.00000, '2025-11-21 12:44:20', '2025-12-02 15:27:40');
 
 -- --------------------------------------------------------
 
@@ -393,7 +440,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `phone_number`, `address`, `department_id`, `password_hash`, `is_active`, `created_at`, `updated_at`, `avatar_path`, `roles`) VALUES
-(68, 'Admin', 'Admin', 'admin@gmail.com', '09305909175', 'Tacloban City', 12, '$2y$10$eFmGsmOld4JDMgkJunzcx.IQo6gPwS8CvtMecl0rY21mm30oZgCYy', 1, '2025-11-25 09:15:54', '2025-11-30 15:35:43', 'uploads/avatars/user_68_1764516943.png', '[\"head_admin\"]');
+(68, 'Admin', 'Admin', 'superadmin@gmail.com', '09305909175', 'Tacloban City', 12, '$2y$10$eFmGsmOld4JDMgkJunzcx.IQo6gPwS8CvtMecl0rY21mm30oZgCYy', 1, '2025-11-25 09:15:54', '2025-12-01 09:04:35', 'uploads/avatars/user_68_1764516943.png', '[\"head_admin\"]'),
+(89, 'Francisco', 'Rivas', 'francisrivas@gmail.com', '09093433343', 'Dulag, Leyte', 12, '$2y$10$zgCHyjBcJ8WpC.bFqhOKlupyRdbuUx7iDzTCUjto.v8riyacUSSK6', 1, '2025-12-01 01:22:59', '2025-12-02 16:11:53', 'uploads/avatars/emp_50_1764691913.jpg', '[\"employee\",\"admin\"]');
 
 --
 -- Indexes for dumped tables
@@ -539,7 +587,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `attendance_logs`
 --
 ALTER TABLE `attendance_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
 
 --
 -- AUTO_INCREMENT for table `backup_restore_settings`
@@ -557,25 +605,25 @@ ALTER TABLE `departments`
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT for table `holidays`
 --
 ALTER TABLE `holidays`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `job_positions`
 --
 ALTER TABLE `job_positions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `leave_requests`
 --
 ALTER TABLE `leave_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
@@ -593,13 +641,13 @@ ALTER TABLE `payroll`
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT for table `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85;
 
 --
 -- AUTO_INCREMENT for table `school_settings`
@@ -611,7 +659,7 @@ ALTER TABLE `school_settings`
 -- AUTO_INCREMENT for table `snapshots`
 --
 ALTER TABLE `snapshots`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- AUTO_INCREMENT for table `special_events`
@@ -635,7 +683,7 @@ ALTER TABLE `time_date_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=89;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
 
 --
 -- Constraints for dumped tables
