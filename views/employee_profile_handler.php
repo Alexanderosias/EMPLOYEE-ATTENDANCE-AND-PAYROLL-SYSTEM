@@ -115,6 +115,15 @@ try {
                 throw new Exception('Employee record not found');
             }
 
+            // Normalize fields for the employee profile UI (e.g., date_of_birth)
+            if (array_key_exists('date_of_birth', $employee)) {
+                if (empty($employee['date_of_birth']) || $employee['date_of_birth'] === '0000-00-00') {
+                    $employee['date_of_birth'] = '';
+                } else {
+                    $employee['date_of_birth'] = trim($employee['date_of_birth']);
+                }
+            }
+
             // Prefer employees.avatar_path for display; fallback to users.avatar_path; else default image
             $empAvatar = $employee['avatar_path'] ?? '';
             $userAvatar = $employee['user_avatar_path'] ?? '';
@@ -142,6 +151,19 @@ try {
             $lastName = isset($_POST['last_name']) ? trim($_POST['last_name']) : null;
             $emergencyContactName = trim($_POST['emergency_contact_name'] ?? '');
             $emergencyContactPhone = trim($_POST['emergency_contact_phone'] ?? '');
+            $dateOfBirthRaw = trim($_POST['date_of_birth'] ?? '');
+
+            if ($dateOfBirthRaw === '') {
+                $dateOfBirth = null;
+            } else {
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateOfBirthRaw)) {
+                    throw new Exception('Invalid Date of Birth format. Use YYYY-MM-DD.');
+                }
+                if (strtotime($dateOfBirthRaw) > time()) {
+                    throw new Exception('Date of Birth cannot be in the future.');
+                }
+                $dateOfBirth = $dateOfBirthRaw;
+            }
 
             // Validate
             if (empty($phoneNumber)) {
@@ -172,9 +194,9 @@ try {
                 $stmt->close();
             }
 
-            // Update employees table (mirror names, contact_number, address, emergency contacts)
-            $stmt = $mysqli->prepare("UPDATE employees SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name), address = ?, contact_number = ?, emergency_contact_name = ?, emergency_contact_phone = ? WHERE user_id = ?");
-            $stmt->bind_param('ssssssi', $firstName, $lastName, $address, $phoneNumber, $emergencyContactName, $emergencyContactPhone, $userId);
+            // Update employees table (mirror names, contact_number, address, emergency contacts, date_of_birth)
+            $stmt = $mysqli->prepare("UPDATE employees SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name), address = ?, contact_number = ?, emergency_contact_name = ?, emergency_contact_phone = ?, date_of_birth = ? WHERE user_id = ?");
+            $stmt->bind_param('sssssssi', $firstName, $lastName, $address, $phoneNumber, $emergencyContactName, $emergencyContactPhone, $dateOfBirth, $userId);
             if (!$stmt->execute()) throw new Exception('Failed to update profile');
             $stmt->close();
 

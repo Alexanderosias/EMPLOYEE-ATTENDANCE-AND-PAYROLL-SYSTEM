@@ -199,7 +199,7 @@ require_once '../views/auth.php';  // path relative to the page
               </div>
 
               <div class="sub-section">
-                <h5>Attendance Grace Period & Company Hours</h5>
+                <h5>Attendance Grace Period & School Hours</h5>
                 <div class="form-row three-col">
                   <div class="form-group">
                     <label for="graceInMinutes">Grace Period: Time In (minutes)</label>
@@ -214,7 +214,7 @@ require_once '../views/auth.php';  // path relative to the page
                   <div class="form-group">
                     <label for="companyHoursPerDay">Total Working Hours per Day</label>
                     <input type="number" id="companyHoursPerDay" value="8" min="1" max="24" step="0.25" />
-                    <p class="small-text">Company-wide default. Job positions can override if needed.</p>
+                    <p class="small-text">Default. Job positions can override if needed.</p>
                   </div>
                 </div>
               </div>
