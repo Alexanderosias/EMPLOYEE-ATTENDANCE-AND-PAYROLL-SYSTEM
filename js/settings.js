@@ -48,6 +48,51 @@ async function loadSettings() {
   }
 }
 
+// Save payroll frequency per job role
+async function saveRolePayrollSettings() {
+  const container = document.getElementById("rolePayrollContainer");
+  if (!container) return;
+  const selects = container.querySelectorAll("select[data-role-id]");
+  const map = {};
+  selects.forEach((sel) => {
+    const id = sel.getAttribute("data-role-id");
+    if (id) map[id] = sel.value;
+  });
+
+  let response;
+  let responseText = "";
+  const formData = new FormData();
+  formData.append("action", "save_role_payroll");
+  formData.append("frequencies", JSON.stringify(map));
+
+  try {
+    response = await fetch("../views/settings_handler.php", {
+      method: "POST",
+      body: formData,
+    });
+    responseText = await response.text();
+    if (!response.ok) {
+      showStatus(`Failed to save: ${response.status} ${response.statusText}`, "error");
+      return;
+    }
+    const result = JSON.parse(responseText);
+    if (result.success) {
+      showStatus(result.message || "Saved.", "success");
+      // Reflect locally
+      if (settingsData.payroll && Array.isArray(settingsData.payroll.roles)) {
+        settingsData.payroll.roles = settingsData.payroll.roles.map((r) => ({
+          ...r,
+          payroll_frequency: map[r.id] ? map[r.id] : r.payroll_frequency,
+        }));
+      }
+    } else {
+      showStatus(result.message || "Failed to save.", "error");
+    }
+  } catch (e) {
+    showStatus("Error saving: " + e.message, "error");
+  }
+}
+
 function populateForm() {
   // System Info
   const system = settingsData.system || {};
@@ -121,6 +166,10 @@ function populateForm() {
   const sessionTimeoutElem = document.getElementById("sessionTimeout");
   if (sessionTimeoutElem)
     sessionTimeoutElem.value = backup.session_timeout_minutes || 30;
+
+  // Payroll per role
+  const payroll = settingsData.payroll || {};
+  renderRolePayroll(Array.isArray(payroll.roles) ? payroll.roles : []);
 }
 
 function updateSidebar() {
@@ -131,6 +180,55 @@ function updateSidebar() {
   }
   document.getElementById("sidebarAppName").textContent =
     settingsData.system.system_name || "EAAPS Admin";
+}
+
+// Render payroll frequency selectors per job role
+function renderRolePayroll(roles) {
+  const container = document.getElementById("rolePayrollContainer");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!Array.isArray(roles) || roles.length === 0) {
+    const p = document.createElement("p");
+    p.className = "small-text";
+    p.textContent = "No job roles found. Add roles in Departments and Positions.";
+    container.appendChild(p);
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "form-row three-col";
+
+  const options = [
+    { v: "weekly", l: "Weekly" },
+    { v: "biweekly", l: "Bi-Weekly" },
+    { v: "semimonthly", l: "Semi-Monthly" },
+    { v: "monthly", l: "Monthly" },
+  ];
+
+  roles.forEach((role) => {
+    const group = document.createElement("div");
+    group.className = "form-group";
+
+    const label = document.createElement("label");
+    label.textContent = role.name;
+    group.appendChild(label);
+
+    const select = document.createElement("select");
+    select.setAttribute("data-role-id", String(role.id));
+    options.forEach((opt) => {
+      const o = document.createElement("option");
+      o.value = opt.v;
+      o.textContent = opt.l;
+      select.appendChild(o);
+    });
+    select.value = (role.payroll_frequency || "monthly").toLowerCase();
+    group.appendChild(select);
+
+    grid.appendChild(group);
+  });
+
+  container.appendChild(grid);
 }
 
 // Logo Upload Functions

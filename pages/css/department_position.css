@@ -199,6 +199,21 @@ ul.item-list li:last-child {
   border-color: var(--add-btn-color, #007bff);
 }
 
+.modal-body select {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline-offset: 2px;
+  outline-color: transparent;
+  transition: outline-color 0.2s ease;
+}
+
+.modal-body select:focus {
+  outline-color: var(--add-btn-color, #007bff);
+  border-color: var(--add-btn-color, #007bff);
+}
+
 .modal-footer {
   margin-top: 1.5rem;
   display: flex;

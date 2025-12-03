@@ -259,6 +259,7 @@ require_once '../views/auth.php';  // path relative to the page
             </div>
           </div>
 
+
           <div id="working-hours-modal" class="modal-overlay hidden">
             <div class="modal-content relative">
               <button id="wh-close-btn" class="modal-close-btn">&times;</button>

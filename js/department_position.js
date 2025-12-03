@@ -83,6 +83,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Update Job Position modal elements
+  const updateJobPositionModal = document.getElementById("update-job-position-modal");
+  const updateJobPositionForm = document.getElementById("update-job-position-form");
+  const updId = document.getElementById("upd-position-id");
+  const updName = document.getElementById("upd-position-name");
+  const updRate = document.getElementById("upd-position-rate");
+  const updFreq = document.getElementById("upd-position-frequency");
+
+  // Close handlers for Update modal
+  if (updateJobPositionModal) {
+    updateJobPositionModal.querySelectorAll(".modal-close-btn").forEach((btn) => {
+      btn.addEventListener("click", () => closeModal(updateJobPositionModal));
+    });
+    updateJobPositionModal.addEventListener("click", (e) => {
+      if (e.target === updateJobPositionModal) closeModal(updateJobPositionModal);
+    });
+  }
+
+  function openUpdatePositionModal(pos) {
+    if (!isHeadAdmin) return;
+    if (!updateJobPositionModal) return;
+    updId.value = String(pos.id);
+    updName.value = pos.name || "";
+    updRate.value = (parseFloat(pos.rate_per_day || 0) || 0).toString();
+    updFreq.value = String(pos.payroll_frequency || 'bi-weekly').toLowerCase();
+    openModal(updateJobPositionModal);
+  }
+
+  // Submit Update Job Position
+  if (updateJobPositionForm) {
+    updateJobPositionForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!isHeadAdmin) return;
+      const formData = new FormData(updateJobPositionForm);
+      formData.append("action", "update_position");
+      try {
+        const response = await fetch(API_BASE, { method: "POST", body: formData });
+        const result = await response.json();
+        if (result.success) {
+          showStatus(result.message || "Job position updated.");
+          closeModal(updateJobPositionModal);
+          fetchPositions();
+        } else {
+          showStatus(result.message || "Failed to update position.", "error");
+        }
+      } catch (error) {
+        showStatus("Failed to update position. " + error.message, "error");
+      }
+    });
+  }
+
   // Delete function
   async function deleteItem(id, type) {
     try {
@@ -355,17 +406,31 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         positions.forEach((pos) => {
           const ratePerDayNum = parseFloat(pos.rate_per_day || 0);
-          const ratePerHourNum =
-            companyHoursPerDay > 0 ? ratePerDayNum / companyHoursPerDay : 0;
-          const displayText = `${pos.name} - ₱${ratePerDayNum.toFixed(
-            2
-          )}/day (₱${ratePerHourNum.toFixed(2)}/hr)`;
-          const li = createListItem(
-            pos.id,
-            displayText,
-            pos.employee_count,
-            "position"
-          );
+          const ratePerHourNum = companyHoursPerDay > 0 ? ratePerDayNum / companyHoursPerDay : 0;
+          const freq = String(pos.payroll_frequency || 'bi-weekly').toLowerCase();
+          const freqLabelMap = { 'daily': 'Daily', 'weekly': 'Weekly', 'bi-weekly': 'Bi-Weekly', 'monthly': 'Monthly' };
+          const freqLabel = freqLabelMap[freq] || freq;
+
+          const displayText = `${pos.name} - ₱${ratePerDayNum.toFixed(2)}/day (₱${ratePerHourNum.toFixed(2)}/hr) • ${freqLabel}`;
+          const li = createListItem(pos.id, displayText, pos.employee_count, "position");
+
+          if (isHeadAdmin) {
+            const actions = li.querySelector('.item-actions');
+            if (actions) {
+              const editBtn = document.createElement('button');
+              editBtn.className = 'btn-delete';
+              editBtn.setAttribute('aria-label', `Update ${pos.name}`);
+              const editImg = document.createElement('img');
+              editImg.src = './icons/update.png';
+              editImg.alt = 'Update';
+              editImg.className = 'delete-icon';
+              editBtn.appendChild(editImg);
+              editBtn.title = `Update job position "${pos.name}"`;
+              editBtn.addEventListener('click', () => openUpdatePositionModal(pos));
+              actions.appendChild(editBtn);
+            }
+          }
+
           jobPositionsList.appendChild(li);
         });
       }

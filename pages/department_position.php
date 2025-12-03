@@ -156,7 +156,7 @@ require_once '../views/auth.php'; // path relative to the page
                     <!-- Departments Section -->
                     <section class="section-box" aria-labelledby="departments-title">
                         <h3 id="departments-title">Departments</h3>
-                        <ul id="departments-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
+                        <ul style="overflow-y: auto; maz-height: 200px" id="departments-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
                             <!-- Dynamic items inserted by JS -->
                         </ul>
                         <?php
@@ -225,9 +225,48 @@ require_once '../views/auth.php'; // path relative to the page
                                 <label for="job-position-rate">Rate per Day</label>
                                 <input type="number" id="job-position-rate" name="rate_per_day" step="0.01" min="0" required
                                     placeholder="Enter rate per day" />
+                                <label for="job-position-frequency">Payroll Frequency</label>
+                                <select id="job-position-frequency" name="payroll_frequency" required>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="bi-weekly" selected>Bi-Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
                             </div>
                             <footer class="modal-footer">
                                 <button type="submit" class="btn btn-primary">Add Job Position</button>
+                                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+                            </footer>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Update Job Position Modal -->
+                <div id="update-job-position-modal" class="modal" aria-hidden="true" role="dialog"
+                    aria-labelledby="update-job-position-title" aria-modal="true">
+                    <div class="modal-content">
+                        <header class="modal-header">
+                            <h4 id="update-job-position-title">Update Job Position</h4>
+                            <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
+                        </header>
+                        <form id="update-job-position-form" novalidate>
+                            <div class="modal-body">
+                                <input type="hidden" id="upd-position-id" name="id" />
+                                <label for="upd-position-name">Job Position Name</label>
+                                <input type="text" id="upd-position-name" name="name" required placeholder="Enter job position name" />
+                                <label for="upd-position-rate">Rate per Day</label>
+                                <input type="number" id="upd-position-rate" name="rate_per_day" step="0.01" min="0" required
+                                    placeholder="Enter rate per day" />
+                                <label for="upd-position-frequency">Payroll Frequency</label>
+                                <select id="upd-position-frequency" name="payroll_frequency" required>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="bi-weekly">Bi-Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                            <footer class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
                                 <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
                             </footer>
                         </form>
@@ -258,12 +297,11 @@ require_once '../views/auth.php'; // path relative to the page
                     <h4>How departments and positions are used</h4>
                     <p>
                         Departments and job positions are used across EAAPS for organizing employees,
-                        computing payroll rates, generating reports, and validating leave. Avoid deleting
-                        items that are still actively used by employees unless you have reassigned them.
+                        computing payroll rates, generating reports, and validating leave.
                     </p>
                     <p>
                         Tip: Keep department and position names clear and consistent so reports remain
-                        easy to understand for HR and management.
+                        easy to understand for HR and management.  
                     </p>
                 </div>
             </div>
