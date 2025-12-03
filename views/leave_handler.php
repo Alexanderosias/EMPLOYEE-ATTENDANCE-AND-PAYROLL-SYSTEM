@@ -116,8 +116,8 @@ try {
 
         case 'approve_leave':
             $requestId = (int)$_POST['id'];
-            // Get leave_type, days, and employee_id
-            $stmt = $mysqli->prepare("SELECT leave_type, days, employee_id FROM leave_requests WHERE id = ? AND status = 'Pending'");
+            // Get leave_type, days, employee_id, and date range
+            $stmt = $mysqli->prepare("SELECT leave_type, days, employee_id, start_date, end_date FROM leave_requests WHERE id = ? AND status = 'Pending'");
             $stmt->bind_param('i', $requestId);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -127,8 +127,109 @@ try {
                 throw new Exception('Request not found or not pending');
             }
             $leaveType = $req['leave_type'];
-            $days = $req['days'];
-            $employeeId = $req['employee_id'];
+            $days = (int)$req['days'];
+            $employeeId = (int)$req['employee_id'];
+            $startDateStr = $req['start_date'] ?? null;
+            $endDateStr = $req['end_date'] ?? null;
+
+            // Compute effective days to deduct based on employee schedules
+            $effectiveDays = $days;
+            if ($startDateStr && $endDateStr) {
+                try {
+                    $startDate = new DateTime($startDateStr);
+                    $endDate = new DateTime($endDateStr);
+                    if ($startDate > $endDate) {
+                        $tmp = $startDate;
+                        $startDate = $endDate;
+                        $endDate = $tmp;
+                    }
+
+                    // Fetch working days of week for this employee
+                    $stmt = $mysqli->prepare("SELECT DISTINCT day_of_week FROM schedules WHERE employee_id = ? AND is_working = 1");
+                    $stmt->bind_param('i', $employeeId);
+                    $stmt->execute();
+                    $schedResult = $stmt->get_result();
+                    $workingDays = [];
+                    while ($row = $schedResult->fetch_assoc()) {
+                        $workingDays[$row['day_of_week']] = true;
+                    }
+                    $stmt->close();
+
+                    // Build a set of dates that are holidays or special events within the range
+                    $specialDates = [];
+
+                    // Holidays
+                    $stmt = $mysqli->prepare("SELECT start_date, end_date FROM holidays WHERE NOT (end_date < ? OR start_date > ?)");
+                    if ($stmt) {
+                        $stmt->bind_param('ss', $startDateStr, $endDateStr);
+                        $stmt->execute();
+                        $res = $stmt->get_result();
+                        while ($row = $res->fetch_assoc()) {
+                            $hStart = new DateTime($row['start_date']);
+                            $hEnd = new DateTime($row['end_date']);
+                            if ($hStart > $hEnd) {
+                                $tmpH = $hStart;
+                                $hStart = $hEnd;
+                                $hEnd = $tmpH;
+                            }
+                            $hEndInclusive = (clone $hEnd)->modify('+1 day');
+                            $hPeriod = new DatePeriod($hStart, new DateInterval('P1D'), $hEndInclusive);
+                            foreach ($hPeriod as $d) {
+                                $specialDates[$d->format('Y-m-d')] = true;
+                            }
+                        }
+                        $stmt->close();
+                    }
+
+                    // Special events
+                    $stmt = $mysqli->prepare("SELECT start_date, end_date FROM special_events WHERE NOT (end_date < ? OR start_date > ?)");
+                    if ($stmt) {
+                        $stmt->bind_param('ss', $startDateStr, $endDateStr);
+                        $stmt->execute();
+                        $res = $stmt->get_result();
+                        while ($row = $res->fetch_assoc()) {
+                            $eStart = new DateTime($row['start_date']);
+                            $eEnd = new DateTime($row['end_date']);
+                            if ($eStart > $eEnd) {
+                                $tmpE = $eStart;
+                                $eStart = $eEnd;
+                                $eEnd = $tmpE;
+                            }
+                            $eEndInclusive = (clone $eEnd)->modify('+1 day');
+                            $ePeriod = new DatePeriod($eStart, new DateInterval('P1D'), $eEndInclusive);
+                            foreach ($ePeriod as $d) {
+                                $specialDates[$d->format('Y-m-d')] = true;
+                            }
+                        }
+                        $stmt->close();
+                    }
+
+                    if (!empty($workingDays)) {
+                        $effectiveDays = 0;
+                        $periodEnd = (clone $endDate)->modify('+1 day');
+                        $period = new DatePeriod($startDate, new DateInterval('P1D'), $periodEnd);
+                        foreach ($period as $date) {
+                            $dayName = $date->format('l');
+                            $dateStrLoop = $date->format('Y-m-d');
+
+                            // Skip if this date is a holiday or special event
+                            if (!empty($specialDates[$dateStrLoop])) {
+                                continue;
+                            }
+
+                            if (!empty($workingDays[$dayName])) {
+                                $effectiveDays++;
+                            }
+                        }
+                    } else {
+                        // No schedules found; do not deduct anything
+                        $effectiveDays = 0;
+                    }
+                } catch (Exception $e) {
+                    // On any error, fall back to original days value
+                    $effectiveDays = $days;
+                }
+            }
 
             // Update status and fields
             $stmt = $mysqli->prepare("UPDATE leave_requests SET status = 'Approved', deducted_from = ?, approved_at = NOW(), approved_by = ? WHERE id = ? AND status = 'Pending'");
@@ -144,9 +245,9 @@ try {
                 } elseif ($leaveType === 'Sick') {
                     $balanceColumn = 'annual_sick_leave_days';
                 }
-                if ($balanceColumn) {
+                if ($balanceColumn && $effectiveDays > 0) {
                     $stmt = $mysqli->prepare("UPDATE employees SET $balanceColumn = $balanceColumn - ? WHERE id = ?");
-                    $stmt->bind_param('ii', $days, $employeeId);
+                    $stmt->bind_param('ii', $effectiveDays, $employeeId);
                     $stmt->execute();
                     $stmt->close();
                 }

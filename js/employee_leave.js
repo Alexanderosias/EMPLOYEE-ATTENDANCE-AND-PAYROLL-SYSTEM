@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const totalDaysInput = document.getElementById("total-days");
   const availableBalanceSpan = document.getElementById("available-balance");
   const balanceDisplay = document.getElementById("balance-display");
+  const daysBreakdown = document.getElementById("days-breakdown");
   const searchInput = document.getElementById("search-input");
   const statusFilter = document.getElementById("status-filter");
 
@@ -140,6 +141,10 @@ document.addEventListener("DOMContentLoaded", () => {
     totalDaysInput.value = "";
     errorMsg.classList.add("hidden");
     submitBtn.disabled = false;
+    if (daysBreakdown) {
+      daysBreakdown.textContent = "";
+      daysBreakdown.classList.add("hidden");
+    }
   }
 
   function openViewModal() {
@@ -170,6 +175,21 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Overlap check fetch error:", error);
       return null;
     }
+  }
+
+  async function previewEffectiveDays(startDate, endDate) {
+    try {
+      const response = await fetch(
+        `${API_BASE}?action=preview_leave_days&start=${startDate}&end=${endDate}`
+      );
+      const result = await response.json();
+      if (result.success && result.data) {
+        return result.data;
+      }
+    } catch (error) {
+      console.error("Preview effective days error:", error);
+    }
+    return null;
   }
 
   async function viewLeaveRequest(requestId) {
@@ -529,26 +549,62 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Calculate total days on date change
-  startDateInput.addEventListener("change", calculateDays);
-  endDateInput.addEventListener("change", calculateDays);
+  // Calculate total days on date change (using backend effective-day logic)
+  startDateInput.addEventListener("change", () => {
+    calculateDays();
+  });
+  endDateInput.addEventListener("change", () => {
+    calculateDays();
+  });
 
-  function calculateDays() {
+  async function calculateDays() {
     const start = startDateInput.value;
     const end = endDateInput.value;
+
     if (start && end) {
       const startDate = new Date(start);
       const endDate = new Date(end);
       if (startDate <= endDate) {
-        const days =
-          Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1; // Inclusive
-        totalDaysInput.value = days;
+        const preview = await previewEffectiveDays(start, end);
+        if (preview && typeof preview.effective_days === "number") {
+          const effective = preview.effective_days;
+          const calendar =
+            typeof preview.calendar_days === "number"
+              ? preview.calendar_days
+              : effective;
+          totalDaysInput.value = effective;
+          if (daysBreakdown) {
+            if (calendar !== effective) {
+              daysBreakdown.textContent = `Calendar days: ${calendar}, Deducted days: ${effective}`;
+            } else {
+              daysBreakdown.textContent = `Days to be deducted: ${effective}`;
+            }
+            daysBreakdown.classList.remove("hidden");
+          }
+        } else {
+          const days =
+            Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+          totalDaysInput.value = days;
+          if (daysBreakdown) {
+            daysBreakdown.textContent = "";
+            daysBreakdown.classList.add("hidden");
+          }
+        }
       } else {
         totalDaysInput.value = "";
+        if (daysBreakdown) {
+          daysBreakdown.textContent = "";
+          daysBreakdown.classList.add("hidden");
+        }
       }
     } else {
       totalDaysInput.value = "";
+      if (daysBreakdown) {
+        daysBreakdown.textContent = "";
+        daysBreakdown.classList.add("hidden");
+      }
     }
+
     validateForm();
   }
 

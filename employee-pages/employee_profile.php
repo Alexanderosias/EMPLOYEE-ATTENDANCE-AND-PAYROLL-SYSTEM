@@ -22,6 +22,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
+<style>
+    #status-message {
+        z-index: 1599;
+    }
+</style>
+
 <body>
     <!-- Status Message (for feedback) -->
     <div id="status-message" class="status-message"></div>
@@ -235,6 +241,183 @@
     <script src="../js/dashboard.js"></script>
     <script src="../js/current_time.js"></script>
     <script src="../js/auto_logout.js"></script>
+    <script>
+        // Simple status helper (uses .show class from status-message.css)
+        function showStatus(message, type = 'success') {
+            const el = document.getElementById('status-message');
+            if (!el) return;
+            el.textContent = message;
+            el.className = 'status-message ' + type;
+            el.classList.add('show');
+            if (el._hideTimer) clearTimeout(el._hideTimer);
+            el._hideTimer = setTimeout(() => {
+                el.classList.remove('show');
+            }, 3500);
+        }
+
+        // Elements
+        const profileImage = document.getElementById('profileImage');
+        const imageUpload = document.getElementById('imageUpload');
+
+        const firstNameEl = document.getElementById('firstName');
+        const lastNameEl = document.getElementById('lastName');
+        const emailEl = document.getElementById('email');
+        const phoneEl = document.getElementById('phoneNumber');
+        const addressEl = document.getElementById('address');
+        const genderEl = document.getElementById('gender');
+        const civilStatusEl = document.getElementById('civilStatus');
+        const emergencyNameEl = document.getElementById('emergencyContactName');
+        const emergencyPhoneEl = document.getElementById('emergencyContactPhone');
+        const fullNameEl = document.getElementById('fullName');
+
+        const editBtn = document.querySelector('.btn.btn-secondary');
+        const saveBtn = document.querySelector('.btn.btn-primary');
+        let isEditingProfile = false;
+
+        async function loadProfile() {
+            try {
+                const res = await fetch('../views/employee_profile_handler.php?action=get_profile');
+                const result = await res.json();
+                if (!result.success) throw new Error(result.message || 'Failed to load profile');
+                const d = result.data || {};
+
+                // Populate fields
+                firstNameEl.value = d.first_name || '';
+                lastNameEl.value = d.last_name || '';
+                emailEl.value = d.email || '';
+                phoneEl.value = d.contact_number || d.phone_number || '';
+                addressEl.value = d.address || '';
+                genderEl.value = d.gender || '';
+                civilStatusEl.value = d.marital_status || '';
+                emergencyNameEl.value = d.emergency_contact_name || '';
+                emergencyPhoneEl.value = d.emergency_contact_phone || '';
+                if (fullNameEl) fullNameEl.textContent = `${firstNameEl.value} ${lastNameEl.value}`.trim() || 'Employee';
+                if (profileImage && d.avatar_path) profileImage.src = d.avatar_path;
+            } catch (e) {
+                console.error('Load profile failed:', e);
+                showStatus('Failed to load profile', 'error');
+            }
+        }
+
+        function setEditable(editing) {
+            const fields = [firstNameEl, lastNameEl, phoneEl, addressEl, emergencyNameEl, emergencyPhoneEl];
+            fields.forEach((el) => el && (el.readOnly = !editing));
+            if (editBtn && saveBtn) {
+                editBtn.style.display = editing ? 'none' : 'inline-flex';
+                saveBtn.style.display = editing ? 'inline-flex' : 'none';
+            }
+            isEditingProfile = editing;
+        }
+
+        function editProfile() {
+            setEditable(true);
+        }
+
+        async function saveProfile() {
+            try {
+                const fd = new FormData();
+                fd.append('action', 'update_profile');
+                fd.append('first_name', firstNameEl.value.trim());
+                fd.append('last_name', lastNameEl.value.trim());
+                fd.append('phone_number', phoneEl.value.trim());
+                fd.append('address', addressEl.value.trim());
+                fd.append('emergency_contact_name', emergencyNameEl.value.trim());
+                fd.append('emergency_contact_phone', emergencyPhoneEl.value.trim());
+
+                const res = await fetch('../views/employee_profile_handler.php', { method: 'POST', body: fd });
+                const result = await res.json();
+                if (!result.success) throw new Error(result.message || 'Save failed');
+                showStatus(result.message || 'Profile updated', 'success');
+                setEditable(false);
+                // Refresh UI and name
+                await loadProfile();
+            } catch (e) {
+                console.error('Save profile failed:', e);
+                showStatus(e.message, 'error');
+            }
+        }
+
+        function triggerImageUpload() {
+            if (!isEditingProfile) {
+                showStatus('Tap Edit Profile first to change your avatar.', 'error');
+                return;
+            }
+            if (imageUpload) imageUpload.click();
+        }
+
+        imageUpload && imageUpload.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            if (!isEditingProfile) {
+                showStatus('Tap Edit Profile first to change your avatar.', 'error');
+                e.target.value = '';
+                return;
+            }
+            const fd = new FormData();
+            fd.append('action', 'update_avatar');
+            fd.append('avatar', file);
+            try {
+                const res = await fetch('../views/employee_profile_handler.php', { method: 'POST', body: fd });
+                const result = await res.json();
+                if (!result.success) throw new Error(result.message || 'Avatar update failed');
+                if (profileImage && result.avatar_path) profileImage.src = result.avatar_path + '?v=' + Date.now();
+                showStatus(result.message || 'Avatar updated', 'success');
+            } catch (e) {
+                console.error('Avatar upload failed:', e);
+                showStatus(e.message, 'error');
+            } finally {
+                e.target.value = '';
+            }
+        });
+
+        // Password visibility toggles
+        function wirePasswordToggle(inputId, btnId) {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            if (!input || !btn) return;
+            btn.addEventListener('click', () => {
+                input.type = input.type === 'password' ? 'text' : 'password';
+            });
+        }
+        wirePasswordToggle('currentPassword', 'currentPasswordToggle');
+        wirePasswordToggle('newPassword', 'newPasswordToggle');
+        wirePasswordToggle('confirmPassword', 'confirmPasswordToggle');
+
+        async function changePassword() {
+            const cur = document.getElementById('currentPassword').value;
+            const nw = document.getElementById('newPassword').value;
+            const conf = document.getElementById('confirmPassword').value;
+            const fd = new FormData();
+            fd.append('action', 'change_password');
+            fd.append('current_password', cur);
+            fd.append('new_password', nw);
+            fd.append('confirm_password', conf);
+            try {
+                const res = await fetch('../views/employee_profile_handler.php', { method: 'POST', body: fd });
+                const result = await res.json();
+                if (!result.success) throw new Error(result.message || 'Password change failed');
+                showStatus(result.message || 'Password changed', 'success');
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } catch (e) {
+                showStatus(e.message, 'error');
+            }
+        }
+
+        // Expose for buttons
+        window.editProfile = editProfile;
+        window.saveProfile = saveProfile;
+        window.triggerImageUpload = triggerImageUpload;
+        window.changePassword = changePassword;
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            setEditable(false);
+            await loadProfile();
+        });
+    </script>
+
 </body>
 
 </html>

@@ -279,6 +279,17 @@ switch ($action) {
       echo json_encode(['success' => false, 'message' => 'POST required']);
       break;
     }
+
+    // Check if user has head_admin role
+    session_start();
+    $userRoles = $_SESSION['roles'] ?? [];
+    if (!in_array('head_admin', $userRoles)) {
+      ob_end_clean();
+      http_response_code(403);
+      echo json_encode(['success' => false, 'message' => 'Only Head Admin can delete schedules']);
+      break;
+    }
+
     $id = (int)($_POST['id'] ?? 0);
     if (!$id) {
       ob_end_clean();

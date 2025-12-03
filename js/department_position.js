@@ -3,6 +3,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const API_BASE = BASE_PATH + "/views/departments_positions.php"; // Backend endpoint
 
+  const isHeadAdmin =
+    window.isHeadAdmin === true || window.isHeadAdmin === "true";
+
+  // Company-wide hours per day (from Time & Date settings)
+  let companyHoursPerDay = 8;
+
+  async function loadCompanyHours() {
+    try {
+      const resp = await fetch("../views/settings_handler.php?action=load");
+      if (!resp.ok) return;
+      const result = await resp.json();
+      const val = parseFloat(
+        result?.data?.time_date?.company_hours_per_day
+      );
+      if (!isNaN(val) && val > 0) companyHoursPerDay = val;
+    } catch (e) {
+      // Keep default 8 if load fails
+    }
+  }
+
   // Modal helper functions
   function openModal(modal) {
     modal.setAttribute("aria-hidden", "false");
@@ -63,6 +83,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Update Job Position modal elements
+  const updateJobPositionModal = document.getElementById("update-job-position-modal");
+  const updateJobPositionForm = document.getElementById("update-job-position-form");
+  const updId = document.getElementById("upd-position-id");
+  const updName = document.getElementById("upd-position-name");
+  const updRate = document.getElementById("upd-position-rate");
+  const updFreq = document.getElementById("upd-position-frequency");
+
+  // Close handlers for Update modal
+  if (updateJobPositionModal) {
+    updateJobPositionModal.querySelectorAll(".modal-close-btn").forEach((btn) => {
+      btn.addEventListener("click", () => closeModal(updateJobPositionModal));
+    });
+    updateJobPositionModal.addEventListener("click", (e) => {
+      if (e.target === updateJobPositionModal) closeModal(updateJobPositionModal);
+    });
+  }
+
+  function openUpdatePositionModal(pos) {
+    if (!isHeadAdmin) return;
+    if (!updateJobPositionModal) return;
+    updId.value = String(pos.id);
+    updName.value = pos.name || "";
+    updRate.value = (parseFloat(pos.rate_per_day || 0) || 0).toString();
+    updFreq.value = String(pos.payroll_frequency || 'bi-weekly').toLowerCase();
+    openModal(updateJobPositionModal);
+  }
+
+  // Submit Update Job Position
+  if (updateJobPositionForm) {
+    updateJobPositionForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!isHeadAdmin) return;
+      const formData = new FormData(updateJobPositionForm);
+      formData.append("action", "update_position");
+      try {
+        const response = await fetch(API_BASE, { method: "POST", body: formData });
+        const result = await response.json();
+        if (result.success) {
+          showStatus(result.message || "Job position updated.");
+          closeModal(updateJobPositionModal);
+          fetchPositions();
+        } else {
+          showStatus(result.message || "Failed to update position.", "error");
+        }
+      } catch (error) {
+        showStatus("Failed to update position. " + error.message, "error");
+      }
+    });
+  }
+
   // Delete function
   async function deleteItem(id, type) {
     try {
@@ -97,9 +168,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const addDepartmentForm = document.getElementById("add-department-form");
   const departmentsList = document.getElementById("departments-list");
 
-  addDepartmentBtn.addEventListener("click", () =>
-    openModal(addDepartmentModal)
-  );
+  if (addDepartmentBtn) {
+    addDepartmentBtn.addEventListener("click", () =>
+      openModal(addDepartmentModal)
+    );
+  }
 
   addDepartmentModal.querySelectorAll(".modal-close-btn").forEach((btn) => {
     btn.addEventListener("click", () => closeModal(addDepartmentModal));
@@ -142,9 +215,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const addJobPositionForm = document.getElementById("add-job-position-form");
   const jobPositionsList = document.getElementById("job-positions-list");
 
-  addJobPositionBtn.addEventListener("click", () =>
-    openModal(addJobPositionModal)
-  );
+  if (addJobPositionBtn) {
+    addJobPositionBtn.addEventListener("click", () =>
+      openModal(addJobPositionModal)
+    );
+  }
 
   addJobPositionModal.querySelectorAll(".modal-close-btn").forEach((btn) => {
     btn.addEventListener("click", () => closeModal(addJobPositionModal));
@@ -202,35 +277,33 @@ document.addEventListener("DOMContentLoaded", () => {
     const itemActions = document.createElement("div");
     itemActions.className = "item-actions";
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "btn-delete";
-    deleteBtn.setAttribute("aria-label", `Delete ${text}`);
+    if (isHeadAdmin) {
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn-delete";
+      deleteBtn.setAttribute("aria-label", `Delete ${text}`);
 
-    const deleteImg = document.createElement("img");
-    deleteImg.src = "./icons/delete.png"; // Adjust path as needed
-    deleteImg.alt = "Delete";
-    deleteImg.className = "delete-icon";
+      const deleteImg = document.createElement("img");
+      deleteImg.src = "./icons/delete.png"; // Adjust path as needed
+      deleteImg.alt = "Delete";
+      deleteImg.className = "delete-icon";
 
-    deleteBtn.appendChild(deleteImg);
+      deleteBtn.appendChild(deleteImg);
 
-    // Disable delete if employees assigned
-    const typeName = type === "department" ? "department" : "job position";
-    if (count > 0) {
-      deleteBtn.disabled = true;
-      deleteBtn.setAttribute("aria-disabled", "true");
-      deleteBtn.title = `Cannot delete this ${typeName} because it has ${count} employee(s) assigned. Please reassign employees first.`;
-      deleteBtn.classList.add("disabled-delete"); // Add CSS: .btn-delete.disabled-delete { opacity: 0.5; cursor: not-allowed; }
-      // ALTERNATIVE: Hide button entirely - uncomment below
-      // itemActions.style.display = 'none';  // Or don't append deleteBtn
-    } else {
-      // Enabled: Attach click listener to show confirmation
-      deleteBtn.addEventListener("click", () => {
-        showDeleteConfirmation(li, id, text, count, type);
-      });
-      deleteBtn.title = `Delete ${typeName} "${text}"`;
+      const typeName = type === "department" ? "department" : "job position";
+      if (count > 0) {
+        deleteBtn.disabled = true;
+        deleteBtn.setAttribute("aria-disabled", "true");
+        deleteBtn.title = `Cannot delete this ${typeName} because it has ${count} employee(s) assigned. Please reassign employees first.`;
+        deleteBtn.classList.add("disabled-delete");
+      } else {
+        deleteBtn.addEventListener("click", () => {
+          showDeleteConfirmation(li, id, text, count, type);
+        });
+        deleteBtn.title = `Delete ${typeName} "${text}"`;
+      }
+
+      itemActions.appendChild(deleteBtn);
     }
-
-    itemActions.appendChild(deleteBtn);
     li.appendChild(itemContent);
     li.appendChild(itemActions);
 
@@ -276,6 +349,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       const departments = result.data;
+      const summaryDept = document.getElementById("summary-dept-count");
+      if (summaryDept) {
+        summaryDept.textContent = Array.isArray(departments)
+          ? departments.length
+          : 0;
+      }
       if (departments.length === 0) {
         departmentsList.innerHTML = "<li>No departments found.</li>";
       } else {
@@ -316,20 +395,42 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       const positions = result.data;
+      const summaryPos = document.getElementById("summary-pos-count");
+      if (summaryPos) {
+        summaryPos.textContent = Array.isArray(positions)
+          ? positions.length
+          : 0;
+      }
       if (positions.length === 0) {
         jobPositionsList.innerHTML = "<li>No job positions found.</li>";
       } else {
         positions.forEach((pos) => {
-          // Updated: Include both rate_per_day and rate_per_hour in display
-          const ratePerDay = parseFloat(pos.rate_per_day || 0).toFixed(2);
-          const ratePerHour = parseFloat(pos.rate_per_hour || 0).toFixed(2);
-          const displayText = `${pos.name} - ₱${ratePerDay}/day (₱${ratePerHour}/hr)`;
-          const li = createListItem(
-            pos.id,
-            displayText,
-            pos.employee_count,
-            "position"
-          );
+          const ratePerDayNum = parseFloat(pos.rate_per_day || 0);
+          const ratePerHourNum = companyHoursPerDay > 0 ? ratePerDayNum / companyHoursPerDay : 0;
+          const freq = String(pos.payroll_frequency || 'bi-weekly').toLowerCase();
+          const freqLabelMap = { 'daily': 'Daily', 'weekly': 'Weekly', 'bi-weekly': 'Bi-Weekly', 'monthly': 'Monthly' };
+          const freqLabel = freqLabelMap[freq] || freq;
+
+          const displayText = `${pos.name} - ₱${ratePerDayNum.toFixed(2)}/day (₱${ratePerHourNum.toFixed(2)}/hr) • ${freqLabel}`;
+          const li = createListItem(pos.id, displayText, pos.employee_count, "position");
+
+          if (isHeadAdmin) {
+            const actions = li.querySelector('.item-actions');
+            if (actions) {
+              const editBtn = document.createElement('button');
+              editBtn.className = 'btn-delete';
+              editBtn.setAttribute('aria-label', `Update ${pos.name}`);
+              const editImg = document.createElement('img');
+              editImg.src = './icons/update.png';
+              editImg.alt = 'Update';
+              editImg.className = 'delete-icon';
+              editBtn.appendChild(editImg);
+              editBtn.title = `Update job position "${pos.name}"`;
+              editBtn.addEventListener('click', () => openUpdatePositionModal(pos));
+              actions.appendChild(editBtn);
+            }
+          }
+
           jobPositionsList.appendChild(li);
         });
       }
@@ -345,7 +446,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Initialize on load: Fetch and render lists
-  fetchDepartments();
-  fetchPositions();
+  // Initialize on load: load company hours then render lists
+  loadCompanyHours().finally(() => {
+    fetchDepartments();
+    fetchPositions();
+  });
 });

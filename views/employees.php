@@ -37,6 +37,9 @@ try {
     die(json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]));
 }
 
+// Ensure new column exists for date of birth
+@($mysqli && $mysqli->query("ALTER TABLE employees ADD COLUMN IF NOT EXISTS date_of_birth DATE NULL"));
+
 function generateQRCode($employee_data, $qr_dir = '../qrcodes/') // Fixed default path
 {
     // Ensure library and GD are available
@@ -292,6 +295,17 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'POST required']);
             break;
         }
+
+        // Check if user has head_admin role
+        session_start();
+        $userRoles = $_SESSION['roles'] ?? [];
+        if (!in_array('head_admin', $userRoles)) {
+            ob_end_clean();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Only Head Admin can add employees']);
+            break;
+        }
+
         $mysqli->begin_transaction();
         try {
             $first_name = trim($_POST['first_name'] ?? '');
@@ -378,16 +392,30 @@ switch ($action) {
             $user_stmt->close();
 
             // Insert into employees
+            // Optional Date of Birth
+            $date_of_birth = trim($_POST['date_of_birth'] ?? '');
+            if ($date_of_birth === '') {
+                $date_of_birth = null;
+            } else {
+                // Basic validation: YYYY-MM-DD and not in the future
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_of_birth)) {
+                    throw new Exception('Invalid Date of Birth format. Use YYYY-MM-DD.');
+                }
+                if (strtotime($date_of_birth) > time()) {
+                    throw new Exception('Date of Birth cannot be in the future.');
+                }
+            }
+
             $query = "INSERT INTO employees (
             user_id, first_name, last_name, address, gender, marital_status, status, email,
             contact_number, emergency_contact_name, emergency_contact_phone,
-            emergency_contact_relationship, date_joined, department_id, job_position_id,
+            emergency_contact_relationship, date_of_birth, date_joined, department_id, job_position_id,
             rate_per_hour, rate_per_day, annual_paid_leave_days, annual_unpaid_leave_days,
             annual_sick_leave_days, avatar_path
-            ) VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?)";
+            ) VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $mysqli->prepare($query);
-            $types = 'issssssssssiiddiiis';
+            $types = 'isssssssssssiiddiiis';
             $params = [
                 $user_id,
                 $first_name,
@@ -400,6 +428,7 @@ switch ($action) {
                 $emergency_contact_name,
                 $emergency_contact_phone,
                 $emergency_contact_relationship,
+                $date_of_birth,
                 $department_id,
                 $job_position_id,
                 $rate_per_hour,
@@ -531,6 +560,15 @@ switch ($action) {
             $annual_unpaid_leave_days = (int)(getUpdateValue('annual_unpaid_leave_days', $current_employee['annual_unpaid_leave_days']));
             $annual_sick_leave_days = (int)(getUpdateValue('annual_sick_leave_days', $current_employee['annual_sick_leave_days']));
             $date_joined = getUpdateValue('date_joined', $current_employee['date_joined']);
+            $date_of_birth = getUpdateValue('date_of_birth', $current_employee['date_of_birth']);
+            if ($date_of_birth !== null && $date_of_birth !== '') {
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_of_birth)) {
+                    throw new Exception('Invalid Date of Birth format. Use YYYY-MM-DD.');
+                }
+                if (strtotime($date_of_birth) > time()) {
+                    throw new Exception('Date of Birth cannot be in the future.');
+                }
+            }
 
             // Fetch rate_per_hour based on selected job_position_id
             $pos_check = $mysqli->prepare("SELECT rate_per_hour, rate_per_day FROM job_positions WHERE id = ?");
@@ -621,10 +659,10 @@ switch ($action) {
                 email = ?, contact_number = ?, emergency_contact_name = ?, emergency_contact_phone = ?,
                 emergency_contact_relationship = ?, department_id = ?, job_position_id = ?,
                 rate_per_hour = ?, rate_per_day = ?, annual_paid_leave_days = ?, annual_unpaid_leave_days = ?,
-                annual_sick_leave_days = ?, date_joined = ?, avatar_path = ?
+                annual_sick_leave_days = ?, date_joined = ?, date_of_birth = ?, avatar_path = ?
                 WHERE id = ?";
             $stmt = $mysqli->prepare($query);
-            $types = 'ssssssssssiiddiiissi';
+            $types = 'ssssssssssiiddiiisssi';
             $params = [
                 $first_name,
                 $last_name,
@@ -644,6 +682,7 @@ switch ($action) {
                 $annual_unpaid_leave_days,
                 $annual_sick_leave_days,
                 $date_joined,
+                $date_of_birth,
                 $avatar_path,
                 $id
             ];
@@ -720,6 +759,17 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'POST required']);
             break;
         }
+
+        // Check if user has head_admin role
+        session_start();
+        $userRoles = $_SESSION['roles'] ?? [];
+        if (!in_array('head_admin', $userRoles)) {
+            ob_end_clean();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Only Head Admin can delete employees']);
+            break;
+        }
+
         $id = (int)($_POST['id'] ?? 0);
         if (!$id) {
             ob_end_clean();

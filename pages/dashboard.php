@@ -138,28 +138,18 @@ require_once '../views/auth.php'; // Check login
             </header>
 
             <div class="scrollbar-container">
-                <!-- Info Banners -->
-                <!-- <div class="info-banner" id="payroll-date-banner">
-                    Next Payroll Date: <span id="next-payroll-date">--</span> &nbsp;&nbsp;|&nbsp;&nbsp; Last Payroll Date:
-                    <span id="last-payroll-date">--</span>
-                </div> -->
-
                 <div class="metrics-cards">
                     <div class="card card-blue">
                         <p>Total Employees</p>
-                        <h3>42</h3>
+                        <h3 id="total-employees-count">--</h3>
                     </div>
                     <div class="card card-green">
                         <p>Present Today</p>
-                        <h3>38</h3>
+                        <h3 id="present-today-count">--</h3>
                     </div>
                     <div class="card card-orange">
                         <p>Late Today</p>
-                        <h3>4</h3>
-                    </div>
-                    <div class="card card-purple">
-                        <p>Pending Payroll</p>
-                        <h3>3</h3>
+                        <h3 id="late-today-count">--</h3>
                     </div>
                 </div>
 
@@ -182,22 +172,28 @@ require_once '../views/auth.php'; // Check login
                             </div>
                         </div>
                         <div id="attendance-chart">
-                            Attendance chart will be rendered here.
+                            <canvas id="attendanceChartCanvas"></canvas>
                         </div>
                     </section>
 
-                    <!-- Salary Distribution Section -->
-                    <section class="dashboard-section salary-distribution chart-section">
-                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Salary Distribution</h3>
-                        <div id="salary-distribution-chart">
-                            Salary distribution chart will be rendered here.
+                    <section class="dashboard-section chart-section">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Holidays & Events</h3>
+                        <div id="calendar-container">
+                            <div id="calendar-header">
+                                <button id="cal-prev" aria-label="Previous Month">◀</button>
+                                <span id="cal-title"></span>
+                                <button id="cal-next" aria-label="Next Month">▶</button>
+                            </div>
+                            <div id="calendar-grid"></div>
                         </div>
+                        <ul id="events-list"></ul>
                     </section>
                 </div>
             </div>
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../js/dashboard.js"></script>
     <script src="../js/sidebar_update.js"></script>
     <script src="../js/auto_logout.js"></script>
@@ -205,19 +201,139 @@ require_once '../views/auth.php'; // Check login
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Set current year as default in year filter
             const yearInput = document.getElementById('year-filter');
+            const periodSelect = document.getElementById('period-filter');
             const currentYear = new Date().getFullYear();
-            yearInput.value = currentYear;
+            if (yearInput) yearInput.value = currentYear;
 
-            // Placeholder: Set example payroll dates and pending count
-            document.getElementById('next-payroll-date').textContent = '2024-07-15';
-            document.getElementById('last-payroll-date').textContent = '2024-06-15';
-            document.getElementById('pending-payroll-count').textContent = '3';
+            const metricsUrl = '../views/dashboard_handler.php?action=metrics';
+            const chartUrl = (period, year) => `../views/dashboard_handler.php?action=attendance_chart&period=${encodeURIComponent(period)}&year=${encodeURIComponent(year)}`;
+            const eventsUrl = (year, month) => `../views/dashboard_handler.php?action=events&year=${year}&month=${month}`;
 
-            // TODO: Integrate chart libraries (e.g., Chart.js) and backend data here
+            function loadMetrics() {
+                fetch(metricsUrl)
+                  .then(r => r.json())
+                  .then(res => {
+                      if (!res.success) return;
+                      const d = res.data || {};
+                      const elTot = document.getElementById('total-employees-count');
+                      const elPre = document.getElementById('present-today-count');
+                      const elLate = document.getElementById('late-today-count');
+                      if (elTot) elTot.textContent = (d.total_employees ?? 0);
+                      if (elPre) elPre.textContent = (d.present_today ?? 0);
+                      if (elLate) elLate.textContent = (d.late_today ?? 0);
+                  })
+                  .catch(() => {});
+            }
+
+            let attChart;
+            function loadChart() {
+                const period = periodSelect ? periodSelect.value : 'weekly';
+                const year = yearInput ? parseInt(yearInput.value || currentYear, 10) : currentYear;
+                fetch(chartUrl(period, year))
+                  .then(r => r.json())
+                  .then(res => {
+                      if (!res.success) return;
+                      const ctx = document.getElementById('attendanceChartCanvas').getContext('2d');
+                      const labels = res.data.labels || [];
+                      const present = res.data.present || [];
+                      const late = res.data.late || [];
+                      const data = {
+                        labels,
+                        datasets: [
+                          { label: 'Present', data: present, borderColor: '#0ea5e9', backgroundColor: 'rgba(14,165,233,0.2)', tension: 0.3 },
+                          { label: 'Late', data: late, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.2)', tension: 0.3 }
+                        ]
+                      };
+                      const options = { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } };
+                      if (attChart) { attChart.data = data; attChart.options = options; attChart.update(); }
+                      else { attChart = new Chart(ctx, { type: 'line', data, options }); }
+                  })
+                  .catch(() => {});
+            }
+
+            function daysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
+            function renderCalendarGrid(year, month, events) {
+                const grid = document.getElementById('calendar-grid');
+                const title = document.getElementById('cal-title');
+                if (!grid || !title) return;
+                grid.innerHTML = '';
+                const firstDay = new Date(year, month, 1).getDay();
+                const totalDays = daysInMonth(year, month);
+                const monthName = new Date(year, month, 1).toLocaleString('default', { month: 'long' });
+                title.textContent = `${monthName} ${year}`;
+                const weekDays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+                weekDays.forEach(w => {
+                  const h = document.createElement('div');
+                  h.className = 'cal-cell cal-head';
+                  h.textContent = w;
+                  grid.appendChild(h);
+                });
+                for (let i=0;i<firstDay;i++) {
+                  const e = document.createElement('div'); e.className = 'cal-cell cal-empty'; grid.appendChild(e);
+                }
+                const map = {};
+                (events||[]).forEach(ev => {
+                  const sd = new Date(ev.start_date);
+                  const ed = new Date(ev.end_date);
+                  for (let d=new Date(sd); d<=ed; d.setDate(d.getDate()+1)) {
+                    if (d.getFullYear()===year && d.getMonth()===month) {
+                      const key = d.getDate();
+                      if (!map[key]) map[key] = [];
+                      map[key].push(ev);
+                    }
+                  }
+                });
+                for (let day=1; day<=totalDays; day++) {
+                  const cell = document.createElement('div');
+                  cell.className = 'cal-cell cal-day';
+                  const n = document.createElement('span'); n.className = 'cal-daynum'; n.textContent = day;
+                  cell.appendChild(n);
+                  const evs = map[day] || [];
+                  if (evs.length>0) {
+                    cell.classList.add('has-event');
+                    const dot = document.createElement('span'); dot.className = 'cal-dot'; cell.appendChild(dot);
+                  }
+                  grid.appendChild(cell);
+                }
+            }
+
+            function loadEvents(year, month) {
+                const url = `../views/dashboard_handler.php?action=events&year=${year}&month=${month+1}`;
+                fetch(url)
+                  .then(r => r.json())
+                  .then(res => {
+                    if (!res.success) return;
+                    renderCalendarGrid(year, month, res.data || []);
+                    const list = document.getElementById('events-list');
+                    if (list) {
+                      list.innerHTML = '';
+                      (res.data||[]).forEach(ev => {
+                        const li = document.createElement('li');
+                        li.textContent = `${ev.start_date} - ${ev.end_date}: ${ev.name}`;
+                        list.appendChild(li);
+                      });
+                    }
+                  })
+                  .catch(() => {});
+            }
+
+            let calYear = new Date().getFullYear();
+            let calMonth = new Date().getMonth();
+            const btnPrev = document.getElementById('cal-prev');
+            const btnNext = document.getElementById('cal-next');
+            if (btnPrev) btnPrev.addEventListener('click', () => { calMonth--; if (calMonth<0){calMonth=11;calYear--;} loadEvents(calYear, calMonth); });
+            if (btnNext) btnNext.addEventListener('click', () => { calMonth++; if (calMonth>11){calMonth=0;calYear++;} loadEvents(calYear, calMonth); });
+
+            if (periodSelect) periodSelect.addEventListener('change', loadChart);
+            if (yearInput) yearInput.addEventListener('change', loadChart);
+
+            loadMetrics();
+            loadChart();
+            loadEvents(calYear, calMonth);
         });
     </script>
+
 </body>
 
 </html>

@@ -13,7 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once 'conn.php';  // Assumes this returns ['mysqli' => $mysqli]
+require_once 'auth.php';
+require_once 'conn.php';  
 
 define('BASE_PATH', ''); // Change to '' for localhost:8000, or '/newpath' for Hostinger
 
@@ -24,6 +25,17 @@ try {
     $mysqli = $db['mysqli'];
     if (!$mysqli || $mysqli->connect_error) {
         throw new Exception('MySQL connection failed: ' . ($mysqli ? $mysqli->connect_error : 'No connection'));
+    }
+    // Ensure payroll_frequency column exists (support servers without IF NOT EXISTS)
+    $hasPayrollFreq = false;
+    if ($desc = $mysqli->query("DESCRIBE job_positions")) {
+        while ($r = $desc->fetch_assoc()) {
+            if (isset($r['Field']) && $r['Field'] === 'payroll_frequency') { $hasPayrollFreq = true; break; }
+        }
+        $desc->free();
+    }
+    if (!$hasPayrollFreq) {
+        @$mysqli->query("ALTER TABLE job_positions ADD COLUMN payroll_frequency ENUM('daily','weekly','bi-weekly','monthly') NOT NULL DEFAULT 'bi-weekly'");
     }
 } catch (Exception $e) {
     ob_end_clean();
@@ -61,6 +73,110 @@ switch ($action) {
         }
         break;
 
+    case 'update_position':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            ob_end_clean();
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'POST required']);
+            break;
+        }
+        try {
+            $userRoles = $_SESSION['roles'] ?? [];
+            if (!in_array('head_admin', $userRoles)) {
+                ob_end_clean();
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Only Head Admin can update job positions']);
+                break;
+            }
+            $id = intval($_POST['id'] ?? 0);
+            $name = trim($_POST['name'] ?? '');
+            $ratePerDay = floatval($_POST['rate_per_day'] ?? 0);
+            $payrollFrequency = strtolower(trim($_POST['payroll_frequency'] ?? 'bi-weekly'));
+            $allowedFreq = ['daily','weekly','bi-weekly','monthly'];
+            if (!in_array($payrollFrequency, $allowedFreq, true)) { $payrollFrequency = 'bi-weekly'; }
+
+            if ($id <= 0) throw new Exception('Invalid job position ID.');
+            if (empty($name)) throw new Exception('Job position name is required.');
+            if ($ratePerDay < 0) throw new Exception('Rate per day must be a non-negative number.');
+
+            // Dup name check (exclude current id)
+            $checkStmt = $mysqli->prepare("SELECT id FROM job_positions WHERE LOWER(name) = LOWER(?) AND id <> ?");
+            $checkStmt->bind_param('si', $name, $id);
+            $checkStmt->execute();
+            if ($checkStmt->get_result()->num_rows > 0) {
+                throw new Exception('Job position name already exists.');
+            }
+            $checkStmt->close();
+
+            // Get working hours per day for this position, fallback to settings
+            $wh = 8.0;
+            $whStmt = $mysqli->prepare("SELECT working_hours_per_day FROM job_positions WHERE id = ?");
+            $whStmt->bind_param('i', $id);
+            $whStmt->execute();
+            $whRes = $whStmt->get_result()->fetch_assoc();
+            $whStmt->close();
+            if ($whRes && isset($whRes['working_hours_per_day']) && (float)$whRes['working_hours_per_day'] > 0) {
+                $wh = (float)$whRes['working_hours_per_day'];
+            } else {
+                $whRow2 = $mysqli->query("SELECT company_hours_per_day FROM time_date_settings LIMIT 1");
+                $row2 = $whRow2 ? $whRow2->fetch_assoc() : null;
+                if ($row2 && (float)$row2['company_hours_per_day'] > 0) $wh = (float)$row2['company_hours_per_day'];
+            }
+            $ratePerHour = $wh > 0 ? $ratePerDay / $wh : 0;
+
+            $stmt = $mysqli->prepare("UPDATE job_positions SET name = ?, rate_per_day = ?, rate_per_hour = ?, payroll_frequency = ? WHERE id = ?");
+            $stmt->bind_param('sddsi', $name, $ratePerDay, $ratePerHour, $payrollFrequency, $id);
+            if (!$stmt->execute()) {
+                throw new Exception('Update failed: ' . $stmt->error);
+            }
+            $stmt->close();
+            ob_end_clean();
+            echo json_encode(['success' => true, 'message' => 'Job position updated successfully.']);
+        } catch (Exception $e) {
+            error_log("Update Position Error: " . $e->getMessage());
+            ob_end_clean();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
+
+    case 'update_position_payroll':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            ob_end_clean();
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'POST required']);
+            break;
+        }
+        try {
+            $userRoles = $_SESSION['roles'] ?? [];
+            if (!in_array('head_admin', $userRoles)) {
+                ob_end_clean();
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Only Head Admin can edit payroll frequency']);
+                break;
+            }
+            $id = intval($_POST['id'] ?? 0);
+            $freq = strtolower(trim($_POST['payroll_frequency'] ?? ''));
+            $allowed = ['daily','weekly','bi-weekly','monthly'];
+            if ($id <= 0 || !in_array($freq, $allowed, true)) {
+                throw new Exception('Invalid parameters.');
+            }
+            $stmt = $mysqli->prepare("UPDATE job_positions SET payroll_frequency = ? WHERE id = ?");
+            $stmt->bind_param('si', $freq, $id);
+            if (!$stmt->execute()) {
+                throw new Exception('Update failed: ' . $stmt->error);
+            }
+            $stmt->close();
+            ob_end_clean();
+            echo json_encode(['success' => true, 'message' => 'Payroll frequency updated.']);
+        } catch (Exception $e) {
+            error_log("Update Position Payroll Error: " . $e->getMessage());
+            ob_end_clean();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
+
     case 'list_positions':
         try {
             // First, check what columns exist in job_positions table
@@ -89,6 +205,11 @@ switch ($action) {
                 $selectFields .= ", jp.working_hours_per_day";
             } else {
                 $selectFields .= ", 8 as working_hours_per_day";
+            }
+            if (in_array('payroll_frequency', $columns)) {
+                $selectFields .= ", jp.payroll_frequency";
+            } else {
+                $selectFields .= ", 'monthly' as payroll_frequency";
             }
 
             $query = "
@@ -127,6 +248,13 @@ switch ($action) {
             break;
         }
         try {
+            $userRoles = $_SESSION['roles'] ?? [];
+            if (!in_array('head_admin', $userRoles)) {
+                ob_end_clean();
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Only Head Admin can add departments']);
+                break;
+            }
             $name = trim($_POST['name'] ?? '');
             if (empty($name)) {
                 throw new Exception('Department name is required.');
@@ -166,8 +294,18 @@ switch ($action) {
             break;
         }
         try {
+            $userRoles = $_SESSION['roles'] ?? [];
+            if (!in_array('head_admin', $userRoles)) {
+                ob_end_clean();
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Only Head Admin can add job positions']);
+                break;
+            }
             $name = trim($_POST['name'] ?? '');
             $ratePerDay = floatval($_POST['rate_per_day'] ?? 0);
+            $payrollFrequency = strtolower(trim($_POST['payroll_frequency'] ?? 'monthly'));
+            $allowedFreq = ['weekly','biweekly','semimonthly','monthly'];
+            if (!in_array($payrollFrequency, $allowedFreq, true)) { $payrollFrequency = 'monthly'; }
 
             if (empty($name)) {
                 throw new Exception('Job position name is required.');
@@ -185,16 +323,17 @@ switch ($action) {
             }
             $checkStmt->close();
 
-            // Get default working_hour_per_day (8 hours if not set)
-            // This will be updated later from settings page
-            $workingHourPerDay = 8; // Default value
+            // Get default working_hour_per_day from settings (fallback 8)
+            $whRes = $mysqli->query("SELECT company_hours_per_day FROM time_date_settings LIMIT 1");
+            $whRow = $whRes ? $whRes->fetch_assoc() : null;
+            $workingHourPerDay = isset($whRow['company_hours_per_day']) ? (float)$whRow['company_hours_per_day'] : 8;
 
             // Compute rate_per_hour = rate_per_day / working_hour_per_day
             $ratePerHour = $workingHourPerDay > 0 ? $ratePerDay / $workingHourPerDay : 0;
 
-            // Insert with all three fields
-            $stmt = $mysqli->prepare("INSERT INTO job_positions (name, rate_per_day, rate_per_hour, working_hours_per_day) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param('sddd', $name, $ratePerDay, $ratePerHour, $workingHourPerDay);
+            // Insert with payroll_frequency
+            $stmt = $mysqli->prepare("INSERT INTO job_positions (name, rate_per_day, rate_per_hour, working_hours_per_day, payroll_frequency) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param('sddds', $name, $ratePerDay, $ratePerHour, $workingHourPerDay, $payrollFrequency);
             if (!$stmt->execute()) {
                 throw new Exception('Insert failed: ' . $stmt->error);
             }
@@ -216,6 +355,13 @@ switch ($action) {
             ob_end_clean();
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'DELETE required']);
+            break;
+        }
+        $userRoles = $_SESSION['roles'] ?? [];
+        if (!in_array('head_admin', $userRoles)) {
+            ob_end_clean();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Only Head Admin can delete departments']);
             break;
         }
         $id = (int)($_GET['id'] ?? 0);
@@ -264,6 +410,13 @@ switch ($action) {
             ob_end_clean();
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'DELETE required']);
+            break;
+        }
+        $userRoles = $_SESSION['roles'] ?? [];
+        if (!in_array('head_admin', $userRoles)) {
+            ob_end_clean();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Only Head Admin can delete job positions']);
             break;
         }
         $id = (int)($_GET['id'] ?? 0);

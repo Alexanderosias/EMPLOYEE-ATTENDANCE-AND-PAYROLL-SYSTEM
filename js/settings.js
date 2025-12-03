@@ -48,6 +48,51 @@ async function loadSettings() {
   }
 }
 
+// Save payroll frequency per job role
+async function saveRolePayrollSettings() {
+  const container = document.getElementById("rolePayrollContainer");
+  if (!container) return;
+  const selects = container.querySelectorAll("select[data-role-id]");
+  const map = {};
+  selects.forEach((sel) => {
+    const id = sel.getAttribute("data-role-id");
+    if (id) map[id] = sel.value;
+  });
+
+  let response;
+  let responseText = "";
+  const formData = new FormData();
+  formData.append("action", "save_role_payroll");
+  formData.append("frequencies", JSON.stringify(map));
+
+  try {
+    response = await fetch("../views/settings_handler.php", {
+      method: "POST",
+      body: formData,
+    });
+    responseText = await response.text();
+    if (!response.ok) {
+      showStatus(`Failed to save: ${response.status} ${response.statusText}`, "error");
+      return;
+    }
+    const result = JSON.parse(responseText);
+    if (result.success) {
+      showStatus(result.message || "Saved.", "success");
+      // Reflect locally
+      if (settingsData.payroll && Array.isArray(settingsData.payroll.roles)) {
+        settingsData.payroll.roles = settingsData.payroll.roles.map((r) => ({
+          ...r,
+          payroll_frequency: map[r.id] ? map[r.id] : r.payroll_frequency,
+        }));
+      }
+    } else {
+      showStatus(result.message || "Failed to save.", "error");
+    }
+  } catch (e) {
+    showStatus("Error saving: " + e.message, "error");
+  }
+}
+
 function populateForm() {
   // System Info
   const system = settingsData.system || {};
@@ -70,6 +115,23 @@ function populateForm() {
   const dateFormatElem = document.getElementById("dateFormat");
   if (dateFormatElem)
     dateFormatElem.value = timeDate.date_format || "DD/MM/YYYY";
+  const graceInElem = document.getElementById("graceInMinutes");
+  if (graceInElem)
+    graceInElem.value = Number.isFinite(parseInt(timeDate.grace_in_minutes))
+      ? parseInt(timeDate.grace_in_minutes)
+      : 0;
+  const graceOutElem = document.getElementById("graceOutMinutes");
+  if (graceOutElem)
+    graceOutElem.value = Number.isFinite(parseInt(timeDate.grace_out_minutes))
+      ? parseInt(timeDate.grace_out_minutes)
+      : 0;
+  const companyHoursElem = document.getElementById("companyHoursPerDay");
+  if (companyHoursElem)
+    companyHoursElem.value = Number.isFinite(
+      parseFloat(timeDate.company_hours_per_day)
+    )
+      ? parseFloat(timeDate.company_hours_per_day)
+      : 8;
 
   // Leave Info
   const leave = settingsData.leave || {};
@@ -104,6 +166,10 @@ function populateForm() {
   const sessionTimeoutElem = document.getElementById("sessionTimeout");
   if (sessionTimeoutElem)
     sessionTimeoutElem.value = backup.session_timeout_minutes || 30;
+
+  // Payroll per role
+  const payroll = settingsData.payroll || {};
+  renderRolePayroll(Array.isArray(payroll.roles) ? payroll.roles : []);
 }
 
 function updateSidebar() {
@@ -114,6 +180,55 @@ function updateSidebar() {
   }
   document.getElementById("sidebarAppName").textContent =
     settingsData.system.system_name || "EAAPS Admin";
+}
+
+// Render payroll frequency selectors per job role
+function renderRolePayroll(roles) {
+  const container = document.getElementById("rolePayrollContainer");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!Array.isArray(roles) || roles.length === 0) {
+    const p = document.createElement("p");
+    p.className = "small-text";
+    p.textContent = "No job roles found. Add roles in Departments and Positions.";
+    container.appendChild(p);
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "form-row three-col";
+
+  const options = [
+    { v: "weekly", l: "Weekly" },
+    { v: "biweekly", l: "Bi-Weekly" },
+    { v: "semimonthly", l: "Semi-Monthly" },
+    { v: "monthly", l: "Monthly" },
+  ];
+
+  roles.forEach((role) => {
+    const group = document.createElement("div");
+    group.className = "form-group";
+
+    const label = document.createElement("label");
+    label.textContent = role.name;
+    group.appendChild(label);
+
+    const select = document.createElement("select");
+    select.setAttribute("data-role-id", String(role.id));
+    options.forEach((opt) => {
+      const o = document.createElement("option");
+      o.value = opt.v;
+      o.textContent = opt.l;
+      select.appendChild(o);
+    });
+    select.value = (role.payroll_frequency || "monthly").toLowerCase();
+    group.appendChild(select);
+
+    grid.appendChild(group);
+  });
+
+  container.appendChild(grid);
 }
 
 // Logo Upload Functions
@@ -203,6 +318,15 @@ async function saveTimeDateSettings() {
   let responseText = "";
   const minutes = parseInt(document.getElementById("autoLogoutTime").value);
   const dateFormatVal = document.getElementById("dateFormat").value;
+  const graceInVal = parseInt(
+    document.getElementById("graceInMinutes").value
+  );
+  const graceOutVal = parseInt(
+    document.getElementById("graceOutMinutes").value
+  );
+  const companyHoursVal = parseFloat(
+    document.getElementById("companyHoursPerDay").value
+  );
 
   // 0 = disabled
   if (minutes === 0) {
@@ -214,10 +338,26 @@ async function saveTimeDateSettings() {
     return;
   }
 
+  if (graceInVal < 0 || graceInVal > 120) {
+    showStatus("Grace Period (Time In) must be 0–120 minutes.", "error");
+    return;
+  }
+  if (graceOutVal < 0 || graceOutVal > 120) {
+    showStatus("Grace Period (Time Out) must be 0–120 minutes.", "error");
+    return;
+  }
+  if (companyHoursVal < 1 || companyHoursVal > 24) {
+    showStatus("Total Working Hours per Day must be 1–24 hours.", "error");
+    return;
+  }
+
   const formData = new FormData();
   formData.append("action", "save_time_date");
   formData.append("auto_logout", minutes);
   formData.append("date_format", dateFormatVal);
+  formData.append("grace_in", graceInVal);
+  formData.append("grace_out", graceOutVal);
+  formData.append("company_hours_per_day", companyHoursVal);
 
   try {
     console.log("Saving time & date settings to ../views/settings_handler.php");
@@ -250,6 +390,9 @@ async function saveTimeDateSettings() {
       settingsData.time_date = {
         auto_logout_time_hours: decimal,
         date_format: dateFormatVal,
+        grace_in_minutes: graceInVal,
+        grace_out_minutes: graceOutVal,
+        company_hours_per_day: companyHoursVal,
       };
       // Auto-refresh to apply date format immediately
       setTimeout(() => location.reload(), 1000);

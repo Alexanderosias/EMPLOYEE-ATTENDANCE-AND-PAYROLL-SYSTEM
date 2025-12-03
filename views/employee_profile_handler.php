@@ -8,6 +8,71 @@ ini_set('error_log', __DIR__ . '/php_errors.log');
 require_once 'auth.php';
 require_once 'conn.php';
 
+// QR helpers (duplicate of logic in employees.php simplified for profile updates)
+function ep_generate_qr($mysqli, $employeeId)
+{
+    $qr_lib_path = '../phpqrcode/qrlib.php';
+    if (!file_exists($qr_lib_path)) return [null, null];
+    require_once $qr_lib_path;
+
+    // Fetch fresh employee with position
+    $stmt = $mysqli->prepare("SELECT e.id, e.first_name, e.last_name, e.date_joined, jp.name AS position_name FROM employees e LEFT JOIN job_positions jp ON e.job_position_id = jp.id WHERE e.id = ?");
+    $stmt->bind_param('i', $employeeId);
+    $stmt->execute();
+    $emp = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$emp) return [null, null];
+
+    $id = (int)$emp['id'];
+    $first = trim(preg_replace('/[|:]/', '', $emp['first_name'] ?? 'EMP'));
+    if ($first === '') $first = 'EMP';
+    $last  = trim(preg_replace('/[|:]/', '', $emp['last_name'] ?? ''));
+    $pos = trim($emp['position_name'] ?? 'N/A');
+    $joined = (!empty($emp['date_joined']) && $emp['date_joined'] !== '0000-00-00') ? $emp['date_joined'] : 'N/A';
+    $qr_data = "ID:$id|First:$first|Last:$last|Position:$pos|Joined:$joined";
+
+    $dir = '../qrcodes/';
+    if (!is_dir($dir)) mkdir($dir, 0755, true);
+    $base = $first . $last;
+    if ($base === '') $base = 'EMP' . $id;
+    $filename = $base . '.png';
+    $counter = 1;
+    while (file_exists($dir . $filename)) {
+        $filename = $base . '_' . $id . '_' . $counter . '.png';
+        $counter++;
+    }
+    $file_path = $dir . $filename;
+    $web_path = 'qrcodes/' . $filename;
+
+    // Suppress accidental output
+    $obLevel = ob_get_level();
+    ob_start();
+    $ecc = defined('QR_ECLEVEL_L') ? QR_ECLEVEL_L : 0;
+    QRcode::png($qr_data, $file_path, $ecc, 10, 2);
+    while (ob_get_level() > $obLevel) { ob_end_clean(); }
+
+    if (!file_exists($file_path)) return [null, null];
+    return [$web_path, $qr_data];
+}
+
+function ep_delete_qr($mysqli, $employeeId)
+{
+    $stmt = $mysqli->prepare("SELECT qr_image_path FROM qr_codes WHERE employee_id = ?");
+    $stmt->bind_param('i', $employeeId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res->fetch_assoc();
+    $stmt->close();
+    if ($row && !empty($row['qr_image_path'])) {
+        $full = '../' . $row['qr_image_path'];
+        if (file_exists($full)) @unlink($full);
+    }
+    $stmt = $mysqli->prepare("DELETE FROM qr_codes WHERE employee_id = ?");
+    $stmt->bind_param('i', $employeeId);
+    $stmt->execute();
+    $stmt->close();
+}
+
 $db = conn();
 $mysqli = $db['mysqli'];
 
@@ -15,7 +80,10 @@ header('Content-Type: application/json');
 ob_start();
 
 // Check if user is employee
-if ($_SESSION['role'] !== 'employee') {
+$userRoles = $_SESSION['roles'] ?? [];
+$hasEmployeeRole = (isset($_SESSION['role']) && $_SESSION['role'] === 'employee')
+    || (is_array($userRoles) && in_array('employee', $userRoles));
+if (!$hasEmployeeRole) {
     ob_end_clean();
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
@@ -29,7 +97,7 @@ try {
         case 'get_profile':
             // Fetch employee data
             $stmt = $mysqli->prepare("
-                SELECT e.*, u.first_name, u.last_name, u.email, u.avatar_path, u.created_at,
+                SELECT e.*, u.first_name, u.last_name, u.email, u.avatar_path AS user_avatar_path, u.created_at,
                        d.name as department_name, jp.name as position_name
                 FROM employees e
                 JOIN users u ON e.user_id = u.id
@@ -47,10 +115,14 @@ try {
                 throw new Exception('Employee record not found');
             }
 
-            // Format avatar path
-            if ($employee['avatar_path'] && strpos($employee['avatar_path'], 'uploads/') === 0) {
-                $employee['avatar_path'] = '../' . $employee['avatar_path'];
-            } elseif (!$employee['avatar_path']) {
+            // Prefer employees.avatar_path for display; fallback to users.avatar_path; else default image
+            $empAvatar = $employee['avatar_path'] ?? '';
+            $userAvatar = $employee['user_avatar_path'] ?? '';
+            if (!empty($empAvatar)) {
+                $employee['avatar_path'] = (strpos($empAvatar, 'uploads/') === 0) ? ('../' . $empAvatar) : $empAvatar;
+            } elseif (!empty($userAvatar)) {
+                $employee['avatar_path'] = (strpos($userAvatar, 'uploads/') === 0) ? ('../' . $userAvatar) : $userAvatar;
+            } else {
                 $employee['avatar_path'] = '../pages/img/user.jpg';
             }
 
@@ -59,13 +131,15 @@ try {
             break;
 
         case 'update_profile':
-            // Update editable fields only: address, phone_number, emergency_contact_name, emergency_contact_phone
+            // Update editable fields. If QR-relevant name fields change, regenerate QR.
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('POST required');
             }
 
             $address = trim($_POST['address'] ?? '');
             $phoneNumber = trim($_POST['phone_number'] ?? '');
+            $firstName = isset($_POST['first_name']) ? trim($_POST['first_name']) : null;
+            $lastName = isset($_POST['last_name']) ? trim($_POST['last_name']) : null;
             $emergencyContactName = trim($_POST['emergency_contact_name'] ?? '');
             $emergencyContactPhone = trim($_POST['emergency_contact_phone'] ?? '');
 
@@ -74,22 +148,52 @@ try {
                 throw new Exception('Phone number is required');
             }
 
-            // Update employees table
-            $stmt = $mysqli->prepare("
-                UPDATE employees 
-                SET address = ?, phone_number = ?, 
-                    emergency_contact_name = ?, emergency_contact_phone = ?
-                WHERE user_id = ?
-            ");
-            $stmt->bind_param('ssssi', $address, $phoneNumber, $emergencyContactName, $emergencyContactPhone, $userId);
+            // Load current values for QR change detection and employee id
+            $stmt = $mysqli->prepare("SELECT e.id, e.first_name, e.last_name FROM employees e WHERE e.user_id = ?");
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $empRow = $res->fetch_assoc();
+            $stmt->close();
+            if (!$empRow) throw new Exception('Employee record not found');
+            $employeeId = (int)$empRow['id'];
+            $currentFirst = $empRow['first_name'] ?? '';
+            $currentLast = $empRow['last_name'] ?? '';
 
-            if (!$stmt->execute()) {
-                throw new Exception('Failed to update profile');
+            $qrChanged = false;
+            if ($firstName !== null && $firstName !== $currentFirst) $qrChanged = true;
+            if ($lastName !== null && $lastName !== $currentLast) $qrChanged = true;
+
+            // Update users table (names, phone, address)
+            if ($firstName !== null || $lastName !== null || $address !== '' || $phoneNumber !== '') {
+                $stmt = $mysqli->prepare("UPDATE users SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name), phone_number = ?, address = ? WHERE id = ?");
+                $stmt->bind_param('ssssi', $firstName, $lastName, $phoneNumber, $address, $userId);
+                if (!$stmt->execute()) throw new Exception('Failed to update user info');
+                $stmt->close();
             }
+
+            // Update employees table (mirror names, contact_number, address, emergency contacts)
+            $stmt = $mysqli->prepare("UPDATE employees SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name), address = ?, contact_number = ?, emergency_contact_name = ?, emergency_contact_phone = ? WHERE user_id = ?");
+            $stmt->bind_param('ssssssi', $firstName, $lastName, $address, $phoneNumber, $emergencyContactName, $emergencyContactPhone, $userId);
+            if (!$stmt->execute()) throw new Exception('Failed to update profile');
             $stmt->close();
 
+            $qrPath = null;
+            if ($qrChanged) {
+                // Delete old QR then generate new
+                ep_delete_qr($mysqli, $employeeId);
+                [$qr_path, $qr_data] = ep_generate_qr($mysqli, $employeeId);
+                if ($qr_path && $qr_data) {
+                    $stmt = $mysqli->prepare("INSERT INTO qr_codes (employee_id, qr_data, qr_image_path) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE qr_data = VALUES(qr_data), qr_image_path = VALUES(qr_image_path)");
+                    $stmt->bind_param('iss', $employeeId, $qr_data, $qr_path);
+                    $stmt->execute();
+                    $stmt->close();
+                    $qrPath = $qr_path;
+                }
+            }
+
             ob_end_clean();
-            echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
+            echo json_encode(['success' => true, 'message' => 'Profile updated successfully', 'qr_regenerated' => $qrChanged, 'qr_path' => $qrPath]);
             break;
 
         case 'update_avatar':
@@ -129,20 +233,60 @@ try {
                 throw new Exception('Failed to save uploaded file');
             }
 
-            // Update database
-            $stmt = $mysqli->prepare("UPDATE users SET avatar_path = ? WHERE id = ?");
-            $stmt->bind_param('si', $dbPath, $userId);
-
-            if (!$stmt->execute()) {
-                unlink($targetPath); // Delete uploaded file if database update fails
-                throw new Exception('Failed to update avatar in database');
-            }
+            // Read old avatar paths (employees and users)
+            $oldEmpPath = '';
+            $oldUserPath = '';
+            $stmt = $mysqli->prepare("SELECT e.avatar_path AS emp_avatar, u.avatar_path AS user_avatar, e.id AS emp_id FROM employees e JOIN users u ON e.user_id = u.id WHERE e.user_id = ?");
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $row = $res->fetch_assoc();
             $stmt->close();
+            if ($row) {
+                $oldEmpPath = trim($row['emp_avatar'] ?? '');
+                $oldUserPath = trim($row['user_avatar'] ?? '');
+            }
+
+            // Update both tables in a transaction
+            $mysqli->begin_transaction();
+            try {
+                // Update users
+                $stmt = $mysqli->prepare("UPDATE users SET avatar_path = ? WHERE id = ?");
+                $stmt->bind_param('si', $dbPath, $userId);
+                if (!$stmt->execute()) throw new Exception('Failed to update user avatar');
+                $stmt->close();
+
+                // Update employees (linked by user_id)
+                $stmt = $mysqli->prepare("UPDATE employees SET avatar_path = ? WHERE user_id = ?");
+                $stmt->bind_param('si', $dbPath, $userId);
+                if (!$stmt->execute()) throw new Exception('Failed to update employee avatar');
+                $stmt->close();
+
+                $mysqli->commit();
+            } catch (Exception $txe) {
+                $mysqli->rollback();
+                // Clean up uploaded file on failure
+                if (file_exists($targetPath)) @unlink($targetPath);
+                throw $txe;
+            }
+
+            // Delete old avatar files (avoid deleting defaults or if same as new)
+            $toDelete = [];
+            foreach ([$oldEmpPath, $oldUserPath] as $p) {
+                if (!empty($p) && strpos($p, 'uploads/avatars/') === 0 && $p !== $dbPath) {
+                    $abs = __DIR__ . '/../' . $p;
+                    if (file_exists($abs)) $toDelete[$abs] = true; // de-dup
+                }
+            }
+            foreach (array_keys($toDelete) as $absPath) {
+                @unlink($absPath);
+            }
 
             ob_end_clean();
             echo json_encode([
                 'success' => true,
                 'message' => 'Avatar updated successfully',
+                // Return the employee avatar path for display
                 'avatar_path' => '../' . $dbPath
             ]);
             break;
@@ -170,20 +314,20 @@ try {
             }
 
             // Verify current password
-            $stmt = $mysqli->prepare("SELECT password FROM users WHERE id = ?");
+            $stmt = $mysqli->prepare("SELECT password_hash FROM users WHERE id = ?");
             $stmt->bind_param('i', $userId);
             $stmt->execute();
             $result = $stmt->get_result();
             $user = $result->fetch_assoc();
             $stmt->close();
 
-            if (!$user || !password_verify($currentPassword, $user['password'])) {
+            if (!$user || !password_verify($currentPassword, $user['password_hash'])) {
                 throw new Exception('Current password is incorrect');
             }
 
             // Update password
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $stmt = $mysqli->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $stmt = $mysqli->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
             $stmt->bind_param('si', $hashedPassword, $userId);
 
             if (!$stmt->execute()) {

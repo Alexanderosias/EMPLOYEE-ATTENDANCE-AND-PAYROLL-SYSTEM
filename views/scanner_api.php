@@ -111,7 +111,7 @@ switch ($action) {
             $now = date('Y-m-d H:i:s');
 
             // Check existing log for today
-            $stmt = $mysqli->prepare("SELECT id, time_in, time_out FROM attendance_logs WHERE employee_id = ? AND date = ?");
+            $stmt = $mysqli->prepare("SELECT id, time_in, time_out, status FROM attendance_logs WHERE employee_id = ? AND date = ?");
             $stmt->bind_param('is', $employeeId, $today);
             $stmt->execute();
             $logResult = $stmt->get_result();
@@ -173,20 +173,33 @@ switch ($action) {
 
             // Determine Status
             $status = 'Present';
-            $gracePeriodMinutes = 15; // Example grace period, can be made dynamic later
+
+            // Load grace periods from settings
+            $graceInMinutes = 0;
+            $graceOutMinutes = 0;
+            $gpRes = $mysqli->query("SELECT grace_in_minutes, grace_out_minutes FROM time_date_settings LIMIT 1");
+            if ($gpRes) {
+                $gpRow = $gpRes->fetch_assoc();
+                if ($gpRow) {
+                    $graceInMinutes = isset($gpRow['grace_in_minutes']) ? (int)$gpRow['grace_in_minutes'] : 0;
+                    $graceOutMinutes = isset($gpRow['grace_out_minutes']) ? (int)$gpRow['grace_out_minutes'] : 0;
+                }
+            }
 
             if ($checkType === 'in') {
                 $expectedStartTimeStr = $today . ' ' . $earliestStart;
                 // Late if current time > expected start time + grace period
                 // For strict comparison without grace period, remove the addition
-                if (strtotime($now) > strtotime($expectedStartTimeStr)) {
+                if (strtotime($now) > (strtotime($expectedStartTimeStr) + ($graceInMinutes * 60))) {
                     $status = 'Late';
                 }
             } elseif ($checkType === 'out') {
                 $expectedEndTimeStr = $today . ' ' . $latestEnd;
-                // Undertime if current time < expected end time
-                if (strtotime($now) < strtotime($expectedEndTimeStr)) {
+                // Undertime if current time < expected end time (consider grace period for time-out)
+                if (strtotime($now) < (strtotime($expectedEndTimeStr) - ($graceOutMinutes * 60))) {
                     $status = 'Undertime';
+                } else {
+                    $status = isset($existingLog['status']) && $existingLog['status'] !== '' ? $existingLog['status'] : $status;
                 }
             }
 
@@ -238,6 +251,116 @@ switch ($action) {
             ob_end_clean();
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        break;
+
+    case 'export_package':
+        try {
+            if (!class_exists('ZipArchive')) {
+                // Provide a clear error instead of a fatal 500
+                if (function_exists('ob_get_length') && ob_get_length()) {
+                    @ob_end_clean();
+                }
+                header('Content-Type: text/plain; charset=utf-8');
+                http_response_code(500);
+                echo "Export failed: PHP ZipArchive extension is not enabled.\n" .
+                     "Please enable the php_zip extension in your php.ini (XAMPP: enable ;extension=zip), then restart Apache.";
+                exit;
+            }
+            // Prepare ZIP
+            $timestamp = date('Ymd_His');
+            $zipFilename = 'attendance_package_' . $timestamp . '.zip';
+            $tmpZipPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $zipFilename;
+
+            $zip = new ZipArchive();
+            if ($zip->open($tmpZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                throw new Exception('Failed to create zip archive');
+            }
+
+            // Fetch all attendance logs
+            $query = "
+                SELECT al.id, al.employee_id, al.date, al.time_in, al.time_out, al.status, al.check_type,
+                       al.expected_start_time, al.expected_end_time, al.snapshot_path
+                FROM attendance_logs al
+                ORDER BY al.date DESC, al.time_in DESC
+            ";
+            $result = $mysqli->query($query);
+            if (!$result) {
+                $zip->close();
+                throw new Exception('Query failed: ' . $mysqli->error);
+            }
+
+            $logs = [];
+            $copiedFiles = [];
+            while ($row = $result->fetch_assoc()) {
+                $logId = (int)$row['id'];
+
+                // Collect snapshot paths (primary + snapshots table)
+                $snapPaths = [];
+                if (!empty($row['snapshot_path'])) {
+                    $snapPaths[] = $row['snapshot_path'];
+                }
+                $sRes = $mysqli->prepare("SELECT image_path FROM snapshots WHERE attendance_log_id = ?");
+                $sRes->bind_param('i', $logId);
+                $sRes->execute();
+                $sRows = $sRes->get_result();
+                while ($s = $sRows->fetch_assoc()) {
+                    if (!empty($s['image_path'])) $snapPaths[] = $s['image_path'];
+                }
+                $sRes->close();
+
+                // Unique by basename and copy into zip under snapshots/
+                $snapBasenames = [];
+                foreach ($snapPaths as $p) {
+                    $base = basename($p);
+                    if (isset($snapBasenames[$base])) continue; // avoid duplicates
+                    $snapBasenames[$base] = true;
+
+                    $diskPath = realpath(__DIR__ . '/../' . $p);
+                    if ($diskPath && file_exists($diskPath)) {
+                        $zip->addFile($diskPath, 'snapshots/' . $base);
+                        $copiedFiles[$base] = true;
+                    }
+                }
+
+                $logs[] = [
+                    'employee_id' => (int)$row['employee_id'],
+                    'date' => $row['date'],
+                    'time_in' => $row['time_in'],
+                    'time_out' => $row['time_out'],
+                    'status' => $row['status'],
+                    'check_type' => $row['check_type'],
+                    'expected_start_time' => $row['expected_start_time'],
+                    'expected_end_time' => $row['expected_end_time'],
+                    'snapshots' => array_keys($snapBasenames)
+                ];
+            }
+            $result->free();
+
+            // Add logs.json
+            $payload = json_encode([
+                'exported_at' => date('c'),
+                'logs' => $logs
+            ], JSON_PRETTY_PRINT);
+            $zip->addFromString('logs.json', $payload);
+
+            $zip->close();
+
+            // Stream the zip to browser
+            if (function_exists('ob_get_length') && ob_get_length()) {
+                @ob_end_clean();
+            }
+            header('Content-Type: application/zip');
+            header('Content-Disposition: attachment; filename=' . $zipFilename);
+            header('Content-Length: ' . filesize($tmpZipPath));
+            readfile($tmpZipPath);
+            @unlink($tmpZipPath);
+            exit;
+        } catch (Exception $e) {
+            error_log("Export Package Error: " . $e->getMessage());
+            ob_end_clean();
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Export package failed: ' . $e->getMessage()]);
         }
         break;
 

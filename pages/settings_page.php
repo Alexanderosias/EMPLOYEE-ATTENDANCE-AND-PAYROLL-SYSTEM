@@ -197,6 +197,27 @@ require_once '../views/auth.php';  // path relative to the page
                   </select>
                 </div>
               </div>
+
+              <div class="sub-section">
+                <h5>Attendance Grace Period & Company Hours</h5>
+                <div class="form-row three-col">
+                  <div class="form-group">
+                    <label for="graceInMinutes">Grace Period: Time In (minutes)</label>
+                    <input type="number" id="graceInMinutes" value="0" min="0" max="120" step="1" />
+                    <p class="small-text">Clock-ins within this window are not considered late.</p>
+                  </div>
+                  <div class="form-group">
+                    <label for="graceOutMinutes">Grace Period: Time Out (minutes)</label>
+                    <input type="number" id="graceOutMinutes" value="0" min="0" max="120" step="1" />
+                    <p class="small-text">Allow early time-out without undertime within this window.</p>
+                  </div>
+                  <div class="form-group">
+                    <label for="companyHoursPerDay">Total Working Hours per Day</label>
+                    <input type="number" id="companyHoursPerDay" value="8" min="1" max="24" step="0.25" />
+                    <p class="small-text">Company-wide default. Job positions can override if needed.</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="btn-group">
@@ -237,6 +258,7 @@ require_once '../views/auth.php';  // path relative to the page
               </button>
             </div>
           </div>
+
 
           <div id="working-hours-modal" class="modal-overlay hidden">
             <div class="modal-content relative">

@@ -1,258 +1,204 @@
-// Toggle tax settings panel (FIX: Uses 'active' class for visibility)
-        const taxSettingsHeader = document.getElementById('tax-settings-header');
-        const taxSettingsContent = document.getElementById('tax-settings-content');
-        const toggleIcon = document.getElementById('toggle-icon');
+document.addEventListener('DOMContentLoaded', () => {
+  const API = '../views/payroll_handler.php';
 
-        taxSettingsHeader.addEventListener('click', () => {
-            const expanded = taxSettingsHeader.getAttribute('aria-expanded') === 'true';
-            if (expanded) {
-                taxSettingsContent.classList.remove('active');
-                taxSettingsHeader.setAttribute('aria-expanded', 'false');
-                toggleIcon.style.transform = 'rotate(0deg)';
-            } else {
-                taxSettingsContent.classList.add('active');
-                taxSettingsHeader.setAttribute('aria-expanded', 'true');
-                toggleIcon.style.transform = 'rotate(180deg)';
-            }
-        });
+  // Summary refs
+  const sumGross = document.getElementById('sum-gross');
+  const sumDed = document.getElementById('sum-deductions');
+  const sumNet = document.getElementById('sum-net');
+  const sumPeriod = document.getElementById('sum-period');
 
-        taxSettingsHeader.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                taxSettingsHeader.click();
-            }
-        });
+  // Controls
+  const startInput = document.getElementById('period-start');
+  const endInput = document.getElementById('period-end');
+  const freqSelect = document.getElementById('freq-select');
+  const roleFilter = document.getElementById('role-filter');
+  const btnRecalc = document.getElementById('btn-recalc');
 
-        // Elements for payroll summary
-        const totalGrossPaySpan = document.getElementById('total-gross-pay');
-        const totalDeductionsSpan = document.getElementById('total-deductions');
-        const totalNetPaySpan = document.getElementById('total-net-pay');
-        const payrollTableBody = document.getElementById('payroll-table-body');
-        const payPeriodDisplayP = document.getElementById('pay-period-display');
-        const markAsPaidBtn = document.getElementById('mark-as-paid-btn');
-        const statusMessageDiv = document.getElementById('status-message');
+  // Tables
+  const roleNextBody = document.getElementById('role-next-payroll-body');
+  const previewBody = document.getElementById('payroll-preview-body');
 
-        // Tax rate inputs
-        const philhealthRateInput = document.getElementById('philhealth-rate');
-        const philhealthFloorInput = document.getElementById('philhealth-floor');
-        const philhealthCeilingInput = document.getElementById('philhealth-ceiling');
-        const philhealthFixedFloorInput = document.getElementById('philhealth-fixed-floor');
-        const philhealthFixedCeilingInput = document.getElementById('philhealth-fixed-ceiling');
-        const pagibigRateInput = document.getElementById('pagibig-rate');
-        const pagibigLowRateInput = document.getElementById('pagibig-low-rate');
-        const pagibigThresholdInput = document.getElementById('pagibig-threshold');
-        const sssTableTextarea = document.getElementById('sss-table');
-        const saveTaxRatesBtn = document.getElementById('save-tax-rates-btn');
+  // Deductions
+  const dedRows = document.getElementById('deduction-rows');
+  const btnAddDed = document.getElementById('btn-add-deduction');
 
-        // Mock employees data
-        const employees = [
-            { id: 'emp1', name: 'Francis Rivas', monthlySalary: 20000, isSkipped: false },
-            { id: 'emp2', name: 'Adela Onlao', monthlySalary: 20000, isSkipped: false }
-        ];
+  const statusBox = document.getElementById('status-message');
 
-        // Default tax rates object
-        let taxRates = null;
+  function show(msg, type = 'success') {
+    if (!statusBox) return;
+    statusBox.textContent = msg;
+    statusBox.className = 'status-message ' + type;
+    statusBox.classList.add('show');
+    if (statusBox._hideTimer) clearTimeout(statusBox._hideTimer);
+    statusBox._hideTimer = setTimeout(() => statusBox.classList.remove('show'), 2500);
+  }
 
-        // Utility functions
-        function formatCurrency(num) {
-            return `₱${num.toFixed(2)}`;
+  function pad(n){ return n.toString().padStart(2,'0'); }
+  function ymd(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+
+  function initDefaultPeriod() {
+    const now = new Date();
+    const s = new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 1 : 16);
+    const e = new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 15 : (new Date(now.getFullYear(), now.getMonth()+1, 0)).getDate());
+    if (startInput) startInput.value = ymd(s);
+    if (endInput) endInput.value = ymd(e);
+    if (sumPeriod) sumPeriod.textContent = `${startInput.value} to ${endInput.value}`;
+  }
+
+  async function loadRoles() {
+    try {
+      const res = await fetch(`${API}?action=roles`);
+      const out = await res.json();
+      if (!out.success) return;
+      const roles = Array.isArray(out.data) ? out.data : [];
+      if (!roleFilter) return;
+      const first = roleFilter.querySelector('option')?.outerHTML || '<option value="">All Roles</option>';
+      roleFilter.innerHTML = first + roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+    } catch {}
+  }
+
+  async function loadNextPayrollPerRole() {
+    try {
+      const res = await fetch(`${API}?action=next_payroll_per_role`);
+      const out = await res.json();
+      if (!roleNextBody) return;
+      roleNextBody.innerHTML = '';
+      if (!out.success) {
+        roleNextBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#6b7280;">Failed to load</td></tr>';
+        return;
+      }
+      const list = Array.isArray(out.data) ? out.data : [];
+      if (list.length === 0) {
+        roleNextBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#6b7280;">No data</td></tr>';
+        return;
+      }
+      list.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.role_name}</td>
+          <td>${(r.frequency || '').replace(/^./, c=>c.toUpperCase())}</td>
+          <td>${r.next_payroll_date}</td>
+          <td>${r.period_start} to ${r.period_end}</td>
+        `;
+        roleNextBody.appendChild(tr);
+      });
+    } catch {
+      if (roleNextBody) roleNextBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#6b7280;">Error</td></tr>';
+    }
+  }
+
+  function collectDeductions() {
+    const arr = [];
+    if (!dedRows) return arr;
+    dedRows.querySelectorAll('.deduction-row').forEach(row => {
+      const [typeSel, labelInp, amtInp, scopeSel] = row.querySelectorAll('select, input[type="text"], input[type="number"]');
+      const recur = row.querySelector('input[type="checkbox"]');
+      const type = typeSel ? (typeSel.value || '') : '';
+      const label = labelInp ? (labelInp.value || '') : '';
+      const amount = parseFloat(amtInp?.value || '0');
+      const scope = scopeSel ? (scopeSel.value || 'Per Employee') : 'Per Employee';
+      const recurring = !!(recur && recur.checked);
+      if (!isNaN(amount) && amount > 0) arr.push({ type, label, amount, scope, recurring });
+    });
+    return arr;
+  }
+
+  function formatPhp(n) {
+    const num = typeof n === 'string' ? parseFloat(n) : n;
+    if (isNaN(num)) return '₱0.00';
+    return '₱' + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  async function recalcPreview() {
+    try {
+      const start = startInput?.value || '';
+      const end = endInput?.value || '';
+      const role_id = parseInt(roleFilter?.value || '0', 10) || 0;
+      if (sumPeriod) sumPeriod.textContent = `${start || '—'} to ${end || '—'}`;
+      const body = { start, end, role_id, deductions: collectDeductions() };
+      const res = await fetch(`${API}?action=preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const out = await res.json();
+      if (!out.success) throw new Error(out.message || 'Failed to compute');
+
+      // Update summary
+      const s = out.data?.summary || {};
+      if (sumGross) sumGross.textContent = formatPhp(s.total_gross || 0);
+      if (sumDed) sumDed.textContent = formatPhp(s.total_deductions || 0);
+      if (sumNet) sumNet.textContent = formatPhp(s.total_net || 0);
+
+      // Update table
+      if (previewBody) {
+        previewBody.innerHTML = '';
+        const rows = Array.isArray(out.data?.rows) ? out.data.rows : [];
+        if (rows.length === 0) {
+          previewBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#6b7280;">No results</td></tr>';
+        } else {
+          rows.forEach(r => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${r.employee}</td>
+              <td>${r.role}</td>
+              <td>${r.hours_days}</td>
+              <td>${formatPhp(r.gross)}</td>
+              <td>${formatPhp(r.deductions)}</td>
+              <td>${formatPhp(r.net)}</td>
+              <td>${r.status || 'Included'}</td>
+            `;
+            previewBody.appendChild(tr);
+          });
         }
+      }
+      show('Preview updated.');
+    } catch (e) {
+      show(e.message || 'Failed to compute', 'error');
+    }
+  }
 
-        function calculatePhilHealth(monthlySalary) {
-            if (!taxRates) return 0;
-            const { rate, floor, ceiling, fixedAmountFloor, fixedAmountCeiling } = taxRates.philhealth;
-            if (monthlySalary <= floor) return fixedAmountFloor;
-            if (monthlySalary >= ceiling) return fixedAmountCeiling;
-            return monthlySalary * rate;
-        }
+  function makeDeductionRow() {
+    const div = document.createElement('div');
+    div.className = 'deduction-row';
+    div.innerHTML = `
+      <select>
+        <option>SSS</option>
+        <option>PhilHealth</option>
+        <option>Pag-IBIG</option>
+        <option>Tax</option>
+        <option>Loan</option>
+        <option>Other</option>
+      </select>
+      <input type="text" placeholder="e.g., Union Fee" />
+      <input type="number" step="0.01" placeholder="0.00" />
+      <select>
+        <option>Per Employee</option>
+        <option>Per Role</option>
+        <option>Global</option>
+      </select>
+      <label class="recurring"><input type="checkbox" /> Yes</label>
+      <button type="button" class="btn-remove-row">Remove</button>
+    `;
+    div.querySelector('.btn-remove-row').addEventListener('click', () => div.remove());
+    return div;
+  }
 
-        function calculatePagIbig(monthlySalary) {
-            if (!taxRates) return 0;
-            const { employeeRate, lowIncomeEmployeeRate, lowIncomeThreshold } = taxRates.pagibig;
-            const rate = monthlySalary > lowIncomeThreshold ? employeeRate : lowIncomeEmployeeRate;
-            return monthlySalary * rate;
-        }
+  // Events
+  btnRecalc && btnRecalc.addEventListener('click', recalcPreview);
+  btnAddDed && btnAddDed.addEventListener('click', () => { dedRows.appendChild(makeDeductionRow()); });
+  roleFilter && roleFilter.addEventListener('change', recalcPreview);
 
-        function calculateSSS(monthlySalary) {
-            if (!taxRates) return 0;
-            const sssTable = taxRates.sss;
-            const entry = sssTable.find(row => monthlySalary >= row.salaryRange[0] && monthlySalary <= row.salaryRange[1]);
-            return entry ? entry.sssContribution : 0;
-        }
+  // Wire initial remove buttons (first row)
+  dedRows?.querySelectorAll('.btn-remove-row').forEach(btn => btn.addEventListener('click', (e) => {
+    const row = e.target.closest('.deduction-row');
+    if (row) row.remove();
+  }));
 
-        function calculatePayroll(employee, isMonthly) {
-            const grossPay = isMonthly ? employee.monthlySalary : employee.monthlySalary / 2;
-            const philhealth = isMonthly ? calculatePhilHealth(employee.monthlySalary) : calculatePhilHealth(employee.monthlySalary) / 2;
-            const sss = isMonthly ? calculateSSS(employee.monthlySalary) : calculateSSS(employee.monthlySalary) / 2;
-            const pagibig = isMonthly ? calculatePagIbig(employee.monthlySalary) : calculatePagIbig(employee.monthlySalary) / 2;
-            const otherDeductions = 0; // Placeholder
-            const totalDeductions = philhealth + sss + pagibig + otherDeductions;
-            const netPay = grossPay - totalDeductions;
-            return { grossPay, philhealth, sss, pagibig, otherDeductions, totalDeductions, netPay };
-        }
+  // Init
+  initDefaultPeriod();
+  loadRoles();
+  loadNextPayrollPerRole();
+  recalcPreview();
+});
 
-        // Render payroll table
-        function renderTable(records) {
-            payrollTableBody.innerHTML = '';
-
-            if (records.length === 0) {
-                const tr = document.createElement('tr');
-                const td = document.createElement('td');
-                td.colSpan = 9;
-                td.textContent = 'No payroll records found.';
-                td.style.textAlign = 'center';
-                td.style.padding = '1rem';
-                tr.appendChild(td);
-                payrollTableBody.appendChild(tr);
-                totalGrossPaySpan.textContent = '₱0.00';
-                totalDeductionsSpan.textContent = '₱0.00';
-                totalNetPaySpan.textContent = '₱0.00';
-                markAsPaidBtn.disabled = true;
-                return;
-            }
-
-            let totalGross = 0;
-            let totalDeductions = 0;
-            let totalNet = 0;
-
-            records.forEach(record => {
-                const tr = document.createElement('tr');
-                if (record.isSkipped) {
-                    tr.classList.add('skipped');
-                    tr.innerHTML = `
-                        <td>${record.name}</td>
-                        <td>--</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td>
-                        <td><button class="action-btn include-btn" data-id="${record.id}">Mark as Unpaid</button></td>
-                    `;
-                } else {
-                    tr.innerHTML = `
-                        <td>${record.name}</td>
-                        <td>${formatCurrency(record.grossPay)}</td>
-                        <td>${formatCurrency(record.philhealth)}</td>
-                        <td>${formatCurrency(record.sss)}</td>
-                        <td>${formatCurrency(record.pagibig)}</td>
-                        <td>${formatCurrency(record.otherDeductions)}</td>
-                        <td>${formatCurrency(record.totalDeductions)}</td>
-                        <td>${formatCurrency(record.netPay)}</td>
-                        <td><button class="action-btn skip-btn" data-id="${record.id}">Mark as Paid</button></td>
-                    `;
-                    totalGross += record.grossPay;
-                    totalDeductions += record.totalDeductions;
-                    totalNet += record.netPay;
-                }
-                payrollTableBody.appendChild(tr);
-            });
-
-            totalGrossPaySpan.textContent = formatCurrency(totalGross);
-            totalDeductionsSpan.textContent = formatCurrency(totalDeductions);
-            totalNetPaySpan.textContent = formatCurrency(totalNet);
-            markAsPaidBtn.disabled = false;
-
-            // Add event listeners for skip/include buttons
-            document.querySelectorAll('.action-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const empId = btn.getAttribute('data-id');
-                    toggleEmployeeSkip(empId);
-                });
-            });
-        }
-
-        // Toggle skip/include employee
-        function toggleEmployeeSkip(empId) {
-            const emp = employees.find(e => e.id === empId);
-            if (!emp) return;
-            emp.isSkipped = !emp.isSkipped;
-            fetchPayrollRecords();
-        }
-
-        // Fetch payroll records and render
-        function fetchPayrollRecords() {
-            if (!taxRates) {
-                // Initialize taxRates from inputs or defaults
-                try {
-                    taxRates = {
-                        philhealth: {
-                            rate: parseFloat(philhealthRateInput.value),
-                            floor: parseFloat(philhealthFloorInput.value),
-                            ceiling: parseFloat(philhealthCeilingInput.value),
-                            fixedAmountFloor: parseFloat(philhealthFixedFloorInput.value),
-                            fixedAmountCeiling: parseFloat(philhealthFixedCeilingInput.value)
-                        },
-                        pagibig: {
-                            employeeRate: parseFloat(pagibigRateInput.value),
-                            lowIncomeEmployeeRate: parseFloat(pagibigLowRateInput.value),
-                            lowIncomeThreshold: parseFloat(pagibigThresholdInput.value)
-                        },
-                        sss: JSON.parse(sssTableTextarea.value)
-                    };
-                } catch {
-                    taxRates = {
-                        philhealth: { rate: 0.05, floor: 10000, ceiling: 100000, fixedAmountFloor: 500, fixedAmountCeiling: 5000 },
-                        pagibig: { employeeRate: 0.02, lowIncomeEmployeeRate: 0.01, lowIncomeThreshold: 1500 },
-                        sss: []
-                    };
-                }
-            }
-
-            // Assume monthly pay period for demo
-            const isMonthly = true;
-
-            const records = employees.map(emp => {
-                if (emp.isSkipped) return { ...emp, isSkipped: true };
-                const payroll = calculatePayroll(emp, isMonthly);
-                return { ...emp, ...payroll, isSkipped: false };
-            });
-
-            renderTable(records);
-            payPeriodDisplayP.textContent = `Pay Period: ${new Date().toLocaleDateString()}`;
-        }
-
-        // Save tax rates button handler
-        saveTaxRatesBtn.addEventListener('click', () => {
-            try {
-                taxRates = {
-                    philhealth: {
-                        rate: parseFloat(philhealthRateInput.value),
-                        floor: parseFloat(philhealthFloorInput.value),
-                        ceiling: parseFloat(philhealthCeilingInput.value),
-                        fixedAmountFloor: parseFloat(philhealthFixedFloorInput.value),
-                        fixedAmountCeiling: parseFloat(philhealthFixedCeilingInput.value)
-                    },
-                    pagibig: {
-                        employeeRate: parseFloat(pagibigRateInput.value),
-                        lowIncomeEmployeeRate: parseFloat(pagibigLowRateInput.value),
-                        lowIncomeThreshold: parseFloat(pagibigThresholdInput.value)
-                    },
-                    sss: JSON.parse(sssTableTextarea.value)
-                };
-                statusMessageDiv.textContent = 'Tax rates saved successfully!';
-                statusMessageDiv.classList.add('success');
-                statusMessageDiv.style.display = 'block';
-                setTimeout(() => {
-                    statusMessageDiv.style.display = 'none';
-                    statusMessageDiv.classList.remove('success');
-                }, 3000);
-                fetchPayrollRecords();
-            } catch (e) {
-                statusMessageDiv.textContent = 'Invalid JSON format for SSS table. Please correct and try again.';
-                statusMessageDiv.classList.remove('success');
-                statusMessageDiv.style.display = 'block';
-            }
-        });
-
-        // Mark as Paid button handler
-        markAsPaidBtn.addEventListener('click', () => {
-            markAsPaidBtn.disabled = true;
-            statusMessageDiv.textContent = 'Payroll marked as paid successfully!';
-            statusMessageDiv.classList.add('success');
-            statusMessageDiv.style.display = 'block';
-            setTimeout(() => {
-                statusMessageDiv.style.display = 'none';
-                statusMessageDiv.classList.remove('success');
-            }, 3000);
-        });
-
-        // Initialize on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchPayrollRecords();
-        });

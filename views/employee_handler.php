@@ -19,6 +19,105 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $action = $_GET['action'] ?? '';
 }
 
+function computeEffectiveLeaveDays($mysqli, $employeeId, $startDateStr, $endDateStr)
+{
+  $calendarDays = 0;
+  try {
+    $startDate = new DateTime($startDateStr);
+    $endDate = new DateTime($endDateStr);
+    if ($startDate > $endDate) {
+      $tmp = $startDate;
+      $startDate = $endDate;
+      $endDate = $tmp;
+    }
+
+    $calendarDays = $startDate->diff($endDate)->days + 1;
+    $effectiveDays = $calendarDays;
+
+    $stmt = $mysqli->prepare("SELECT DISTINCT day_of_week FROM schedules WHERE employee_id = ? AND is_working = 1");
+    if ($stmt) {
+      $stmt->bind_param('i', $employeeId);
+      $stmt->execute();
+      $schedResult = $stmt->get_result();
+      $workingDays = [];
+      while ($row = $schedResult->fetch_assoc()) {
+        $workingDays[$row['day_of_week']] = true;
+      }
+      $stmt->close();
+
+      $specialDates = [];
+
+      $stmt = $mysqli->prepare("SELECT start_date, end_date FROM holidays WHERE NOT (end_date < ? OR start_date > ?)");
+      if ($stmt) {
+        $stmt->bind_param('ss', $startDateStr, $endDateStr);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+          $hStart = new DateTime($row['start_date']);
+          $hEnd = new DateTime($row['end_date']);
+          if ($hStart > $hEnd) {
+            $tmpH = $hStart;
+            $hStart = $hEnd;
+            $hEnd = $tmpH;
+          }
+          $hEndInclusive = (clone $hEnd)->modify('+1 day');
+          $hPeriod = new DatePeriod($hStart, new DateInterval('P1D'), $hEndInclusive);
+          foreach ($hPeriod as $d) {
+            $specialDates[$d->format('Y-m-d')] = true;
+          }
+        }
+        $stmt->close();
+      }
+
+      $stmt = $mysqli->prepare("SELECT start_date, end_date FROM special_events WHERE NOT (end_date < ? OR start_date > ?)");
+      if ($stmt) {
+        $stmt->bind_param('ss', $startDateStr, $endDateStr);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+          $eStart = new DateTime($row['start_date']);
+          $eEnd = new DateTime($row['end_date']);
+          if ($eStart > $eEnd) {
+            $tmpE = $eStart;
+            $eStart = $eEnd;
+            $eEnd = $tmpE;
+          }
+          $eEndInclusive = (clone $eEnd)->modify('+1 day');
+          $ePeriod = new DatePeriod($eStart, new DateInterval('P1D'), $eEndInclusive);
+          foreach ($ePeriod as $d) {
+            $specialDates[$d->format('Y-m-d')] = true;
+          }
+        }
+        $stmt->close();
+      }
+
+      if (!empty($workingDays)) {
+        $effectiveDays = 0;
+        $periodEnd = (clone $endDate)->modify('+1 day');
+        $period = new DatePeriod($startDate, new DateInterval('P1D'), $periodEnd);
+        foreach ($period as $date) {
+          $dayName = $date->format('l');
+          $dateStrLoop = $date->format('Y-m-d');
+          if (!empty($specialDates[$dateStrLoop])) {
+            continue;
+          }
+          if (!empty($workingDays[$dayName])) {
+            $effectiveDays++;
+          }
+        }
+      } else {
+        $effectiveDays = 0;
+      }
+
+      return $effectiveDays;
+    }
+  } catch (Exception $e) {
+    return $calendarDays;
+  }
+
+  return $calendarDays;
+}
+
 try {
   switch ($action) {
     case 'leave_balances':
@@ -125,10 +224,15 @@ try {
         throw new Exception('All fields are required');
       }
 
-      // Calculate days (simple difference)
       $start = new DateTime($startDate);
       $end = new DateTime($endDate);
-      $days = $start->diff($end)->days + 1; // Inclusive
+      if ($start > $end) {
+        $tmp = $start;
+        $start = $end;
+        $end = $tmp;
+      }
+      $effectiveDays = computeEffectiveLeaveDays($mysqli, $employeeId, $startDate, $endDate);
+      $days = $effectiveDays;
 
       // Insert request
       $stmt = $mysqli->prepare("INSERT INTO leave_requests (employee_id, leave_type, start_date, end_date, days, reason, status, proof_path) VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?)");
@@ -174,6 +278,48 @@ try {
       $stmt->close();
 
       echo json_encode(['success' => true, 'overlap' => $overlap]);
+      break;
+
+    case 'preview_leave_days':
+      if (!isset($_SESSION['user_id'])) {
+        throw new Exception('User not authenticated');
+      }
+      $userId = $_SESSION['user_id'];
+      $startDate = $_GET['start'] ?? '';
+      $endDate = $_GET['end'] ?? '';
+
+      if (!$startDate || !$endDate) {
+        throw new Exception('Start and end dates required');
+      }
+
+      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ?");
+      $stmt->bind_param('i', $userId);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $emp = $result->fetch_assoc();
+      $stmt->close();
+      if (!$emp) {
+        throw new Exception('Employee not found');
+      }
+      $employeeId = $emp['id'];
+
+      $start = new DateTime($startDate);
+      $end = new DateTime($endDate);
+      if ($start > $end) {
+        $tmp = $start;
+        $start = $end;
+        $end = $tmp;
+      }
+      $calendarDays = $start->diff($end)->days + 1;
+      $effectiveDays = computeEffectiveLeaveDays($mysqli, $employeeId, $startDate, $endDate);
+
+      echo json_encode([
+        'success' => true,
+        'data' => [
+          'calendar_days' => $calendarDays,
+          'effective_days' => $effectiveDays
+        ]
+      ]);
       break;
 
     case 'view_leave_request':

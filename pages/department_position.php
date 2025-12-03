@@ -139,18 +139,35 @@ require_once '../views/auth.php'; // path relative to the page
             </header>
 
             <div class="scrollbar-container">
+                <!-- Summary cards -->
+                <div class="dp-summary-row">
+                    <div class="dp-summary-card">
+                        <h4>Total Departments</h4>
+                        <p id="summary-dept-count">0</p>
+                    </div>
+                    <div class="dp-summary-card">
+                        <h4>Total Job Positions</h4>
+                        <p id="summary-pos-count">0</p>
+                    </div>
+                </div>
+
                 <!-- Insert Departments and Job Positions container here -->
                 <div class="container">
                     <!-- Departments Section -->
                     <section class="section-box" aria-labelledby="departments-title">
                         <h3 id="departments-title">Departments</h3>
-                        <ul id="departments-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
+                        <ul style="overflow-y: auto; maz-height: 200px" id="departments-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
                             <!-- Dynamic items inserted by JS -->
                         </ul>
-                        <button id="add-department-btn" class="btn-add" aria-haspopup="dialog" aria-controls="add-department-modal">
-                            <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
-                            Add Department
-                        </button>
+                        <?php
+                        $userRoles = $_SESSION['roles'] ?? [];
+                        if (in_array('head_admin', $userRoles)):
+                        ?>
+                            <button id="add-department-btn" class="btn-add" aria-haspopup="dialog" aria-controls="add-department-modal">
+                                <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
+                                Add Department
+                            </button>
+                        <?php endif; ?>
                     </section>
 
                     <!-- Job Positions Section -->
@@ -159,11 +176,16 @@ require_once '../views/auth.php'; // path relative to the page
                         <ul id="job-positions-list" class="item-list" aria-live="polite" aria-relevant="additions removals">
                             <!-- Dynamic items inserted by JS, e.g., <li>Instructor - $15.50/hr <button>Edit</button> <button>Delete</button></li> -->
                         </ul>
-                        <button id="add-job-position-btn" class="btn-add" aria-haspopup="dialog"
-                            aria-controls="add-job-position-modal">
-                            <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
-                            Add Job Position
-                        </button>
+                        <?php
+                        $userRoles = $_SESSION['roles'] ?? [];
+                        if (in_array('head_admin', $userRoles)):
+                        ?>
+                            <button id="add-job-position-btn" class="btn-add" aria-haspopup="dialog"
+                                aria-controls="add-job-position-modal">
+                                <img src="icons/addition.png" alt="Add icon" class="inline mr-2 align-middle" />
+                                Add Job Position
+                            </button>
+                        <?php endif; ?>
                     </section>
                 </div>
 
@@ -203,9 +225,48 @@ require_once '../views/auth.php'; // path relative to the page
                                 <label for="job-position-rate">Rate per Day</label>
                                 <input type="number" id="job-position-rate" name="rate_per_day" step="0.01" min="0" required
                                     placeholder="Enter rate per day" />
+                                <label for="job-position-frequency">Payroll Frequency</label>
+                                <select id="job-position-frequency" name="payroll_frequency" required>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="bi-weekly" selected>Bi-Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
                             </div>
                             <footer class="modal-footer">
                                 <button type="submit" class="btn btn-primary">Add Job Position</button>
+                                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+                            </footer>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Update Job Position Modal -->
+                <div id="update-job-position-modal" class="modal" aria-hidden="true" role="dialog"
+                    aria-labelledby="update-job-position-title" aria-modal="true">
+                    <div class="modal-content">
+                        <header class="modal-header">
+                            <h4 id="update-job-position-title">Update Job Position</h4>
+                            <button type="button" class="modal-close-btn" aria-label="Close modal">&times;</button>
+                        </header>
+                        <form id="update-job-position-form" novalidate>
+                            <div class="modal-body">
+                                <input type="hidden" id="upd-position-id" name="id" />
+                                <label for="upd-position-name">Job Position Name</label>
+                                <input type="text" id="upd-position-name" name="name" required placeholder="Enter job position name" />
+                                <label for="upd-position-rate">Rate per Day</label>
+                                <input type="number" id="upd-position-rate" name="rate_per_day" step="0.01" min="0" required
+                                    placeholder="Enter rate per day" />
+                                <label for="upd-position-frequency">Payroll Frequency</label>
+                                <select id="upd-position-frequency" name="payroll_frequency" required>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="bi-weekly">Bi-Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                            <footer class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
                                 <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
                             </footer>
                         </form>
@@ -230,6 +291,19 @@ require_once '../views/auth.php'; // path relative to the page
                         </footer>
                     </div>
                 </div>
+
+                <!-- Info panel -->
+                <div class="dp-info-panel">
+                    <h4>How departments and positions are used</h4>
+                    <p>
+                        Departments and job positions are used across EAAPS for organizing employees,
+                        computing payroll rates, generating reports, and validating leave.
+                    </p>
+                    <p>
+                        Tip: Keep department and position names clear and consistent so reports remain
+                        easy to understand for HR and management.  
+                    </p>
+                </div>
             </div>
         </main>
     </div>
@@ -237,6 +311,10 @@ require_once '../views/auth.php'; // path relative to the page
     <script src="../js/dashboard.js"></script>
     <script src="../js/sidebar_update.js"></script>
     <script src="../js/current_time.js"></script>
+    <script>
+        <?php $userRoles = $_SESSION['roles'] ?? []; ?>
+        window.isHeadAdmin = <?php echo in_array('head_admin', $userRoles) ? 'true' : 'false'; ?>;
+    </script>
     <script src="../js/department_position.js"></script>
     <script src="../js/auto_logout.js"></script>
 </body>

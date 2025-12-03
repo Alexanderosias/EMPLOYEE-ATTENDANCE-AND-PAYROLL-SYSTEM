@@ -24,15 +24,34 @@ try {
 
     $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+    // Ensure new columns exist for time_date_settings (id=1 row exists from seed)
+    // MariaDB 10.4 supports IF NOT EXISTS
+    @$mysqli->query("ALTER TABLE time_date_settings ADD COLUMN IF NOT EXISTS grace_in_minutes INT DEFAULT 0");
+    @$mysqli->query("ALTER TABLE time_date_settings ADD COLUMN IF NOT EXISTS grace_out_minutes INT DEFAULT 0");
+    @$mysqli->query("ALTER TABLE time_date_settings ADD COLUMN IF NOT EXISTS company_hours_per_day DECIMAL(5,2) DEFAULT 8.00");
+    // Ensure payroll_frequency column exists with correct enum set
+    $hasPayrollFreq = false;
+    if ($d = $mysqli->query("DESCRIBE job_positions")) {
+        while ($row = $d->fetch_assoc()) {
+            if (($row['Field'] ?? '') === 'payroll_frequency') { $hasPayrollFreq = true; break; }
+        }
+        $d->free();
+    }
+    if (!$hasPayrollFreq) {
+        @$mysqli->query("ALTER TABLE job_positions ADD COLUMN payroll_frequency ENUM('daily','weekly','bi-weekly','monthly') NOT NULL DEFAULT 'bi-weekly'");
+    }
+
     switch ($action) {
         case 'load':
             // Load all settings
             $systemResult = $mysqli->query("SELECT system_name, logo_path, annual_paid_leave_days, annual_unpaid_leave_days, annual_sick_leave_days FROM school_settings LIMIT 1");
             $systemData = $systemResult->fetch_assoc() ?: [];
 
-            $timeDateResult = $mysqli->query("SELECT auto_logout_time_hours, date_format FROM time_date_settings LIMIT 1");
+            $timeDateResult = $mysqli->query("SELECT auto_logout_time_hours, date_format, grace_in_minutes, grace_out_minutes, company_hours_per_day FROM time_date_settings LIMIT 1");
             $taxResult = $mysqli->query("SELECT income_tax_rate, custom_tax_formula FROM tax_deduction_settings LIMIT 1");
             $backupResult = $mysqli->query("SELECT backup_frequency, session_timeout_minutes FROM backup_restore_settings LIMIT 1");
+            $rolesRes = $mysqli->query("SELECT id, name, payroll_frequency FROM job_positions ORDER BY name");
+            $roles = $rolesRes ? $rolesRes->fetch_all(MYSQLI_ASSOC) : [];
 
             $settings = [
                 'system' => $systemData,
@@ -43,6 +62,7 @@ try {
                     'annual_sick_leave_days' => $systemData['annual_sick_leave_days'] ?? 10
                 ],
                 'attendance' => [],
+                'payroll' => [ 'roles' => $roles ],
                 'backup' => $backupResult->fetch_assoc() ?: []
             ];
 
@@ -57,6 +77,33 @@ try {
             ];
 
             echo json_encode(['success' => true, 'data' => $settings]);
+            break;
+
+        case 'save_role_payroll':
+            if (!hasHeadAdminRole()) {
+                throw new Exception('Unauthorized: Must have head_admin role.');
+            }
+            $freqJson = $_POST['frequencies'] ?? '';
+            $map = json_decode($freqJson, true);
+            if (!is_array($map)) {
+                throw new Exception('Invalid frequencies payload.');
+            }
+            $allowed = ['daily','weekly','bi-weekly','monthly'];
+            $stmt = $mysqli->prepare("UPDATE job_positions SET payroll_frequency = ? WHERE id = ?");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . $mysqli->error);
+            }
+            foreach ($map as $id => $freq) {
+                $freq = strtolower(trim((string)$freq));
+                $id = intval($id);
+                if ($id <= 0 || !in_array($freq, $allowed, true)) continue;
+                $stmt->bind_param('si', $freq, $id);
+                if (!$stmt->execute()) {
+                    throw new Exception('Execute failed for ID ' . $id . ': ' . $stmt->error);
+                }
+            }
+            $stmt->close();
+            echo json_encode(['success' => true, 'message' => 'Payroll frequencies saved.']);
             break;
 
         case 'save_system_info':
@@ -122,6 +169,9 @@ try {
 
             $minutes = intval($_POST['auto_logout'] ?? 60);
             $dateFormat = $_POST['date_format'] ?? 'DD/MM/YYYY';
+            $graceIn = intval($_POST['grace_in'] ?? 0);
+            $graceOut = intval($_POST['grace_out'] ?? 0);
+            $companyHours = floatval($_POST['company_hours_per_day'] ?? 8);
 
             // 0 = disabled
             if ($minutes === 0) {
@@ -136,8 +186,19 @@ try {
                 $decimal = $minutes / 60;
             }
 
-            $stmt = $mysqli->prepare("UPDATE time_date_settings SET auto_logout_time_hours = ?, date_format = ? WHERE id = 1");
-            $stmt->bind_param('ds', $decimal, $dateFormat);
+            // Validate grace periods and company hours
+            if ($graceIn < 0 || $graceIn > 120) {
+                throw new Exception('Grace Period (Time In) must be between 0 and 120 minutes.');
+            }
+            if ($graceOut < 0 || $graceOut > 120) {
+                throw new Exception('Grace Period (Time Out) must be between 0 and 120 minutes.');
+            }
+            if ($companyHours < 1 || $companyHours > 24) {
+                throw new Exception('Total Working Hours per Day must be between 1 and 24 hours.');
+            }
+
+            $stmt = $mysqli->prepare("UPDATE time_date_settings SET auto_logout_time_hours = ?, date_format = ?, grace_in_minutes = ?, grace_out_minutes = ?, company_hours_per_day = ? WHERE id = 1");
+            $stmt->bind_param('dsiid', $decimal, $dateFormat, $graceIn, $graceOut, $companyHours);
             $stmt->execute();
             $stmt->close();
 

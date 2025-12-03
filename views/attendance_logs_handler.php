@@ -62,7 +62,7 @@ try {
             }
         }
 
-        // Now fetch the attendance logs (existing logic)
+        // Now fetch the attendance logs including snapshot info
         $query = "
         SELECT 
             al.id,
@@ -72,7 +72,20 @@ try {
             al.date,
             DATE_FORMAT(al.time_in, '%h:%i %p') as time_in,
             DATE_FORMAT(al.time_out, '%h:%i %p') as time_out,
-            al.status
+            al.status,
+            al.snapshot_path,
+            (
+                SELECT GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'id', s.id,
+                        'image_path', s.image_path,
+                        'captured_at', s.captured_at
+                    )
+                    SEPARATOR '|||'
+                )
+                FROM snapshots s
+                WHERE s.attendance_log_id = al.id
+            ) AS snapshots_json
         FROM attendance_logs al
         JOIN employees e ON al.employee_id = e.id
         ORDER BY al.date DESC, al.time_in DESC
@@ -88,13 +101,36 @@ try {
         while ($row = $result->fetch_assoc()) {
             $row['timeIn'] = $row['time_in'] ? $row['time_in'] : '-';
             $row['timeOut'] = $row['time_out'] ? $row['time_out'] : '-';
+
+            $snapshots = [];
+            if (!empty($row['snapshots_json'])) {
+                $snapParts = explode('|||', $row['snapshots_json']);
+                foreach ($snapParts as $snap) {
+                    $decoded = json_decode($snap, true);
+                    if ($decoded && isset($decoded['image_path'])) {
+                        $snapshots[] = $decoded;
+                    }
+                }
+            }
+
+            $row['snapshots'] = $snapshots;
+            $row['hasSnapshot'] = (!empty($row['snapshot_path']) || !empty($snapshots)) ? 1 : 0;
+            unset($row['snapshots_json']);
+
             $data[] = $row;
         }
 
         echo json_encode($data);
     } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $input = json_decode(file_get_contents('php://input'), true);
-        $action = $input['action'] ?? null;
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        $input = null;
+        $action = null;
+        if (stripos($contentType, 'application/json') !== false) {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $action = $input['action'] ?? null;
+        } else {
+            $action = $_POST['action'] ?? null;
+        }
 
         if ($action === 'delete') {
             // Delete logic (from delete_attendance_log.php), now with file deletion
@@ -152,6 +188,136 @@ try {
             }
 
             $stmt->close();
+        } elseif ($action === 'import_attendance') {
+            // Import zip package containing logs.json and snapshots/
+            if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception('No import file uploaded.');
+            }
+
+            $uploadedName = $_FILES['file']['name'] ?? '';
+            $ext = strtolower(pathinfo($uploadedName, PATHINFO_EXTENSION));
+            if ($ext !== 'zip') {
+                throw new Exception('Invalid file type. Please upload a .zip package.');
+            }
+
+            $tmpFile = $_FILES['file']['tmp_name'];
+
+            $extractDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'attendance_import_' . uniqid();
+            if (!mkdir($extractDir, 0755, true)) {
+                throw new Exception('Failed to create temp directory.');
+            }
+
+            $zip = new ZipArchive();
+            if ($zip->open($tmpFile) !== true) {
+                throw new Exception('Failed to open zip file.');
+            }
+            if (!$zip->extractTo($extractDir)) {
+                $zip->close();
+                throw new Exception('Failed to extract zip file.');
+            }
+            $zip->close();
+
+            $logsPath = $extractDir . DIRECTORY_SEPARATOR . 'logs.json';
+            if (!file_exists($logsPath)) {
+                rrmdir($extractDir);
+                throw new Exception('logs.json not found in package.');
+            }
+            $payload = json_decode(file_get_contents($logsPath), true);
+            if (!is_array($payload)) {
+                rrmdir($extractDir);
+                throw new Exception('Invalid logs.json format.');
+            }
+            $logs = $payload['logs'] ?? [];
+
+            $destSnapshotsDir = realpath(__DIR__ . '/../uploads') . DIRECTORY_SEPARATOR . 'snapshots';
+            if (!$destSnapshotsDir || !is_dir($destSnapshotsDir)) {
+                $destSnapshotsDir = __DIR__ . '/../uploads/snapshots';
+                if (!is_dir($destSnapshotsDir)) {
+                    mkdir($destSnapshotsDir, 0755, true);
+                }
+            }
+
+            $imported = 0;
+            foreach ($logs as $log) {
+                $employeeId = (int)($log['employee_id'] ?? 0);
+                $date = $log['date'] ?? '';
+                $timeIn = $log['time_in'] ?? null;
+                $timeOut = $log['time_out'] ?? null;
+                $status = $log['status'] ?? 'Present';
+                $checkType = $log['check_type'] ?? 'in';
+                $expectedStart = $log['expected_start_time'] ?? null;
+                $expectedEnd = $log['expected_end_time'] ?? null;
+                $snapBasenames = is_array($log['snapshots'] ?? null) ? $log['snapshots'] : [];
+
+                if (!$employeeId || !$date) {
+                    continue; // skip invalid entries
+                }
+
+                // Upsert attendance log by (employee_id, date)
+                $stmt = $mysqli->prepare("SELECT id, snapshot_path FROM attendance_logs WHERE employee_id = ? AND date = ? LIMIT 1");
+                $stmt->bind_param('is', $employeeId, $date);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $existing = $res->fetch_assoc();
+                $stmt->close();
+
+                if ($existing) {
+                    $logId = (int)$existing['id'];
+                    $stmt = $mysqli->prepare("UPDATE attendance_logs SET time_in = ?, time_out = ?, status = ?, check_type = ?, expected_start_time = ?, expected_end_time = ? WHERE id = ?");
+                    $stmt->bind_param('ssssssi', $timeIn, $timeOut, $status, $checkType, $expectedStart, $expectedEnd, $logId);
+                    $stmt->execute();
+                    $stmt->close();
+                } else {
+                    $stmt = $mysqli->prepare("INSERT INTO attendance_logs (employee_id, date, time_in, time_out, status, check_type, expected_start_time, expected_end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->bind_param('isssssss', $employeeId, $date, $timeIn, $timeOut, $status, $checkType, $expectedStart, $expectedEnd);
+                    $stmt->execute();
+                    $logId = $mysqli->insert_id;
+                    $stmt->close();
+                }
+
+                // Import snapshots from extracted /snapshots directory
+                $firstSavedPath = null;
+                $srcSnapshotsDir = $extractDir . DIRECTORY_SEPARATOR . 'snapshots';
+                foreach ($snapBasenames as $base) {
+                    $base = basename($base);
+                    $srcPath = $srcSnapshotsDir . DIRECTORY_SEPARATOR . $base;
+                    if (!file_exists($srcPath)) continue;
+
+                    $destName = $base;
+                    $destPath = $destSnapshotsDir . DIRECTORY_SEPARATOR . $destName;
+                    if (file_exists($destPath)) {
+                        $destName = time() . '_' . uniqid() . '_' . $destName;
+                        $destPath = $destSnapshotsDir . DIRECTORY_SEPARATOR . $destName;
+                    }
+                    if (!copy($srcPath, $destPath)) {
+                        continue;
+                    }
+                    $webPath = 'uploads/snapshots/' . $destName;
+
+                    $stmt = $mysqli->prepare("INSERT INTO snapshots (attendance_log_id, image_path) VALUES (?, ?)");
+                    $stmt->bind_param('is', $logId, $webPath);
+                    $stmt->execute();
+                    $stmt->close();
+
+                    if ($firstSavedPath === null) {
+                        $firstSavedPath = $webPath;
+                    }
+                }
+
+                // Set primary snapshot_path if empty
+                if ($firstSavedPath) {
+                    $stmt = $mysqli->prepare("UPDATE attendance_logs SET snapshot_path = COALESCE(NULLIF(snapshot_path, ''), ?) WHERE id = ?");
+                    $stmt->bind_param('si', $firstSavedPath, $logId);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+
+                $imported++;
+            }
+
+            rrmdir($extractDir);
+
+            echo json_encode(['success' => true, 'message' => 'Import completed.', 'imported' => $imported]);
         } elseif ($action === 'update') {
             // Update logic (with corrected expected time recalculation)
             $id = $input['id'] ?? null;
@@ -234,4 +400,20 @@ try {
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
+}
+
+// Helper to recursively delete directories
+function rrmdir($dir) {
+    if (!is_dir($dir)) return;
+    $items = scandir($dir);
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') continue;
+        $path = $dir . DIRECTORY_SEPARATOR . $item;
+        if (is_dir($path)) {
+            rrmdir($path);
+        } else {
+            @unlink($path);
+        }
+    }
+    @rmdir($dir);
 }

@@ -165,9 +165,14 @@ require_once '../views/auth.php'; // path relative to the page
             <!-- <button id="import-employee-btn" class="import-employee-btn" aria-label="Import Employees" title="Import">
             <img src="icons/import.png" alt="Import" />
           </button> -->
-            <button id="add-employee-btn" class="add-employee-btn" aria-label="Add Employee">
-              Add Employee <img src="icons/add-emp.png" alt="Add Employee" />
-            </button>
+            <?php
+            $userRoles = $_SESSION['roles'] ?? [];
+            if (in_array('head_admin', $userRoles)):
+            ?>
+              <button id="add-employee-btn" class="add-employee-btn" aria-label="Add Employee">
+                Add Employee <img src="icons/add-emp.png" alt="Add Employee" />
+              </button>
+            <?php endif; ?>
           </div>
 
         </div>
@@ -253,6 +258,11 @@ require_once '../views/auth.php'; // path relative to the page
                   <option value="Widowed">Widowed</option>
                   <option value="Other">Other</option>
                 </select>
+              </div>
+
+              <div class="form-group">
+                <label for="date-of-birth">Date of Birth</label>
+                <input type="date" id="date-of-birth" name="date_of_birth" />
               </div>
 
               <div class="form-group">
@@ -402,6 +412,11 @@ require_once '../views/auth.php'; // path relative to the page
               </div>
 
               <div class="form-group">
+                <label for="update-date-of-birth">Date of Birth</label>
+                <input type="date" id="update-date-of-birth" name="date_of_birth" />
+              </div>
+
+              <div class="form-group">
                 <label for="update-email">Email Address</label>
                 <input type="email" id="update-email" name="email" required placeholder="Enter email address" />
               </div>
@@ -499,6 +514,10 @@ require_once '../views/auth.php'; // path relative to the page
   <script src="../js/sidebar_update.js"></script>
   <script src="../js/auto_logout.js"></script>
   <script src="../js/current_time.js"></script>
+  <script>
+    <?php $userRoles = $_SESSION['roles'] ?? []; ?>
+    window.isHeadAdmin = <?php echo in_array('head_admin', $userRoles) ? 'true' : 'false'; ?>;
+  </script>
   <script src="../js/employees.js"></script>
 </body>
 
