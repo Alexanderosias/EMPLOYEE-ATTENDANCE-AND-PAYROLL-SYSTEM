@@ -364,17 +364,46 @@ try {
             $timeInDB = $timeIn ? date('Y-m-d H:i:s', strtotime("$date $timeIn")) : null;
             $timeOutDB = $timeOut ? date('Y-m-d H:i:s', strtotime("$date $timeOut")) : null;
 
-            // Auto-detect status using updated expected times
+            // Load grace periods from settings (same logic as scanner_api.php)
+            $graceInMinutes = 0;
+            $graceOutMinutes = 0;
+            $gpRes = $mysqli->query("SELECT grace_in_minutes, grace_out_minutes FROM time_date_settings LIMIT 1");
+            if ($gpRes) {
+                $gpRow = $gpRes->fetch_assoc();
+                if ($gpRow) {
+                    $graceInMinutes = isset($gpRow['grace_in_minutes']) ? (int)$gpRow['grace_in_minutes'] : 0;
+                    $graceOutMinutes = isset($gpRow['grace_out_minutes']) ? (int)$gpRow['grace_out_minutes'] : 0;
+                }
+                $gpRes->free();
+            }
+
+            // Load auto OT limit from attendance_settings (defaults to 30 minutes)
+            $autoOtMinutes = 30;
+            $attRes = $mysqli->query("SELECT auto_ot_minutes FROM attendance_settings LIMIT 1");
+            if ($attRes) {
+                $attRow = $attRes->fetch_assoc();
+                if ($attRow && isset($attRow['auto_ot_minutes'])) {
+                    $autoOtMinutes = max(0, (int)$attRow['auto_ot_minutes']);
+                }
+                $attRes->free();
+            }
+
+            $graceInSeconds = max(0, $graceInMinutes) * 60;
+            $graceOutSeconds = max(0, $graceOutMinutes) * 60;
+
+            // Auto-detect status using updated expected times and grace periods
             $newStatus = 'Present';  // Default
             if ($timeInDB && $expectedStart) {
                 $expectedStartStr = "$date $expectedStart";
-                if (strtotime($timeInDB) > strtotime($expectedStartStr)) {
+                $expectedStartTs = strtotime($expectedStartStr);
+                if (strtotime($timeInDB) > ($expectedStartTs + $graceInSeconds)) {
                     $newStatus = 'Late';
                 }
             }
             if ($timeOutDB && $expectedEnd && $newStatus !== 'Late') {  // Only check undertime if not late
                 $expectedEndStr = "$date $expectedEnd";
-                if (strtotime($timeOutDB) < strtotime($expectedEndStr)) {
+                $expectedEndTs = strtotime($expectedEndStr);
+                if (strtotime($timeOutDB) < ($expectedEndTs - $graceOutSeconds)) {
                     $newStatus = 'Undertime';
                 }
             }
@@ -383,13 +412,80 @@ try {
             $stmt = $mysqli->prepare("UPDATE attendance_logs SET time_in = ?, time_out = ?, expected_start_time = ?, expected_end_time = ?, status = ? WHERE id = ?");
             $stmt->bind_param('sssssi', $timeInDB, $timeOutDB, $expectedStart, $expectedEnd, $newStatus, $id);
 
-            if ($stmt->execute()) {
-                echo json_encode(['success' => true, 'message' => 'Record updated successfully']);
-            } else {
+            if (!$stmt->execute()) {
+                $stmt->close();
                 throw new Exception('Failed to update record');
             }
-
             $stmt->close();
+
+            // Recompute overtime for this log (if any) and upsert into overtime_requests
+            if ($timeOutDB && $expectedEnd) {
+                $expectedEndStr = "$date $expectedEnd";
+                $expectedEndTs = strtotime($expectedEndStr);
+                $outTs = strtotime($timeOutDB);
+                $rawOtMinutes = 0;
+                if ($outTs > $expectedEndTs) {
+                    $rawOtMinutes = (int) floor(($outTs - $expectedEndTs) / 60);
+                }
+
+                if ($rawOtMinutes > 0) {
+                    // Ensure overtime_requests table exists
+                    @$mysqli->query("CREATE TABLE IF NOT EXISTS overtime_requests (
+                        id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                        attendance_log_id INT(11) NOT NULL,
+                        employee_id INT(11) NOT NULL,
+                        date DATE NOT NULL,
+                        scheduled_end_time TIME NOT NULL,
+                        actual_out_time DATETIME NOT NULL,
+                        raw_ot_minutes INT(11) NOT NULL DEFAULT 0,
+                        approved_ot_minutes INT(11) NOT NULL DEFAULT 0,
+                        status ENUM('Pending','Approved','Rejected','AutoApproved') DEFAULT 'Pending',
+                        approved_by INT(11) DEFAULT NULL,
+                        approved_at DATETIME DEFAULT NULL,
+                        remarks TEXT DEFAULT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        KEY idx_ot_attendance (attendance_log_id),
+                        KEY idx_ot_employee_date (employee_id, date)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+                    $statusOt = 'Pending';
+                    $approvedMinutes = 0;
+                    if ($rawOtMinutes <= $autoOtMinutes) {
+                        $statusOt = 'AutoApproved';
+                        $approvedMinutes = $rawOtMinutes;
+                    }
+
+                    // Upsert overtime request for this attendance log
+                    $stmt = $mysqli->prepare("SELECT id FROM overtime_requests WHERE attendance_log_id = ? LIMIT 1");
+                    if ($stmt) {
+                        $stmt->bind_param('i', $id);
+                        $stmt->execute();
+                        $res = $stmt->get_result();
+                        $existingOt = $res->fetch_assoc();
+                        $stmt->close();
+
+                        if ($existingOt) {
+                            $otId = (int)$existingOt['id'];
+                            $stmt = $mysqli->prepare("UPDATE overtime_requests SET date = ?, scheduled_end_time = ?, actual_out_time = ?, raw_ot_minutes = ?, approved_ot_minutes = ?, status = ?, updated_at = NOW() WHERE id = ?");
+                            if ($stmt) {
+                                $stmt->bind_param('sssissi', $date, $expectedEnd, $timeOutDB, $rawOtMinutes, $approvedMinutes, $statusOt, $otId);
+                                $stmt->execute();
+                                $stmt->close();
+                            }
+                        } else {
+                            $stmt = $mysqli->prepare("INSERT INTO overtime_requests (attendance_log_id, employee_id, date, scheduled_end_time, actual_out_time, raw_ot_minutes, approved_ot_minutes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                            if ($stmt) {
+                                $stmt->bind_param('iisssiis', $id, $employeeId, $date, $expectedEnd, $timeOutDB, $rawOtMinutes, $approvedMinutes, $statusOt);
+                                $stmt->execute();
+                                $stmt->close();
+                            }
+                        }
+                    }
+                }
+            }
+
+            echo json_encode(['success' => true, 'message' => 'Record updated successfully']);
         } else {
             throw new Exception('Invalid action');
         }

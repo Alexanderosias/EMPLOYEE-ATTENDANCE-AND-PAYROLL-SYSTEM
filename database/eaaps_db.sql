@@ -351,6 +351,78 @@ CREATE TABLE `special_events` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `attendance_settings`
+--
+
+CREATE TABLE `attendance_settings` (
+  `id` int(11) NOT NULL,
+  `late_threshold_minutes` int(11) DEFAULT 15,
+  `undertime_threshold_minutes` int(11) DEFAULT 30,
+  `regular_overtime_multiplier` decimal(5,2) DEFAULT 1.25,
+  `holiday_overtime_multiplier` decimal(5,2) DEFAULT 2.00,
+  `auto_ot_minutes` int(11) DEFAULT 30,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `attendance_settings`
+--
+
+INSERT INTO `attendance_settings` (`id`, `late_threshold_minutes`, `undertime_threshold_minutes`, `regular_overtime_multiplier`, `holiday_overtime_multiplier`, `auto_ot_minutes`, `created_at`, `updated_at`) VALUES
+(1, 15, 30, 1.25, 2.00, 30, '2025-11-21 12:44:20', '2025-11-21 12:44:20');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `overtime_requests`
+--
+
+CREATE TABLE `overtime_requests` (
+  `id` int(11) NOT NULL,
+  `attendance_log_id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL,
+  `date` date NOT NULL,
+  `scheduled_end_time` time NOT NULL,
+  `actual_out_time` datetime NOT NULL,
+  `raw_ot_minutes` int(11) NOT NULL DEFAULT 0,
+  `approved_ot_minutes` int(11) NOT NULL DEFAULT 0,
+  `status` enum('Pending','Approved','Rejected','AutoApproved') DEFAULT 'Pending',
+  `approved_by` int(11) DEFAULT NULL,
+  `approved_at` datetime DEFAULT NULL,
+  `remarks` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `payroll_settings`
+--
+
+CREATE TABLE `payroll_settings` (
+  `id` int(11) NOT NULL,
+  `regular_holiday_rate` decimal(5,2) DEFAULT 2.00,
+  `regular_holiday_ot_rate` decimal(5,2) DEFAULT 2.60,
+  `special_nonworking_rate` decimal(5,2) DEFAULT 1.30,
+  `special_nonworking_ot_rate` decimal(5,2) DEFAULT 1.69,
+  `special_working_rate` decimal(5,2) DEFAULT 1.30,
+  `special_working_ot_rate` decimal(5,2) DEFAULT 1.69,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `payroll_settings`
+--
+
+INSERT INTO `payroll_settings` (`id`, `regular_holiday_rate`, `regular_holiday_ot_rate`, `special_nonworking_rate`, `special_nonworking_ot_rate`, `special_working_rate`, `special_working_ot_rate`, `created_at`, `updated_at`) VALUES
+(1, 2.00, 2.60, 1.30, 1.69, 1.30, 1.69, '2025-11-21 12:44:20', '2025-11-21 12:44:20');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `tax_deduction_settings`
 --
 
@@ -554,6 +626,26 @@ ALTER TABLE `special_events`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `attendance_settings`
+--
+ALTER TABLE `attendance_settings`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `overtime_requests`
+--
+ALTER TABLE `overtime_requests`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_ot_attendance` (`attendance_log_id`),
+  ADD KEY `idx_ot_employee_date` (`employee_id`,`date`);
+
+--
+-- Indexes for table `payroll_settings`
+--
+ALTER TABLE `payroll_settings`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `tax_deduction_settings`
 --
 ALTER TABLE `tax_deduction_settings`
@@ -663,6 +755,24 @@ ALTER TABLE `special_events`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
+-- AUTO_INCREMENT for table `attendance_settings`
+--
+ALTER TABLE `attendance_settings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `overtime_requests`
+--
+ALTER TABLE `overtime_requests`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `payroll_settings`
+--
+ALTER TABLE `payroll_settings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- AUTO_INCREMENT for table `tax_deduction_settings`
 --
 ALTER TABLE `tax_deduction_settings`
@@ -697,6 +807,13 @@ ALTER TABLE `employees`
   ADD CONSTRAINT `fk_employees_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_employees_jobposition` FOREIGN KEY (`job_position_id`) REFERENCES `job_positions` (`id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_employees_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `overtime_requests`
+--
+ALTER TABLE `overtime_requests`
+  ADD CONSTRAINT `fk_ot_attendance` FOREIGN KEY (`attendance_log_id`) REFERENCES `attendance_logs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_ot_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `leave_requests`

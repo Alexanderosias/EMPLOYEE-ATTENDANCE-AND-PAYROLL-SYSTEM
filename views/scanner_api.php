@@ -186,6 +186,17 @@ switch ($action) {
                 }
             }
 
+            // Load auto OT limit from attendance_settings (defaults to 30 minutes)
+            $autoOtMinutes = 30;
+            $attRes = $mysqli->query("SELECT auto_ot_minutes FROM attendance_settings LIMIT 1");
+            if ($attRes) {
+                $attRow = $attRes->fetch_assoc();
+                if ($attRow && isset($attRow['auto_ot_minutes'])) {
+                    $autoOtMinutes = max(0, (int)$attRow['auto_ot_minutes']);
+                }
+                $attRes->free();
+            }
+
             if ($checkType === 'in') {
                 $expectedStartTimeStr = $today . ' ' . $earliestStart;
                 // Late if current time > expected start time + grace period
@@ -229,6 +240,74 @@ switch ($action) {
                     $stmt->execute();
                     $logId = $mysqli->insert_id;
                     $stmt->close();
+                }
+            }
+
+            // If this is a time-out and the employee stayed beyond scheduled end, record overtime
+            if ($checkType === 'out' && $logId) {
+                $expectedEndTimeStr = $today . ' ' . $latestEnd;
+                $expectedEndTs = strtotime($expectedEndTimeStr);
+                $outTs = strtotime($timeOut);
+                $rawOtMinutes = 0;
+                if ($outTs > $expectedEndTs) {
+                    $rawOtMinutes = (int) floor(($outTs - $expectedEndTs) / 60);
+                }
+
+                if ($rawOtMinutes > 0) {
+                    // Ensure overtime_requests table exists (id auto-increment, with basic indexes)
+                    @$mysqli->query("CREATE TABLE IF NOT EXISTS overtime_requests (
+                        id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                        attendance_log_id INT(11) NOT NULL,
+                        employee_id INT(11) NOT NULL,
+                        date DATE NOT NULL,
+                        scheduled_end_time TIME NOT NULL,
+                        actual_out_time DATETIME NOT NULL,
+                        raw_ot_minutes INT(11) NOT NULL DEFAULT 0,
+                        approved_ot_minutes INT(11) NOT NULL DEFAULT 0,
+                        status ENUM('Pending','Approved','Rejected','AutoApproved') DEFAULT 'Pending',
+                        approved_by INT(11) DEFAULT NULL,
+                        approved_at DATETIME DEFAULT NULL,
+                        remarks TEXT DEFAULT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        KEY idx_ot_attendance (attendance_log_id),
+                        KEY idx_ot_employee_date (employee_id, date)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+                    // Decide if OT is auto-approved or requires head admin approval
+                    $statusOt = 'Pending';
+                    $approvedMinutes = 0;
+                    if ($rawOtMinutes <= $autoOtMinutes) {
+                        $statusOt = 'AutoApproved';
+                        $approvedMinutes = $rawOtMinutes;
+                    }
+
+                    // Upsert overtime request for this attendance log
+                    $stmt = $mysqli->prepare("SELECT id FROM overtime_requests WHERE attendance_log_id = ? LIMIT 1");
+                    if ($stmt) {
+                        $stmt->bind_param('i', $logId);
+                        $stmt->execute();
+                        $res = $stmt->get_result();
+                        $existingOt = $res->fetch_assoc();
+                        $stmt->close();
+
+                        if ($existingOt) {
+                            $otId = (int)$existingOt['id'];
+                            $stmt = $mysqli->prepare("UPDATE overtime_requests SET date = ?, scheduled_end_time = ?, actual_out_time = ?, raw_ot_minutes = ?, approved_ot_minutes = ?, status = ?, updated_at = NOW() WHERE id = ?");
+                            if ($stmt) {
+                                $stmt->bind_param('sssissi', $today, $latestEnd, $timeOut, $rawOtMinutes, $approvedMinutes, $statusOt, $otId);
+                                $stmt->execute();
+                                $stmt->close();
+                            }
+                        } else {
+                            $stmt = $mysqli->prepare("INSERT INTO overtime_requests (attendance_log_id, employee_id, date, scheduled_end_time, actual_out_time, raw_ot_minutes, approved_ot_minutes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                            if ($stmt) {
+                                $stmt->bind_param('iisssiis', $logId, $employeeId, $today, $latestEnd, $timeOut, $rawOtMinutes, $approvedMinutes, $statusOt);
+                                $stmt->execute();
+                                $stmt->close();
+                            }
+                        }
+                    }
                 }
             }
 

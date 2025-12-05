@@ -228,6 +228,39 @@ require_once '../views/auth.php';  // path relative to the page
             </div>
           </div>
 
+          <div class="settings-card">
+            <div class="settings-section">
+              <h4>
+                <img src="icons/attendance.png" alt="Attendance Settings" class="section-icon" />
+                Attendance Settings
+              </h4>
+              <div class="form-row three-col">
+                <div class="form-group">
+                  <label for="lateThreshold">Late Threshold (minutes)</label>
+                  <input type="number" id="lateThreshold" value="15" min="0" max="120" step="1" />
+                  <p class="small-text">Minutes after scheduled time-in before an employee is marked late.</p>
+                </div>
+                <div class="form-group">
+                  <label for="undertimeThreshold">Undertime Threshold (minutes)</label>
+                  <input type="number" id="undertimeThreshold" value="30" min="0" max="240" step="1" />
+                  <p class="small-text">Allowed early time-out window before undertime is recorded.</p>
+                </div>
+                <div class="form-group">
+                  <label for="autoOtMinutes">Auto OT Limit (minutes)</label>
+                  <input type="number" id="autoOtMinutes" value="30" min="0" max="600" step="1" />
+                  <p class="small-text">OT minutes at or below this value are auto-approved; higher OT requires head admin approval.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="saveAttendanceSettings()">
+                <img src="icons/save.png" alt="Save" class="btn-icon" />
+                Save Attendance Settings
+              </button>
+            </div>
+          </div>
+
           <!-- Leave Settings Card -->
           <div class="settings-card">
             <div class="settings-section">
@@ -259,6 +292,69 @@ require_once '../views/auth.php';  // path relative to the page
             </div>
           </div>
 
+          <div class="settings-card">
+            <div class="settings-section">
+              <h4>
+                <img src="icons/cash.png" alt="Payroll & Holiday Settings" class="section-icon" />
+                Payroll & Holiday Settings
+              </h4>
+
+              <div class="sub-section">
+                <h5>Regular Holiday</h5>
+                <div class="form-row three-col">
+                  <div class="form-group">
+                    <label for="regularHolidayRate">Regular Holiday Rate (Worked)</label>
+                    <input type="number" id="regularHolidayRate" value="2" min="1" max="3" step="0.01" />
+                    <p class="small-text">Multiplier for days worked on a regular holiday (e.g., 2.0 = 200%).</p>
+                  </div>
+                  <div class="form-group">
+                    <label for="regularHolidayOtRate">Regular Holiday OT Rate</label>
+                    <input type="number" id="regularHolidayOtRate" value="2.6" min="1" max="4" step="0.01" />
+                    <p class="small-text">Multiplier for overtime hours on a regular holiday (e.g., 2.6 = 260%).</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sub-section">
+                <h5>Special Non-Working Holiday</h5>
+                <div class="form-row three-col">
+                  <div class="form-group">
+                    <label for="specialNonworkingRate">Special Non-Working Rate (Worked)</label>
+                    <input type="number" id="specialNonworkingRate" value="1.3" min="1" max="3" step="0.01" />
+                    <p class="small-text">Multiplier for days worked on a special non-working holiday (e.g., 1.3 = 130%).</p>
+                  </div>
+                  <div class="form-group">
+                    <label for="specialNonworkingOtRate">Special Non-Working OT Rate</label>
+                    <input type="number" id="specialNonworkingOtRate" value="1.69" min="1" max="4" step="0.01" />
+                    <p class="small-text">Multiplier for overtime hours on a special non-working holiday.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sub-section">
+                <h5>Special Working Holiday</h5>
+                <div class="form-row three-col">
+                  <div class="form-group">
+                    <label for="specialWorkingRate">Special Working Rate (Worked)</label>
+                    <input type="number" id="specialWorkingRate" value="1.3" min="1" max="3" step="0.01" />
+                    <p class="small-text">Multiplier for days worked on a special working holiday (e.g., 1.3 = 130%).</p>
+                  </div>
+                  <div class="form-group">
+                    <label for="specialWorkingOtRate">Special Working OT Rate</label>
+                    <input type="number" id="specialWorkingOtRate" value="1.69" min="1" max="4" step="0.01" />
+                    <p class="small-text">Multiplier for overtime hours on a special working holiday.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="savePayrollHolidaySettings()">
+                <img src="icons/save.png" alt="Save" class="btn-icon" />
+                Save Payroll & Holiday Settings
+              </button>
+            </div>
+          </div>
 
           <div id="working-hours-modal" class="modal-overlay hidden">
             <div class="modal-content relative">
