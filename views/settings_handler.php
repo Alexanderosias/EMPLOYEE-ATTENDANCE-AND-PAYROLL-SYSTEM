@@ -41,6 +41,48 @@ try {
         @$mysqli->query("ALTER TABLE job_positions ADD COLUMN payroll_frequency ENUM('daily','weekly','bi-weekly','monthly') NOT NULL DEFAULT 'bi-weekly'");
     }
 
+    // Ensure attendance_settings table exists with at least one row
+    @$mysqli->query("CREATE TABLE IF NOT EXISTS attendance_settings (
+        id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        late_threshold_minutes INT(11) DEFAULT 15,
+        undertime_threshold_minutes INT(11) DEFAULT 30,
+        regular_overtime_multiplier DECIMAL(5,2) DEFAULT 1.25,
+        holiday_overtime_multiplier DECIMAL(5,2) DEFAULT 2.00,
+        auto_ot_minutes INT(11) DEFAULT 30,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+    // In case the table already exists without the new column, add it
+    @$mysqli->query("ALTER TABLE attendance_settings ADD COLUMN IF NOT EXISTS auto_ot_minutes INT(11) DEFAULT 30");
+
+    $attCheck = $mysqli->query("SELECT id FROM attendance_settings LIMIT 1");
+    if ($attCheck && $attCheck->num_rows === 0) {
+        @$mysqli->query("INSERT INTO attendance_settings (late_threshold_minutes, undertime_threshold_minutes, regular_overtime_multiplier, holiday_overtime_multiplier, auto_ot_minutes)
+                         VALUES (15, 30, 1.25, 2.00, 30)");
+    }
+    if ($attCheck) { $attCheck->free(); }
+
+    // Ensure payroll_settings table exists with at least one row (holiday multipliers)
+    @$mysqli->query("CREATE TABLE IF NOT EXISTS payroll_settings (
+        id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        regular_holiday_rate DECIMAL(5,2) DEFAULT 2.00,
+        regular_holiday_ot_rate DECIMAL(5,2) DEFAULT 2.60,
+        special_nonworking_rate DECIMAL(5,2) DEFAULT 1.30,
+        special_nonworking_ot_rate DECIMAL(5,2) DEFAULT 1.69,
+        special_working_rate DECIMAL(5,2) DEFAULT 1.30,
+        special_working_ot_rate DECIMAL(5,2) DEFAULT 1.69,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+    $payrollCheck = $mysqli->query("SELECT id FROM payroll_settings LIMIT 1");
+    if ($payrollCheck && $payrollCheck->num_rows === 0) {
+        @$mysqli->query("INSERT INTO payroll_settings (regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate)
+                         VALUES (2.00, 2.60, 1.30, 1.69, 1.30, 1.69)");
+    }
+    if ($payrollCheck) { $payrollCheck->free(); }
+
     switch ($action) {
         case 'load':
             // Load all settings
@@ -48,7 +90,8 @@ try {
             $systemData = $systemResult->fetch_assoc() ?: [];
 
             $timeDateResult = $mysqli->query("SELECT auto_logout_time_hours, date_format, grace_in_minutes, grace_out_minutes, company_hours_per_day FROM time_date_settings LIMIT 1");
-            $taxResult = $mysqli->query("SELECT income_tax_rate, custom_tax_formula FROM tax_deduction_settings LIMIT 1");
+            $attendanceResult = $mysqli->query("SELECT late_threshold_minutes, undertime_threshold_minutes, regular_overtime_multiplier, holiday_overtime_multiplier, auto_ot_minutes FROM attendance_settings LIMIT 1");
+            $payrollSettingsResult = $mysqli->query("SELECT regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate FROM payroll_settings LIMIT 1");
             $backupResult = $mysqli->query("SELECT backup_frequency, session_timeout_minutes FROM backup_restore_settings LIMIT 1");
             $rolesRes = $mysqli->query("SELECT id, name, payroll_frequency FROM job_positions ORDER BY name");
             $roles = $rolesRes ? $rolesRes->fetch_all(MYSQLI_ASSOC) : [];
@@ -66,14 +109,25 @@ try {
                 'backup' => $backupResult->fetch_assoc() ?: []
             ];
 
-            // Parse attendance from tax_deduction_settings
-            $taxData = $taxResult->fetch_assoc();
-            $custom = json_decode($taxData['custom_tax_formula'] ?? '{}', true);
+            $attendanceData = $attendanceResult ? $attendanceResult->fetch_assoc() : [];
+            if ($attendanceResult) { $attendanceResult->free(); }
             $settings['attendance'] = [
-                'late_threshold' => $taxData['income_tax_rate'] ?? 15,
-                'undertime_threshold' => $custom['undertime_threshold'] ?? 30,
-                'regular_overtime' => $custom['regular_overtime'] ?? 1.25,
-                'holiday_overtime' => $custom['holiday_overtime'] ?? 2
+                'late_threshold' => $attendanceData['late_threshold_minutes'] ?? 15,
+                'undertime_threshold' => $attendanceData['undertime_threshold_minutes'] ?? 30,
+                'regular_overtime' => $attendanceData['regular_overtime_multiplier'] ?? 1.25,
+                'holiday_overtime' => $attendanceData['holiday_overtime_multiplier'] ?? 2,
+                'auto_ot_minutes' => isset($attendanceData['auto_ot_minutes']) ? (int)$attendanceData['auto_ot_minutes'] : 30,
+            ];
+
+            $payrollSettings = $payrollSettingsResult ? $payrollSettingsResult->fetch_assoc() : [];
+            if ($payrollSettingsResult) { $payrollSettingsResult->free(); }
+            $settings['payroll']['holiday'] = [
+                'regular_holiday_rate' => isset($payrollSettings['regular_holiday_rate']) ? (float)$payrollSettings['regular_holiday_rate'] : 2.0,
+                'regular_holiday_ot_rate' => isset($payrollSettings['regular_holiday_ot_rate']) ? (float)$payrollSettings['regular_holiday_ot_rate'] : 2.6,
+                'special_nonworking_rate' => isset($payrollSettings['special_nonworking_rate']) ? (float)$payrollSettings['special_nonworking_rate'] : 1.3,
+                'special_nonworking_ot_rate' => isset($payrollSettings['special_nonworking_ot_rate']) ? (float)$payrollSettings['special_nonworking_ot_rate'] : 1.69,
+                'special_working_rate' => isset($payrollSettings['special_working_rate']) ? (float)$payrollSettings['special_working_rate'] : 1.3,
+                'special_working_ot_rate' => isset($payrollSettings['special_working_ot_rate']) ? (float)$payrollSettings['special_working_ot_rate'] : 1.69,
             ];
 
             echo json_encode(['success' => true, 'data' => $settings]);
@@ -229,23 +283,73 @@ try {
                 throw new Exception('Unauthorized: Must have head_admin role.');
             }
 
-            $lateThreshold = intval($_POST['late_threshold'] ?? 15);
-            $undertimeThreshold = intval($_POST['undertime_threshold'] ?? 30);
-            $regularOvertime = floatval($_POST['regular_overtime'] ?? 1.25);
-            $holidayOvertime = floatval($_POST['holiday_overtime'] ?? 2);
+            $lateThreshold = max(0, intval($_POST['late_threshold'] ?? 15));
+            $undertimeThreshold = max(0, intval($_POST['undertime_threshold'] ?? 30));
+            $regularOvertime = max(0.0, floatval($_POST['regular_overtime'] ?? 1.25));
+            $holidayOvertime = max(0.0, floatval($_POST['holiday_overtime'] ?? 2));
+            $autoOtMinutes = max(0, intval($_POST['auto_ot_minutes'] ?? 30));
 
-            $customData = json_encode([
-                'undertime_threshold' => $undertimeThreshold,
-                'regular_overtime' => $regularOvertime,
-                'holiday_overtime' => $holidayOvertime
-            ]);
+            $stmt = $mysqli->prepare("UPDATE attendance_settings SET late_threshold_minutes = ?, undertime_threshold_minutes = ?, regular_overtime_multiplier = ?, holiday_overtime_multiplier = ?, auto_ot_minutes = ? WHERE id = 1");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . $mysqli->error);
+            }
+            $stmt->bind_param('iiddi', $lateThreshold, $undertimeThreshold, $regularOvertime, $holidayOvertime, $autoOtMinutes);
+            if (!$stmt->execute()) {
+                throw new Exception('Execute failed: ' . $stmt->error);
+            }
 
-            $stmt = $mysqli->prepare("UPDATE tax_deduction_settings SET income_tax_rate = ?, custom_tax_formula = ? WHERE id = 1");
-            $stmt->bind_param('ds', $lateThreshold, $customData);
-            $stmt->execute();
+            if ($stmt->affected_rows === 0) {
+                $stmt->close();
+                $stmt = $mysqli->prepare("INSERT INTO attendance_settings (id, late_threshold_minutes, undertime_threshold_minutes, regular_overtime_multiplier, holiday_overtime_multiplier, auto_ot_minutes) VALUES (1, ?, ?, ?, ?, ?)");
+                if (!$stmt) {
+                    throw new Exception('Prepare failed (insert): ' . $mysqli->error);
+                }
+                $stmt->bind_param('iiddi', $lateThreshold, $undertimeThreshold, $regularOvertime, $holidayOvertime, $autoOtMinutes);
+                if (!$stmt->execute()) {
+                    throw new Exception('Execute failed (insert): ' . $stmt->error);
+                }
+            }
             $stmt->close();
 
             echo json_encode(['success' => true, 'message' => 'Attendance settings saved.']);
+            break;
+
+        case 'save_payroll_holiday':
+            // Check if user has head_admin role
+            if (!hasHeadAdminRole()) {
+                throw new Exception('Unauthorized: Must have head_admin role.');
+            }
+
+            $regularHolidayRate = max(0.0, floatval($_POST['regular_holiday_rate'] ?? 2.0));
+            $regularHolidayOtRate = max(0.0, floatval($_POST['regular_holiday_ot_rate'] ?? 2.6));
+            $specialNonworkingRate = max(0.0, floatval($_POST['special_nonworking_rate'] ?? 1.3));
+            $specialNonworkingOtRate = max(0.0, floatval($_POST['special_nonworking_ot_rate'] ?? 1.69));
+            $specialWorkingRate = max(0.0, floatval($_POST['special_working_rate'] ?? 1.3));
+            $specialWorkingOtRate = max(0.0, floatval($_POST['special_working_ot_rate'] ?? 1.69));
+
+            $stmt = $mysqli->prepare("UPDATE payroll_settings SET regular_holiday_rate = ?, regular_holiday_ot_rate = ?, special_nonworking_rate = ?, special_nonworking_ot_rate = ?, special_working_rate = ?, special_working_ot_rate = ? WHERE id = 1");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . $mysqli->error);
+            }
+            $stmt->bind_param('dddddd', $regularHolidayRate, $regularHolidayOtRate, $specialNonworkingRate, $specialNonworkingOtRate, $specialWorkingRate, $specialWorkingOtRate);
+            if (!$stmt->execute()) {
+                throw new Exception('Execute failed: ' . $stmt->error);
+            }
+
+            if ($stmt->affected_rows === 0) {
+                $stmt->close();
+                $stmt = $mysqli->prepare("INSERT INTO payroll_settings (id, regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate) VALUES (1, ?, ?, ?, ?, ?, ?)");
+                if (!$stmt) {
+                    throw new Exception('Prepare failed (insert): ' . $mysqli->error);
+                }
+                $stmt->bind_param('dddddd', $regularHolidayRate, $regularHolidayOtRate, $specialNonworkingRate, $specialNonworkingOtRate, $specialWorkingRate, $specialWorkingOtRate);
+                if (!$stmt->execute()) {
+                    throw new Exception('Execute failed (insert): ' . $stmt->error);
+                }
+            }
+            $stmt->close();
+
+            echo json_encode(['success' => true, 'message' => 'Payroll & holiday settings saved.']);
             break;
 
         case 'save_backup':

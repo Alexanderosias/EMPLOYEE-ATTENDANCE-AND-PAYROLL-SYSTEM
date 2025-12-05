@@ -151,6 +151,11 @@ function populateForm() {
     lateThresholdElem.value = attendance.late_threshold || 15;
   const undertimeElem = document.getElementById("undertimeThreshold");
   if (undertimeElem) undertimeElem.value = attendance.undertime_threshold || 30;
+  const autoOtElem = document.getElementById("autoOtMinutes");
+  if (autoOtElem)
+    autoOtElem.value = Number.isFinite(parseInt(attendance.auto_ot_minutes))
+      ? parseInt(attendance.auto_ot_minutes)
+      : 30;
   const regularOvertimeElem = document.getElementById("regularOvertimeRate");
   if (regularOvertimeElem)
     regularOvertimeElem.value = attendance.regular_overtime || 1.25;
@@ -167,8 +172,61 @@ function populateForm() {
   if (sessionTimeoutElem)
     sessionTimeoutElem.value = backup.session_timeout_minutes || 30;
 
-  // Payroll per role
+  // Payroll settings
   const payroll = settingsData.payroll || {};
+  const holiday = payroll.holiday || {};
+
+  const regularHolidayRateElem = document.getElementById("regularHolidayRate");
+  if (regularHolidayRateElem)
+    regularHolidayRateElem.value =
+      Number.isFinite(parseFloat(holiday.regular_holiday_rate))
+        ? parseFloat(holiday.regular_holiday_rate)
+        : 2.0;
+
+  const regularHolidayOtRateElem = document.getElementById(
+    "regularHolidayOtRate"
+  );
+  if (regularHolidayOtRateElem)
+    regularHolidayOtRateElem.value =
+      Number.isFinite(parseFloat(holiday.regular_holiday_ot_rate))
+        ? parseFloat(holiday.regular_holiday_ot_rate)
+        : 2.6;
+
+  const specialNonworkingRateElem = document.getElementById(
+    "specialNonworkingRate"
+  );
+  if (specialNonworkingRateElem)
+    specialNonworkingRateElem.value =
+      Number.isFinite(parseFloat(holiday.special_nonworking_rate))
+        ? parseFloat(holiday.special_nonworking_rate)
+        : 1.3;
+
+  const specialNonworkingOtRateElem = document.getElementById(
+    "specialNonworkingOtRate"
+  );
+  if (specialNonworkingOtRateElem)
+    specialNonworkingOtRateElem.value =
+      Number.isFinite(parseFloat(holiday.special_nonworking_ot_rate))
+        ? parseFloat(holiday.special_nonworking_ot_rate)
+        : 1.69;
+
+  const specialWorkingRateElem = document.getElementById("specialWorkingRate");
+  if (specialWorkingRateElem)
+    specialWorkingRateElem.value =
+      Number.isFinite(parseFloat(holiday.special_working_rate))
+        ? parseFloat(holiday.special_working_rate)
+        : 1.3;
+
+  const specialWorkingOtRateElem = document.getElementById(
+    "specialWorkingOtRate"
+  );
+  if (specialWorkingOtRateElem)
+    specialWorkingOtRateElem.value =
+      Number.isFinite(parseFloat(holiday.special_working_ot_rate))
+        ? parseFloat(holiday.special_working_ot_rate)
+        : 1.69;
+
+  // Payroll per role
   renderRolePayroll(Array.isArray(payroll.roles) ? payroll.roles : []);
 }
 
@@ -299,6 +357,100 @@ async function saveSystemInfo() {
       settingsData.system.system_name = result.system_name;
       if (result.logo_path) settingsData.system.logo_path = result.logo_path;
       updateSidebar();
+    } else {
+      console.error("API Error:", result.message);
+      showStatus("Failed to save: " + result.message, "error");
+    }
+  } catch (error) {
+    console.error("Network or parsing error:", error);
+    console.log("Raw response text:", responseText);
+    showStatus(
+      "Error saving: " + error.message + ". Check network or file path.",
+      "error"
+    );
+  }
+}
+
+async function savePayrollHolidaySettings() {
+  let response;
+  let responseText = "";
+  const formData = new FormData();
+  formData.append("action", "save_payroll_holiday");
+  formData.append(
+    "regular_holiday_rate",
+    document.getElementById("regularHolidayRate").value
+  );
+  formData.append(
+    "regular_holiday_ot_rate",
+    document.getElementById("regularHolidayOtRate").value
+  );
+  formData.append(
+    "special_nonworking_rate",
+    document.getElementById("specialNonworkingRate").value
+  );
+  formData.append(
+    "special_nonworking_ot_rate",
+    document.getElementById("specialNonworkingOtRate").value
+  );
+  formData.append(
+    "special_working_rate",
+    document.getElementById("specialWorkingRate").value
+  );
+  formData.append(
+    "special_working_ot_rate",
+    document.getElementById("specialWorkingOtRate").value
+  );
+
+  try {
+    console.log(
+      "Saving payroll & holiday settings to ../views/settings_handler.php"
+    );
+    response = await fetch("../views/settings_handler.php", {
+      method: "POST",
+      body: formData,
+    });
+
+    responseText = await response.text();
+
+    if (!response.ok) {
+      console.error(
+        `HTTP Error: ${response.status} ${response.statusText}`,
+        responseText
+      );
+      showStatus(
+        `Failed to save: ${response.status} ${response.statusText}. Check server or file path.`,
+        "error"
+      );
+      return;
+    }
+
+    const result = JSON.parse(responseText);
+    console.log("Save result:", result);
+
+    if (result.success) {
+      showStatus(result.message, "success");
+      // Update local settings
+      if (!settingsData.payroll) settingsData.payroll = {};
+      settingsData.payroll.holiday = {
+        regular_holiday_rate: parseFloat(
+          document.getElementById("regularHolidayRate").value
+        ),
+        regular_holiday_ot_rate: parseFloat(
+          document.getElementById("regularHolidayOtRate").value
+        ),
+        special_nonworking_rate: parseFloat(
+          document.getElementById("specialNonworkingRate").value
+        ),
+        special_nonworking_ot_rate: parseFloat(
+          document.getElementById("specialNonworkingOtRate").value
+        ),
+        special_working_rate: parseFloat(
+          document.getElementById("specialWorkingRate").value
+        ),
+        special_working_ot_rate: parseFloat(
+          document.getElementById("specialWorkingOtRate").value
+        ),
+      };
     } else {
       console.error("API Error:", result.message);
       showStatus("Failed to save: " + result.message, "error");
@@ -484,12 +636,8 @@ async function saveAttendanceSettings() {
     document.getElementById("undertimeThreshold").value
   );
   formData.append(
-    "regular_overtime",
-    document.getElementById("regularOvertimeRate").value
-  );
-  formData.append(
-    "holiday_overtime",
-    document.getElementById("holidayOvertimeRate").value
+    "auto_ot_minutes",
+    document.getElementById("autoOtMinutes").value
   );
 
   try {
@@ -520,17 +668,15 @@ async function saveAttendanceSettings() {
       showStatus(result.message, "success");
       // Update local settings
       settingsData.attendance = {
+        ...settingsData.attendance,
         late_threshold: parseInt(
           document.getElementById("lateThreshold").value
         ),
         undertime_threshold: parseInt(
           document.getElementById("undertimeThreshold").value
         ),
-        regular_overtime: parseFloat(
-          document.getElementById("regularOvertimeRate").value
-        ),
-        holiday_overtime: parseFloat(
-          document.getElementById("holidayOvertimeRate").value
+        auto_ot_minutes: parseInt(
+          document.getElementById("autoOtMinutes").value
         ),
       };
     } else {

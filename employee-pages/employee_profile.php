@@ -264,7 +264,9 @@
         const emailEl = document.getElementById('email');
         const phoneEl = document.getElementById('phoneNumber');
         const addressEl = document.getElementById('address');
+        const dateOfBirthEl = document.getElementById('dateOfBirth');
         const genderEl = document.getElementById('gender');
+
         const civilStatusEl = document.getElementById('civilStatus');
         const emergencyNameEl = document.getElementById('emergencyContactName');
         const emergencyPhoneEl = document.getElementById('emergencyContactPhone');
@@ -287,8 +289,10 @@
                 emailEl.value = d.email || '';
                 phoneEl.value = d.contact_number || d.phone_number || '';
                 addressEl.value = d.address || '';
+                if (dateOfBirthEl) dateOfBirthEl.value = (d.date_of_birth || '').split(' ')[0] || '';
                 genderEl.value = d.gender || '';
                 civilStatusEl.value = d.marital_status || '';
+
                 emergencyNameEl.value = d.emergency_contact_name || '';
                 emergencyPhoneEl.value = d.emergency_contact_phone || '';
                 if (fullNameEl) fullNameEl.textContent = `${firstNameEl.value} ${lastNameEl.value}`.trim() || 'Employee';
@@ -300,7 +304,7 @@
         }
 
         function setEditable(editing) {
-            const fields = [firstNameEl, lastNameEl, phoneEl, addressEl, emergencyNameEl, emergencyPhoneEl];
+            const fields = [firstNameEl, lastNameEl, phoneEl, addressEl, dateOfBirthEl, emergencyNameEl, emergencyPhoneEl];
             fields.forEach((el) => el && (el.readOnly = !editing));
             if (editBtn && saveBtn) {
                 editBtn.style.display = editing ? 'none' : 'inline-flex';
@@ -321,6 +325,7 @@
                 fd.append('last_name', lastNameEl.value.trim());
                 fd.append('phone_number', phoneEl.value.trim());
                 fd.append('address', addressEl.value.trim());
+                fd.append('date_of_birth', dateOfBirthEl ? dateOfBirthEl.value.trim() : '');
                 fd.append('emergency_contact_name', emergencyNameEl.value.trim());
                 fd.append('emergency_contact_phone', emergencyPhoneEl.value.trim());
 

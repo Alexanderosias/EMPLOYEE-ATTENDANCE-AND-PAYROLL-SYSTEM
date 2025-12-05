@@ -92,12 +92,64 @@ try {
             exit;
         }
 
-        // Load company_hours_per_day for day-equivalent calc
+        // Load company_hours_per_day for day-equivalent calc (fallback for roles)
         $chpd = 8.0;
         if ($r = $mysqli->query("SELECT company_hours_per_day FROM time_date_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             $val = (float)($row['company_hours_per_day'] ?? 8.0);
             if ($val > 0) $chpd = $val;
+        }
+
+        // Load regular overtime multiplier from attendance_settings (for non-holiday OT)
+        $regularOtMultiplier = 1.25;
+        $holidayOtMultiplier = 2.00; // reserved / fallback
+        if ($r = $mysqli->query("SELECT regular_overtime_multiplier, holiday_overtime_multiplier FROM attendance_settings LIMIT 1")) {
+            $row = $r->fetch_assoc();
+            if ($row) {
+                if (isset($row['regular_overtime_multiplier'])) {
+                    $regularOtMultiplier = max(0.0, (float)$row['regular_overtime_multiplier']);
+                }
+                if (isset($row['holiday_overtime_multiplier'])) {
+                    $holidayOtMultiplier = max(0.0, (float)$row['holiday_overtime_multiplier']);
+                }
+            }
+        }
+
+        // Load holiday multipliers from payroll_settings
+        $phRegular = 2.0;       // Worked on regular holiday
+        $phRegularOT = 2.6;     // OT on regular holiday (reserved for future use)
+        $phSpecNon = 1.3;       // Worked on special non-working
+        $phSpecNonOT = 1.69;    // OT on special non-working (reserved)
+        $phSpecWork = 1.3;      // Worked on special working
+        $phSpecWorkOT = 1.69;   // OT on special working (reserved)
+
+        if ($r = $mysqli->query("SELECT regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate FROM payroll_settings WHERE id = 1 LIMIT 1")) {
+            $row = $r->fetch_assoc();
+            if ($row) {
+                $phRegular     = max(0.0, (float)($row['regular_holiday_rate'] ?? $phRegular));
+                $phRegularOT   = max(0.0, (float)($row['regular_holiday_ot_rate'] ?? $phRegularOT));
+                $phSpecNon     = max(0.0, (float)($row['special_nonworking_rate'] ?? $phSpecNon));
+                $phSpecNonOT   = max(0.0, (float)($row['special_nonworking_ot_rate'] ?? $phSpecNonOT));
+                $phSpecWork    = max(0.0, (float)($row['special_working_rate'] ?? $phSpecWork));
+                $phSpecWorkOT  = max(0.0, (float)($row['special_working_ot_rate'] ?? $phSpecWorkOT));
+            }
+        }
+
+        // Preload holidays in the period into a date => type map
+        $holidaysByDate = [];
+        if ($hStmt = $mysqli->prepare("SELECT type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?")) {
+            $hStmt->bind_param('ss', $start, $end);
+            if ($hStmt->execute()) {
+                $hRes = $hStmt->get_result();
+                while ($h = $hRes->fetch_assoc()) {
+                    $hs = new DateTime($h['start_date']);
+                    $he = new DateTime($h['end_date']);
+                    for ($d = clone $hs; $d <= $he; $d->modify('+1 day')) {
+                        $holidaysByDate[$d->format('Y-m-d')] = $h['type'];
+                    }
+                }
+            }
+            $hStmt->close();
         }
 
         // Load employees with their role, rates
@@ -127,42 +179,161 @@ try {
             $ratePerHour = (float)($emp['e_rph'] ?? 0);
             if ($ratePerHour <= 0) $ratePerHour = (float)($emp['jp_rph'] ?? 0);
 
-            // Fetch attendance logs in the window
+            // Determine working hours per day for this role/employee
+            $roleHoursPerDay = (float)($emp['whpd'] ?? 0);
+            if ($roleHoursPerDay <= 0) {
+                $roleHoursPerDay = $chpd;
+            }
+
+            // Fetch attendance logs in the window and index by date
             $stmt = $mysqli->prepare("SELECT date, time_in, time_out, status FROM attendance_logs WHERE employee_id = ? AND date BETWEEN ? AND ?");
             $stmt->bind_param('iss', $empId, $start, $end);
             $stmt->execute();
-            $logs = $stmt->get_result();
-
-            $uniqueWorkedDays = [];
-            $totalSeconds = 0;
-            while ($log = $logs->fetch_assoc()) {
-                $date = $log['date'];
-                $status = $log['status'] ?? '';
-                $ti = $log['time_in'];
-                $to = $log['time_out'];
-                if ($status !== 'Absent') {
-                    $uniqueWorkedDays[$date] = true;
-                }
-                if (!empty($ti) && !empty($to)) {
-                    $sec = max(0, strtotime($to) - strtotime($ti));
-                    $totalSeconds += $sec;
-                }
+            $logsRes = $stmt->get_result();
+            $attendanceByDate = [];
+            while ($log = $logsRes->fetch_assoc()) {
+                $attendanceByDate[$log['date']] = $log;
             }
             $stmt->close();
 
-            $daysWorked = count($uniqueWorkedDays);
-            $hoursWorked = $totalSeconds / 3600.0;
+            // Fetch approved leave requests in the window and index by date
+            $leaveByDate = [];
+            if ($lStmt = $mysqli->prepare("SELECT leave_type, start_date, end_date, status FROM leave_requests WHERE employee_id = ? AND status = 'Approved' AND end_date >= ? AND start_date <= ?")) {
+                $lStmt->bind_param('iss', $empId, $start, $end);
+                if ($lStmt->execute()) {
+                    $lRes = $lStmt->get_result();
+                    while ($lr = $lRes->fetch_assoc()) {
+                        $ls = new DateTime($lr['start_date']);
+                        $le = new DateTime($lr['end_date']);
+                        for ($d = clone $ls; $d <= $le; $d->modify('+1 day')) {
+                            $leaveByDate[$d->format('Y-m-d')] = $lr['leave_type'];
+                        }
+                    }
+                }
+                $lStmt->close();
+            }
 
-            // Determine gross using day rate if available; else hourly
-            $gross = 0.0;
+            // Fetch approved overtime (Approved or AutoApproved) in the window and index by date
+            $otByDate = [];
+            if ($otStmt = $mysqli->prepare("SELECT date, approved_ot_minutes, status FROM overtime_requests WHERE employee_id = ? AND date BETWEEN ? AND ? AND status IN ('Approved','AutoApproved')")) {
+                $otStmt->bind_param('iss', $empId, $start, $end);
+                if ($otStmt->execute()) {
+                    $otRes = $otStmt->get_result();
+                    while ($ot = $otRes->fetch_assoc()) {
+                        $d = $ot['date'];
+                        $mins = (int)($ot['approved_ot_minutes'] ?? 0);
+                        if ($mins > 0) {
+                            if (!isset($otByDate[$d])) {
+                                $otByDate[$d] = 0;
+                            }
+                            $otByDate[$d] += $mins;
+                        }
+                    }
+                }
+                $otStmt->close();
+            }
+
+            // Walk each date in the payroll window and compute a day-equivalent multiplier
+            $periodStart = new DateTime($start);
+            $periodEnd = new DateTime($end);
+            $totalDayEquivalent = 0.0;
+            $totalOtPay = 0.0;
+
+            for ($d = clone $periodStart; $d <= $periodEnd; $d->modify('+1 day')) {
+                $dateStr = $d->format('Y-m-d');
+
+                $holidayType = $holidaysByDate[$dateStr] ?? null; // 'regular', 'special_non_working', 'special_working'
+                $leaveType = $leaveByDate[$dateStr] ?? null;       // 'Paid', 'Unpaid', 'Sick'
+                $log = $attendanceByDate[$dateStr] ?? null;
+
+                $status = $log['status'] ?? '';
+                $timeIn = $log['time_in'] ?? null;
+                $timeOut = $log['time_out'] ?? null;
+                $worked = !empty($timeIn) && $status !== 'Absent';
+
+                $approvedOtMinutes = isset($otByDate[$dateStr]) ? (int)$otByDate[$dateStr] : 0;
+
+                $mult = 0.0;
+
+                if ($holidayType) {
+                    // Holiday rules take precedence over normal/leave rules
+                    if ($holidayType === 'regular') {
+                        if ($worked) {
+                            // Worked on regular holiday: 200% by default
+                            $mult = $phRegular;
+                        } else {
+                            // Absent on regular holiday: paid 100%
+                            $mult = 1.0;
+                        }
+                    } elseif ($holidayType === 'special_non_working') {
+                        if ($worked) {
+                            // Worked on special non-working: 130%
+                            $mult = $phSpecNon;
+                        } else {
+                            // No work = no pay (unless company policy differs)
+                            $mult = 0.0;
+                        }
+                    } elseif ($holidayType === 'special_working') {
+                        if ($worked) {
+                            // Special working day: treated as normal day with 30% premium
+                            $mult = $phSpecWork;
+                        } else {
+                            // Absent on special working: no pay (treated as normal day)
+                            $mult = 0.0;
+                        }
+                    }
+                } else {
+                    // Normal day: consider leave and attendance
+                    if ($leaveType === 'Paid' || $leaveType === 'Sick') {
+                        // Approved paid or sick leave: 100% pay even without time-in
+                        $mult = 1.0;
+                    } elseif ($leaveType === 'Unpaid') {
+                        // Unpaid leave day: no pay
+                        $mult = 0.0;
+                    } else {
+                        // No leave recorded: pay only if worked
+                        if ($worked) {
+                            $mult = 1.0;
+                        } else {
+                            $mult = 0.0;
+                        }
+                    }
+                }
+
+                $totalDayEquivalent += $mult;
+
+                // Compute overtime pay for this date (if any approved OT minutes)
+                if ($approvedOtMinutes > 0 && $ratePerHour > 0) {
+                    $otHours = $approvedOtMinutes / 60.0;
+                    $otMult = $regularOtMultiplier;
+                    if ($holidayType === 'regular') {
+                        $otMult = $phRegularOT;
+                    } elseif ($holidayType === 'special_non_working') {
+                        $otMult = $phSpecNonOT;
+                    } elseif ($holidayType === 'special_working') {
+                        $otMult = $phSpecWorkOT;
+                    }
+                    if ($otMult < 0.0) {
+                        $otMult = 0.0;
+                    }
+                    $totalOtPay += $otHours * $ratePerHour * $otMult;
+                }
+            }
+
+            // Determine gross using day-equivalent logic
+            $grossBase = 0.0;
             $hoursOrDaysLabel = '';
             if ($ratePerDay > 0) {
-                $gross = $daysWorked * $ratePerDay;
-                $hoursOrDaysLabel = $daysWorked . ' day' . ($daysWorked == 1 ? '' : 's');
+                $grossBase = $totalDayEquivalent * $ratePerDay;
+                $hoursOrDaysLabel = number_format($totalDayEquivalent, 2) . ' day' . ($totalDayEquivalent == 1.0 ? '' : 's');
             } else {
-                $gross = $hoursWorked * $ratePerHour;
-                $hoursOrDaysLabel = number_format($hoursWorked, 2) . ' hrs';
+                // Fall back to hourly: convert day-equivalent to hours using working hours per day
+                $equivHours = $totalDayEquivalent * $roleHoursPerDay;
+                $grossBase = $equivHours * $ratePerHour;
+                $hoursOrDaysLabel = number_format($equivHours, 2) . ' hrs';
             }
+
+            $gross = $grossBase + $totalOtPay;
 
             // Apply deductions (UI-provided; no specific mapping yet)
             $perEmpDeduction = 0.0;

@@ -174,6 +174,23 @@ document.addEventListener("DOMContentLoaded", () => {
     input.setSelectionRange(newCursor, newCursor);
   }
 
+  function formatDateDisplay(dateStr) {
+    if (!dateStr) return "N/A";
+    const clean = String(dateStr).split(" ")[0];
+    if (!clean || clean === "0000-00-00") return "N/A";
+    const parts = clean.split("-");
+    if (parts.length !== 3) return dateStr;
+    const [y, m, d] = parts;
+    const monthIndex = parseInt(m, 10);
+    if (!y || !monthIndex || monthIndex < 1 || monthIndex > 12 || !d) return dateStr;
+    const monthNames = [
+      "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.",
+      "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
+    ];
+    const dd = String(d).padStart(2, "0");
+    return `${monthNames[monthIndex - 1]} ${dd}, ${y}`;
+  }
+
   function validatePhoneFormat(phone) {
     const phoneRegex = /^\d{3} \d{4} \d{4}$/;
     return phoneRegex.test(phone);
@@ -389,6 +406,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <p class="expanded-item"><strong>Gender:</strong> ${
               emp.gender || "N/A"
             }</p>
+            <p class="expanded-item"><strong>Date of Birth:</strong> ${
+              formatDateDisplay(emp.date_of_birth)
+            }</p>
             <p class="expanded-item"><strong>Marital Status:</strong> ${
               emp.marital_status || "Single"
             }</p>
@@ -410,7 +430,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <p class="expanded-item"><strong>Annual Unpaid Leave Days:</strong> ${unpaidLeave}</p>
             <p class="expanded-item"><strong>Annual Sick Leave Days:</strong> ${sickLeave}</p>
             <p class="expanded-item"><strong>Date Joined:</strong> ${
-              emp.date_joined || "N/A"
+              formatDateDisplay(emp.date_joined)
             }</p>
           </div>
         </div>
