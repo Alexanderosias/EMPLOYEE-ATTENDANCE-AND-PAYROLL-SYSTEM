@@ -159,53 +159,69 @@ require_once '../views/auth.php'; // path relative to the page
         </div>
 
         <!-- Filters / Controls -->
-        <div class="payroll-header">
-          <div>
-            <label for="period-start">Pay Period</label>
-            <div style="display:flex; gap:0.5rem; align-items:center;">
-              <input type="date" id="period-start" />
-              <span>to</span>
-              <input type="date" id="period-end" />
+        <section class="payroll-filters-card">
+          <div class="payroll-filters-card-header">
+            <h3 class="text-xl font-semibold text-gray-800" style="margin: 0;">Payroll Filters &amp; Schedule</h3>
+            <button type="button" id="toggle-filters" class="filters-toggle-btn" aria-expanded="true">Hide filters</button>
+          </div>
+          <div class="payroll-filters-card-body" id="payroll-filters-body">
+            <div class="payroll-header">
+              <div class="payroll-header-left">
+                <div>
+                  <label for="period-start">Pay Period</label>
+                  <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <input type="date" id="period-start" />
+                    <span>to</span>
+                    <input type="date" id="period-end" />
+                  </div>
+                </div>
+                <div>
+                  <label for="freq-select">Payroll Frequency</label>
+                  <select id="freq-select" disabled>
+                    <option value="">—</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="bi-weekly">Bi-Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="role-filter">Job Role</label>
+                  <select id="role-filter">
+                    <option value="">All Roles</option>
+                  </select>
+                </div>
+              </div>
+              <div class="payroll-header-actions">
+                <button type="button" id="btn-recalc" class="mark-paid-btn">Recalculate Preview</button>
+                <button type="button" id="btn-finalize" class="mark-paid-btn">Finalize Payroll</button>
+              </div>
             </div>
-          </div>
-          <div>
-            <label for="freq-select">Frequency</label>
-            <select id="freq-select">
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="bi-weekly">Bi-Weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-            <span class="pay-period-display" id="period-display"></span>
-          </div>
-          <div>
-            <label for="role-filter">Job Role</label>
-            <select id="role-filter">
-              <option value="">All Roles</option>
-            </select>
-          </div>
-          <button type="button" id="btn-recalc" class="mark-paid-btn" style="margin-top:24px;">Recalculate Preview</button>
-        </div>
+            <div class="payroll-period-helper">
+              <span class="pay-period-display" id="period-display"></span>
+            </div>
 
-        <!-- Next Payroll per Role -->
-        <section style="margin-bottom:1.5rem;">
-          <h3 class="text-xl font-semibold text-gray-800" style="margin: 0 0 0.75rem 2px;">Next Payroll per Role</h3>
-          <div class="payroll-table-container">
-            <table class="payroll-table">
-              <thead>
-                <tr>
-                  <th>Job Role</th>
-                  <th>Frequency</th>
-                  <th>Next Payroll Date</th>
-                  <th>Period Window</th>
-                </tr>
-              </thead>
-              <tbody id="role-next-payroll-body">
-                <tr>
-                  <td colspan="4" style="text-align:center; color:#6b7280;">No data yet (UI only)</td>
-                </tr>
-              </tbody>
-            </table>
+            <!-- Next Payroll per Role -->
+            <section style="margin-bottom:1.5rem;">
+              <h3 class="text-xl font-semibold text-gray-800" style="margin: 0 0 0.75rem 2px;">Next Payroll per Role</h3>
+              <div class="payroll-table-container">
+                <table class="payroll-table">
+                  <thead>
+                    <tr>
+                      <th>Job Role</th>
+                      <th>Frequency</th>
+                      <th>Next Payroll Date</th>
+                      <th>Period Window</th>
+                    </tr>
+                  </thead>
+                  <tbody id="role-next-payroll-body">
+                    <tr>
+                      <td colspan="4" style="text-align:center; color:#6b7280;">No data yet (UI only)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </div>
         </section>
 
@@ -213,7 +229,7 @@ require_once '../views/auth.php'; // path relative to the page
         <section class="deductions-card">
           <div class="deductions-card-header">
             <h3>Deductions</h3>
-            <p class="muted">Add any deduction type (government or custom).</p>
+            <p class="muted">Set manual or additional deductions by type.</p>
           </div>
           <div class="deductions-rows-header">
             <div>Type</div>
@@ -225,28 +241,27 @@ require_once '../views/auth.php'; // path relative to the page
           </div>
           <div id="deduction-rows" class="deductions-rows">
             <div class="deduction-row">
-              <select>
-                <option>SSS</option>
-                <option>PhilHealth</option>
-                <option>Pag-IBIG</option>
-                <option>Tax</option>
-                <option>Loan</option>
-                <option>Other</option>
-              </select>
-              <input type="text" placeholder="e.g., Union Fee" />
-              <input type="number" step="0.01" placeholder="0.00" />
-              <select>
-                <option>Per Employee</option>
-                <option>Per Role</option>
-                <option>Global</option>
-              </select>
-              <label class="recurring"><input type="checkbox" /> Yes</label>
-              <button type="button" class="btn-remove-row">Remove</button>
+              <div>
+                <span>Other</span>
+                <input type="hidden" class="ded-type" value="Other" />
+              </div>
+              <input type="text" class="ded-label" placeholder="Optional label" />
+              <input type="number" step="0.01" class="ded-amount" placeholder="0.00" />
+              <div class="ded-scope-wrapper">
+                <select class="ded-scope">
+                  <option value="per_employee">Per Employee</option>
+                  <option value="per_role">Per Role</option>
+                  <option value="global">Global</option>
+                </select>
+                <div class="ded-scope-roles"></div>
+              </div>
+              <label class="recurring"><input type="checkbox" class="ded-recurring" /> Yes</label>
+              <div style="text-align:center; font-size:0.8rem; color:#6b7280;">—</div>
             </div>
           </div>
-          <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
-            <button type="button" id="btn-add-deduction" class="tax-settings-save-btn" style="max-width:none;">Add Deduction</button>
-          </div>
+          <p style="margin-top:0.5rem; font-size:0.8rem; color:#6b7280;">
+            <strong>Legend:</strong> Government contributions (SSS, PhilHealth, Pag-IBIG, Income Tax) are computed automatically from settings. Use the <strong>Other</strong> row for manual company or employee-specific deductions (e.g., loans, penalties, adjustments).
+          </p>
         </section>
 
         <!-- Payroll Preview -->
@@ -273,9 +288,91 @@ require_once '../views/auth.php'; // path relative to the page
             </table>
           </div>
         </section>
+
+        <!-- Finalized Payroll Records -->
+        <section style="margin-top:1.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin: 0 0 0.75rem 2px; gap:0.75rem; flex-wrap:wrap;">
+            <h3 class="text-xl font-semibold text-gray-800" style="margin: 0;">Finalized Payroll Records</h3>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button type="button" id="btn-refresh-finalized" class="mark-paid-btn">Refresh Records</button>
+              <button type="button" id="btn-mark-period-paid" class="mark-paid-btn">Mark ALL as Paid</button>
+            </div>
+          </div>
+          <div class="payroll-table-container">
+            <table class="payroll-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Role</th>
+                  <th>Period</th>
+                  <th>Net Pay</th>
+                  <th>Paid Status</th>
+                  <th>Payment Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="payroll-finalized-body">
+                <tr>
+                  <td colspan="7" style="text-align:center; color:#6b7280;">No finalized records loaded yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 13th Month Preview -->
+        <section style="margin-top:1.5rem;">
+          <h3 class="text-xl font-semibold text-gray-800" style="margin: 0 0 0.75rem 2px;">13th Month Preview</h3>
+          <div class="payroll-header" style="margin-bottom: 0.75rem;">
+            <div class="payroll-header-left">
+              <div>
+                <label for="thirteenth-year">Year</label>
+                <input type="number" id="thirteenth-year" min="2000" max="2100" />
+              </div>
+              <div>
+                <label for="thirteenth-as-of">As of (optional)</label>
+                <input type="date" id="thirteenth-as-of" />
+              </div>
+            </div>
+            <div class="payroll-header-actions">
+              <button type="button" id="btn-thirteenth-recalc" class="mark-paid-btn">Recalculate 13th Month</button>
+            </div>
+          </div>
+          <div class="payroll-table-container">
+            <table class="payroll-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Role</th>
+                  <th>Total Basic (Year)</th>
+                  <th>13th Month</th>
+                </tr>
+              </thead>
+              <tbody id="thirteenth-body">
+                <tr>
+                  <td colspan="4" style="text-align:center; color:#6b7280;">13th month preview will appear here.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </main>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var toggle = document.getElementById('toggle-filters');
+      var body = document.getElementById('payroll-filters-body');
+      if (!toggle || !body) return;
+      toggle.addEventListener('click', function () {
+        var isHidden = body.style.display === 'none';
+        body.style.display = isHidden ? '' : 'none';
+        toggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+        toggle.textContent = isHidden ? 'Hide filters' : 'Show filters';
+      });
+    });
+  </script>
 
   <script src="../js/payroll.js"></script>
   <script src="../js/sidebar_update.js"></script>

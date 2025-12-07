@@ -513,3 +513,235 @@ function openSnapshotModal(index) {
 
 // Initial fetch
 fetchAttendanceData();
+
+// ----- Overtime Requests (Head Admin) -----
+
+const otTableBody = document.getElementById("ot-requests-body");
+const otStatusMessage = document.getElementById("ot-status-message");
+const otStatusFilter = document.getElementById("ot-status-filter");
+const otSummary = document.getElementById("ot-summary");
+
+function showOtMessage(msg, type = "info") {
+  if (!otStatusMessage) return;
+  otStatusMessage.textContent = msg;
+  otStatusMessage.className = `text-sm mt-2 ${
+    type === "error" ? "text-red-600" : type === "success" ? "text-green-600" : "text-gray-600"
+  }`;
+}
+
+async function fetchOvertimeRequests() {
+  if (!otTableBody) return; // Not a head_admin or section not present
+  otTableBody.innerHTML = "";
+  try {
+    let url = "../views/overtime_requests_handler.php?action=list";
+    if (otStatusFilter && otStatusFilter.value) {
+      const v = encodeURIComponent(otStatusFilter.value);
+      url += `&status=${v}`;
+    }
+    const res = await fetch(url);
+    const text = await res.text();
+    let out;
+    try {
+      out = JSON.parse(text);
+    } catch (e) {
+      showOtMessage("Failed to parse overtime data.", "error");
+      return;
+    }
+    if (!out.success) {
+      showOtMessage(out.message || "Failed to load overtime requests.", "error");
+      return;
+    }
+    const list = Array.isArray(out.data) ? out.data : [];
+    renderOvertimeRequests(list);
+  } catch (e) {
+    showOtMessage(e.message || "Error loading overtime requests.", "error");
+  }
+}
+
+function renderOvertimeRequests(list) {
+  if (!otTableBody) return;
+  otTableBody.innerHTML = "";
+
+  if (!list.length) {
+    otTableBody.innerHTML =
+      '<tr><td colspan="9" class="px-4 py-3 text-center text-sm text-gray-500">No overtime requests found.</td></tr>';
+    showOtMessage("", "info");
+    if (otSummary) {
+      otSummary.textContent = "";
+    }
+    return;
+  }
+
+  const statusOrder = {
+    Pending: 0,
+    AutoApproved: 1,
+    Approved: 2,
+    Rejected: 3,
+  };
+
+  const sorted = list.slice().sort((a, b) => {
+    const sa = statusOrder[a.status] !== undefined ? statusOrder[a.status] : 99;
+    const sb = statusOrder[b.status] !== undefined ? statusOrder[b.status] : 99;
+    if (sa !== sb) return sa - sb;
+
+    const da = a.date || "";
+    const db = b.date || "";
+    if (da > db) return -1;
+    if (da < db) return 1;
+
+    const ta = a.actual_out_time || "";
+    const tb = b.actual_out_time || "";
+    if (ta > tb) return -1;
+    if (ta < tb) return 1;
+
+    const ia = typeof a.id === "number" ? a.id : parseInt(a.id || 0, 10) || 0;
+    const ib = typeof b.id === "number" ? b.id : parseInt(b.id || 0, 10) || 0;
+    return ib - ia;
+  });
+
+  sorted.forEach((r) => {
+    const tr = document.createElement("tr");
+    tr.className = "hover:bg-gray-50";
+
+    const raw = typeof r.raw_ot_minutes === "number" ? r.raw_ot_minutes : parseInt(r.raw_ot_minutes || 0, 10) || 0;
+    const approved = typeof r.approved_ot_minutes === "number" ? r.approved_ot_minutes : parseInt(r.approved_ot_minutes || 0, 10) || 0;
+    const status = r.status || "Pending";
+
+    tr.innerHTML = `
+      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${
+        r.employee_name || ""
+      }</td>
+      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${r.date || ""}</td>
+      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${r.scheduled_end_time || ""}</td>
+      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${r.actual_out_time || ""}</td>
+      <td class="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">${raw}</td>
+      <td class="px-4 py-3 whitespace-nowrap text-sm text-right">
+        <input type="number" class="ot-approved-input border border-gray-300 rounded px-2 py-1 text-sm w-24 text-right" min="0" max="${raw}" value="${approved}" />
+      </td>
+      <td class="px-4 py-3 whitespace-nowrap text-sm ${
+        status === "Pending"
+          ? "text-yellow-600"
+          : status === "Rejected"
+          ? "text-red-600"
+          : "text-green-600"
+      }">${status}</td>
+      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+        <input type="text" class="ot-remarks-input border border-gray-300 rounded px-2 py-1 text-sm w-full" value="${
+          r.remarks ? String(r.remarks).replace(/"/g, "&quot;") : ""
+        }" />
+      </td>
+      <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
+        <button type="button" class="ot-approve-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs mr-1">Approve</button>
+        <button type="button" class="ot-reject-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">Reject</button>
+      </td>
+    `;
+
+    const approvedInput = tr.querySelector(".ot-approved-input");
+    const remarksInput = tr.querySelector(".ot-remarks-input");
+    const approveBtn = tr.querySelector(".ot-approve-btn");
+    const rejectBtn = tr.querySelector(".ot-reject-btn");
+
+    const id = r.id;
+
+    if (approveBtn) {
+      approveBtn.addEventListener("click", () => {
+        const val = parseInt(approvedInput.value || "0", 10) || 0;
+        const mins = val < 0 ? 0 : val > raw ? raw : val;
+        const remarks = remarksInput.value || "";
+        updateOvertimeRequest(id, "Approved", mins, remarks);
+      });
+    }
+
+    if (rejectBtn) {
+      rejectBtn.addEventListener("click", () => {
+        if (!confirm("Reject this overtime request? Approved minutes will be set to 0.")) return;
+        const remarks = remarksInput.value || "";
+        updateOvertimeRequest(id, "Rejected", 0, remarks);
+      });
+    }
+
+    otTableBody.appendChild(tr);
+  });
+
+  updateOtSummary(list);
+}
+
+function updateOtSummary(list) {
+  if (!otSummary) return;
+  if (!list || !list.length) {
+    otSummary.textContent = "";
+    return;
+  }
+
+  let totalRaw = 0;
+  let totalApproved = 0;
+  let pending = 0;
+  let approved = 0;
+  let rejected = 0;
+  let autoApproved = 0;
+
+  list.forEach((r) => {
+    const raw =
+      typeof r.raw_ot_minutes === "number"
+        ? r.raw_ot_minutes
+        : parseInt(r.raw_ot_minutes || 0, 10) || 0;
+    const appr =
+      typeof r.approved_ot_minutes === "number"
+        ? r.approved_ot_minutes
+        : parseInt(r.approved_ot_minutes || 0, 10) || 0;
+
+    totalRaw += raw;
+    totalApproved += appr;
+
+    const s = r.status || "Pending";
+    if (s === "Pending") pending += 1;
+    else if (s === "Approved") approved += 1;
+    else if (s === "Rejected") rejected += 1;
+    else if (s === "AutoApproved") autoApproved += 1;
+  });
+
+  const parts = [];
+  parts.push(`Total: ${list.length}`);
+  if (pending) parts.push(`Pending: ${pending}`);
+  if (approved) parts.push(`Approved: ${approved}`);
+  if (rejected) parts.push(`Rejected: ${rejected}`);
+  if (autoApproved) parts.push(`Auto-approved: ${autoApproved}`);
+  parts.push(`Raw mins: ${totalRaw}`);
+  parts.push(`Approved mins: ${totalApproved}`);
+
+  otSummary.textContent = parts.join(" | ");
+}
+
+async function updateOvertimeRequest(id, status, approvedMinutes, remarks) {
+  try {
+    const res = await fetch("../views/overtime_requests_handler.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "update",
+        id,
+        status,
+        approved_minutes: approvedMinutes,
+        remarks,
+      }),
+    });
+    const out = await res.json();
+    if (!out.success) {
+      showOtMessage(out.message || "Failed to update overtime request.", "error");
+      return;
+    }
+    showOtMessage(out.message || "Overtime request updated.", "success");
+    fetchOvertimeRequests();
+  } catch (e) {
+    showOtMessage(e.message || "Error updating overtime request.", "error");
+  }
+}
+
+// Initial fetch for overtime requests (only if section exists)
+if (otStatusFilter) {
+  otStatusFilter.addEventListener("change", () => {
+    fetchOvertimeRequests();
+  });
+}
+
+fetchOvertimeRequests();

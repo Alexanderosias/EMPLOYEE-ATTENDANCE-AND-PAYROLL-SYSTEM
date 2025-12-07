@@ -303,9 +303,9 @@ switch ($action) {
             }
             $name = trim($_POST['name'] ?? '');
             $ratePerDay = floatval($_POST['rate_per_day'] ?? 0);
-            $payrollFrequency = strtolower(trim($_POST['payroll_frequency'] ?? 'monthly'));
-            $allowedFreq = ['weekly','biweekly','semimonthly','monthly'];
-            if (!in_array($payrollFrequency, $allowedFreq, true)) { $payrollFrequency = 'monthly'; }
+            $payrollFrequency = strtolower(trim($_POST['payroll_frequency'] ?? 'bi-weekly'));
+            $allowedFreq = ['daily','weekly','bi-weekly','monthly'];
+            if (!in_array($payrollFrequency, $allowedFreq, true)) { $payrollFrequency = 'bi-weekly'; }
 
             if (empty($name)) {
                 throw new Exception('Job position name is required.');

@@ -36,31 +36,69 @@
     padding-top: 6px;
 }
 
-#sum-period {
-    font-size: 1rem !important;
-    padding-top: 0 !important;
-    color: #374151 !important;
-    font-weight: 600 !important;
+.payroll-filters-card {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background: #ffffff;
+    padding: 0.75rem 1rem 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    max-width: 100%;
 }
 
-.payroll-dashboard {
+.payroll-filters-card-header {
     display: flex;
-    flex-direction: column;
-    max-width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.filters-toggle-btn {
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    background: #f9fafb;
+    color: #374151;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.filters-toggle-btn:hover {
+    background: #e5e7eb;
 }
 
 .payroll-header {
     font-size: 16px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: minmax(260px, 1.5fr) minmax(200px, 1fr);
     gap: 1rem;
-    align-items: end;
+    align-items: flex-end;
     margin-bottom: 1.25rem;
 }
 
 .payroll-header div {
     display: flex;
     flex-direction: column;
+}
+
+.payroll-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.payroll-header .payroll-header-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+    justify-content: flex-start;
+    border-left: 1px solid #d1d5db;
+    padding-left: 1rem;
 }
 
 .payroll-header label {
@@ -71,7 +109,10 @@
     color: #333;
 }
 
-.payroll-header select {
+.payroll-header select,
+.payroll-header input[type="date"],
+.payroll-header input[type="number"],
+.payroll-header input[type="text"] {
     padding: 10px 12px;
     font-size: 15px;
     border: 2px solid #c5c5c5;
@@ -80,24 +121,36 @@
     color: #333;
     cursor: pointer;
     transition: 0.2s ease;
-}
-
-.payroll-header input[type="date"],
-.payroll-header select {
     width: 100%;
     box-sizing: border-box;
 }
 
-.payroll-header select:hover {
+.payroll-header select:hover,
+.payroll-header input[type="date"]:hover,
+.payroll-header input[type="number"]:hover,
+.payroll-header input[type="text"]:hover {
     border-color: #132bb6;
 }
 
-.payroll-header select:focus {
+.payroll-header select:focus,
+.payroll-header input[type="date"]:focus,
+.payroll-header input[type="number"]:focus,
+.payroll-header input[type="text"]:focus {
     outline: none;
     box-shadow: 0 0 5px rgba(23, 52, 199, 0.5);
 }
 
 .payroll-header .pay-period-display {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.payroll-period-helper {
+    margin-top: -0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.payroll-period-helper .pay-period-display {
     font-size: 0.9rem;
     color: #6b7280;
 }
@@ -346,8 +399,14 @@ table.payroll-table button.include-btn:hover {
     padding: 0.5rem 1rem;
     border-radius: 0.375rem;
     font-weight: 700;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     cursor: pointer;
-    max-width: 150px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
     transition: background-color 0.2s ease;
     align-self: flex-end;
 }
@@ -498,6 +557,37 @@ table.payroll-table button.include-btn:hover {
     border: 1px solid #e5e7eb;
     border-radius: 0.375rem;
     padding: 0.5rem 0.75rem;
+}
+
+.ded-scope-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.ded-scope-roles {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    min-width: 180px;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    padding: 0.4rem 0.5rem;
+    max-height: 160px;
+    overflow-y: auto;
+    z-index: 40;
+    display: none; /* JS will toggle when hovering */
+}
+
+.ded-scope-roles label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: #374151;
+    padding: 1px 0;
 }
 
 .deduction-row select,

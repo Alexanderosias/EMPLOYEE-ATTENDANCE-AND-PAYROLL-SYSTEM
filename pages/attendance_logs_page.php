@@ -136,6 +136,7 @@ require_once '../views/auth.php'; // path relative to the page
       </header>
       <div class="scrollbar-container">
         <section class="attendance-logs max-w-7xl mx-auto">
+
           <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
             <div class="flex items-center space-x-2">
               <label for="rows-per-page" class="text-gray-700 text-sm font-medium">Show</label>
@@ -205,6 +206,50 @@ require_once '../views/auth.php'; // path relative to the page
             <button id="next-page" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</button>
           </div>
         </section>
+
+        <?php
+        $userRoles = $_SESSION['roles'] ?? [];
+        if (in_array('head_admin', $userRoles)):
+        ?>
+        <section class="attendance-logs max-w-7xl mx-auto" style="margin-top: 2rem;">
+          <h3 class="text-lg font-semibold text-gray-800 mb-2">Overtime Requests</h3>
+          <p class="text-sm text-gray-600 mb-3">Review overtime logged by the system. Approve or reject requests and adjust the approved OT minutes when needed.</p>
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <label for="ot-status-filter" class="text-xs font-medium text-gray-700">Show</label>
+              <select id="ot-status-filter"
+                class="ml-1 border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All</option>
+                <option value="Pending" selected>Pending only</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="AutoApproved">Auto-approved</option>
+              </select>
+            </div>
+            <div id="ot-summary" class="text-xs text-gray-600"></div>
+          </div>
+          <div class="overflow-x-auto bg-white rounded shadow">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scheduled End</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual Out</th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Raw OT (mins)</th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Approved OT (mins)</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
+                  <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ot-requests-body" class="bg-white divide-y divide-gray-200">
+              </tbody>
+            </table>
+          </div>
+          <div id="ot-status-message" class="text-sm mt-2 text-gray-600"></div>
+        </section>
+        <?php endif; ?>
       </div>
     </main>
   </div>
