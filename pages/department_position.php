@@ -227,7 +227,6 @@ require_once '../views/auth.php'; // path relative to the page
                                     placeholder="Enter rate per day" />
                                 <label for="job-position-frequency">Payroll Frequency</label>
                                 <select id="job-position-frequency" name="payroll_frequency" required>
-                                    <option value="daily">Daily</option>
                                     <option value="weekly">Weekly</option>
                                     <option value="bi-weekly" selected>Bi-Weekly</option>
                                     <option value="monthly">Monthly</option>
@@ -259,7 +258,6 @@ require_once '../views/auth.php'; // path relative to the page
                                     placeholder="Enter rate per day" />
                                 <label for="upd-position-frequency">Payroll Frequency</label>
                                 <select id="upd-position-frequency" name="payroll_frequency" required>
-                                    <option value="daily">Daily</option>
                                     <option value="weekly">Weekly</option>
                                     <option value="bi-weekly">Bi-Weekly</option>
                                     <option value="monthly">Monthly</option>

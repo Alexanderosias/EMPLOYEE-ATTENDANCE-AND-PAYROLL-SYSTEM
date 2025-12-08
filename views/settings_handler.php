@@ -38,7 +38,7 @@ try {
         $d->free();
     }
     if (!$hasPayrollFreq) {
-        @$mysqli->query("ALTER TABLE job_positions ADD COLUMN payroll_frequency ENUM('daily','weekly','bi-weekly','monthly') NOT NULL DEFAULT 'bi-weekly'");
+        @$mysqli->query("ALTER TABLE job_positions ADD COLUMN payroll_frequency ENUM('weekly','bi-weekly','monthly') NOT NULL DEFAULT 'bi-weekly'");
     }
 
     // Ensure attendance_settings table exists with at least one row
@@ -142,7 +142,7 @@ try {
             if (!is_array($map)) {
                 throw new Exception('Invalid frequencies payload.');
             }
-            $allowed = ['daily','weekly','bi-weekly','monthly'];
+            $allowed = ['weekly','bi-weekly','monthly'];
             $stmt = $mysqli->prepare("UPDATE job_positions SET payroll_frequency = ? WHERE id = ?");
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);

@@ -248,7 +248,7 @@ require_once '../views/auth.php';  // path relative to the page
                 <div class="form-group">
                   <label for="autoOtMinutes">Auto OT Limit (minutes)</label>
                   <input type="number" id="autoOtMinutes" value="30" min="0" max="600" step="1" />
-                  <p class="small-text">OT minutes at or below this value are auto-approved; higher OT requires head admin approval.</p>
+                  <p class="small-text">Minutes beyond scheduled time up to this limit are not treated as overtime. Only minutes beyond this limit will create an overtime request that requires head admin approval.</p>
                 </div>
               </div>
             </div>

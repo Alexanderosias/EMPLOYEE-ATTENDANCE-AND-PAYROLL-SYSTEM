@@ -40,6 +40,35 @@ function convertTo24Hour(time12h) {
   return `${hours.toString().padStart(2, "0")}:${minutes}`;
 }
 
+// Format a time or datetime string into 12-hour format with AM/PM for display
+function formatTimeTo12Hour(value) {
+  if (!value) return "";
+  let timePart = String(value).trim();
+
+  // If value includes a date or other prefix, take the time portion
+  if (timePart.includes(" ")) {
+    const parts = timePart.split(" ");
+    timePart = parts[parts.length - 1];
+  } else if (timePart.includes("T")) {
+    const parts = timePart.split("T");
+    timePart = parts[parts.length - 1];
+  }
+
+  const match = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(timePart);
+  if (!match) return String(value);
+
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  if (Number.isNaN(hours)) return String(value);
+
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+
+  const hoursStr = hours.toString().padStart(2, "0");
+  return `${hoursStr}:${minutes} ${ampm}`;
+}
+
 // Fetch data from the server
 async function fetchAttendanceData() {
   try {
@@ -612,8 +641,12 @@ function renderOvertimeRequests(list) {
         r.employee_name || ""
       }</td>
       <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${r.date || ""}</td>
-      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${r.scheduled_end_time || ""}</td>
-      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${r.actual_out_time || ""}</td>
+      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${formatTimeTo12Hour(
+        r.scheduled_end_time
+      )}</td>
+      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${formatTimeTo12Hour(
+        r.actual_out_time
+      )}</td>
       <td class="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">${raw}</td>
       <td class="px-4 py-3 whitespace-nowrap text-sm text-right">
         <input type="number" class="ot-approved-input border border-gray-300 rounded px-2 py-1 text-sm w-24 text-right" min="0" max="${raw}" value="${approved}" />

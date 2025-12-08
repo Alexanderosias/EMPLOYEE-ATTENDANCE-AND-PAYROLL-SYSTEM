@@ -223,7 +223,6 @@ require_once '../views/auth.php'; // path relative to the page
                 <option value="Pending" selected>Pending only</option>
                 <option value="Approved">Approved</option>
                 <option value="Rejected">Rejected</option>
-                <option value="AutoApproved">Auto-approved</option>
               </select>
             </div>
             <div id="ot-summary" class="text-xs text-gray-600"></div>

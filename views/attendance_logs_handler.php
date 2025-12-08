@@ -418,7 +418,7 @@ try {
             }
             $stmt->close();
 
-            // Recompute overtime for this log (if any) and upsert into overtime_requests
+            // Recompute overtime for this log (if any) and upsert/delete overtime_requests
             if ($timeOutDB && $expectedEnd) {
                 $expectedEndStr = "$date $expectedEnd";
                 $expectedEndTs = strtotime($expectedEndStr);
@@ -428,60 +428,85 @@ try {
                     $rawOtMinutes = (int) floor(($outTs - $expectedEndTs) / 60);
                 }
 
-                if ($rawOtMinutes > 0) {
-                    // Ensure overtime_requests table exists
-                    @$mysqli->query("CREATE TABLE IF NOT EXISTS overtime_requests (
-                        id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                        attendance_log_id INT(11) NOT NULL,
-                        employee_id INT(11) NOT NULL,
-                        date DATE NOT NULL,
-                        scheduled_end_time TIME NOT NULL,
-                        actual_out_time DATETIME NOT NULL,
-                        raw_ot_minutes INT(11) NOT NULL DEFAULT 0,
-                        approved_ot_minutes INT(11) NOT NULL DEFAULT 0,
-                        status ENUM('Pending','Approved','Rejected','AutoApproved') DEFAULT 'Pending',
-                        approved_by INT(11) DEFAULT NULL,
-                        approved_at DATETIME DEFAULT NULL,
-                        remarks TEXT DEFAULT NULL,
-                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                        KEY idx_ot_attendance (attendance_log_id),
-                        KEY idx_ot_employee_date (employee_id, date)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+                // Ensure overtime_requests table exists
+                @$mysqli->query("CREATE TABLE IF NOT EXISTS overtime_requests (
+                    id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    attendance_log_id INT(11) NOT NULL,
+                    employee_id INT(11) NOT NULL,
+                    date DATE NOT NULL,
+                    scheduled_end_time TIME NOT NULL,
+                    actual_out_time DATETIME NOT NULL,
+                    raw_ot_minutes INT(11) NOT NULL DEFAULT 0,
+                    approved_ot_minutes INT(11) NOT NULL DEFAULT 0,
+                    status ENUM('Pending','Approved','Rejected','AutoApproved') DEFAULT 'Pending',
+                    approved_by INT(11) DEFAULT NULL,
+                    approved_at DATETIME DEFAULT NULL,
+                    remarks TEXT DEFAULT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    KEY idx_ot_attendance (attendance_log_id),
+                    KEY idx_ot_employee_date (employee_id, date)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
-                    $statusOt = 'Pending';
-                    $approvedMinutes = 0;
-                    if ($rawOtMinutes <= $autoOtMinutes) {
-                        $statusOt = 'AutoApproved';
-                        $approvedMinutes = $rawOtMinutes;
-                    }
-
-                    // Upsert overtime request for this attendance log
-                    $stmt = $mysqli->prepare("SELECT id FROM overtime_requests WHERE attendance_log_id = ? LIMIT 1");
-                    if ($stmt) {
+                if ($rawOtMinutes <= $autoOtMinutes || $rawOtMinutes <= 0) {
+                    // OT within or below limit: treat as no overtime, remove any existing request
+                    if ($stmt = $mysqli->prepare("DELETE FROM overtime_requests WHERE attendance_log_id = ?")) {
                         $stmt->bind_param('i', $id);
                         $stmt->execute();
-                        $res = $stmt->get_result();
-                        $existingOt = $res->fetch_assoc();
                         $stmt->close();
+                    }
+                } else {
+                    // Only minutes beyond the auto-OT limit require approval
+                    $effectiveOt = $rawOtMinutes - $autoOtMinutes;
+                    if ($effectiveOt < 0) {
+                        $effectiveOt = 0;
+                    }
 
-                        if ($existingOt) {
-                            $otId = (int)$existingOt['id'];
-                            $stmt = $mysqli->prepare("UPDATE overtime_requests SET date = ?, scheduled_end_time = ?, actual_out_time = ?, raw_ot_minutes = ?, approved_ot_minutes = ?, status = ?, updated_at = NOW() WHERE id = ?");
-                            if ($stmt) {
-                                $stmt->bind_param('sssissi', $date, $expectedEnd, $timeOutDB, $rawOtMinutes, $approvedMinutes, $statusOt, $otId);
-                                $stmt->execute();
-                                $stmt->close();
-                            }
-                        } else {
-                            $stmt = $mysqli->prepare("INSERT INTO overtime_requests (attendance_log_id, employee_id, date, scheduled_end_time, actual_out_time, raw_ot_minutes, approved_ot_minutes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                            if ($stmt) {
-                                $stmt->bind_param('iisssiis', $id, $employeeId, $date, $expectedEnd, $timeOutDB, $rawOtMinutes, $approvedMinutes, $statusOt);
-                                $stmt->execute();
-                                $stmt->close();
+                    if ($effectiveOt > 0) {
+                        $statusOt = 'Pending';
+                        $approvedMinutes = 0;
+
+                        // Upsert overtime request for this attendance log
+                        $stmt = $mysqli->prepare("SELECT id FROM overtime_requests WHERE attendance_log_id = ? LIMIT 1");
+                        if ($stmt) {
+                            $stmt->bind_param('i', $id);
+                            $stmt->execute();
+                            $res = $stmt->get_result();
+                            $existingOt = $res->fetch_assoc();
+                            $stmt->close();
+
+                            if ($existingOt) {
+                                $otId = (int)$existingOt['id'];
+                                $stmt = $mysqli->prepare("UPDATE overtime_requests SET date = ?, scheduled_end_time = ?, actual_out_time = ?, raw_ot_minutes = ?, approved_ot_minutes = ?, status = ?, updated_at = NOW() WHERE id = ?");
+                                if ($stmt) {
+                                    $stmt->bind_param('sssissi', $date, $expectedEnd, $timeOutDB, $effectiveOt, $approvedMinutes, $statusOt, $otId);
+                                    $stmt->execute();
+                                    $stmt->close();
+                                }
+                            } else {
+                                $stmt = $mysqli->prepare("INSERT INTO overtime_requests (attendance_log_id, employee_id, date, scheduled_end_time, actual_out_time, raw_ot_minutes, approved_ot_minutes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                                if ($stmt) {
+                                    $stmt->bind_param('iisssiis', $id, $employeeId, $date, $expectedEnd, $timeOutDB, $effectiveOt, $approvedMinutes, $statusOt);
+                                    $stmt->execute();
+                                    $stmt->close();
+                                }
                             }
                         }
+                    } else {
+                        // Safety: if effective OT is 0, remove any existing request
+                        if ($stmt = $mysqli->prepare("DELETE FROM overtime_requests WHERE attendance_log_id = ?")) {
+                            $stmt->bind_param('i', $id);
+                            $stmt->execute();
+                            $stmt->close();
+                        }
                     }
+                }
+            } else {
+                // No valid time-out or expected end; ensure no overtime request remains
+                if ($stmt = $mysqli->prepare("DELETE FROM overtime_requests WHERE attendance_log_id = ?")) {
+                    $stmt->bind_param('i', $id);
+                    $stmt->execute();
+                    $stmt->close();
                 }
             }
 
