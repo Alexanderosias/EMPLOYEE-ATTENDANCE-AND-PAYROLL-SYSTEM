@@ -620,7 +620,7 @@ switch ($action) {
             } else {
                 // Insert new
                 $stmt = $mysqli->prepare("
-                    INSERT INTO attendance_logs (employee_id, date, time_in, time_out, qr_snapshot_path, check_type, synced)
+                    INSERT INTO attendance_logs (employee_id, date, time_in, time_out, qr_snapshot_path, check_type, is_synced)
                     VALUES (?, ?, ?, ?, ?, ?, 0)
                 ");
                 $stmt->bind_param('isssss', $employeeId, $date, $timeIn, $timeOut, $snapshotPath, $checkType);
@@ -665,7 +665,7 @@ switch ($action) {
                 $checkType = $log['check_type'] ?? 'in';
 
                 $stmt = $mysqli->prepare("
-                    INSERT INTO attendance_logs (employee_id, date, time_in, time_out, qr_snapshot_path, check_type, synced)
+                    INSERT INTO attendance_logs (employee_id, date, time_in, time_out, qr_snapshot_path, check_type, is_synced)
                     VALUES (?, ?, ?, ?, ?, ?, 0)
                     ON DUPLICATE KEY UPDATE time_in = VALUES(time_in), time_out = VALUES(time_out), qr_snapshot_path = VALUES(qr_snapshot_path)
                 ");
@@ -724,7 +724,7 @@ switch ($action) {
 
     case 'get_unsynced_count':
         try {
-            $result = $mysqli->query("SELECT COUNT(*) AS count FROM attendance_logs WHERE synced = 0");
+            $result = $mysqli->query("SELECT COUNT(*) AS count FROM attendance_logs WHERE is_synced = 0");
             $row = $result->fetch_assoc();
             $count = (int)$row['count'];
             $result->free();
@@ -742,7 +742,7 @@ switch ($action) {
     case 'sync_attendance':
         try {
             // Mark as synced (no Firebase, just update DB)
-            $stmt = $mysqli->prepare("UPDATE attendance_logs SET synced = 1 WHERE synced = 0");
+            $stmt = $mysqli->prepare("UPDATE attendance_logs SET is_synced = 1 WHERE is_synced = 0");
             $stmt->execute();
             $syncedCount = $stmt->affected_rows;
             $stmt->close();

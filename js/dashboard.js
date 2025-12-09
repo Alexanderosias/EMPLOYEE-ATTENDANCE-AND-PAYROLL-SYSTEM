@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Login success message ---
   const loginStatus = sessionStorage.getItem("loginStatus");
-  if (loginStatus === "success") {
+  if (loginStatus === "success" && messageBox) {
     sessionStorage.removeItem("loginStatus");
 
     messageBox.style.display = "block";

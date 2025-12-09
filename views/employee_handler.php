@@ -120,6 +120,633 @@ function computeEffectiveLeaveDays($mysqli, $employeeId, $startDateStr, $endDate
 
 try {
   switch ($action) {
+    case 'today_attendance':
+      if (!isset($_SESSION['user_id'])) {
+        throw new Exception('User not authenticated');
+      }
+      $userId = $_SESSION['user_id'];
+
+      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('i', $userId);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $emp = $res->fetch_assoc();
+      $stmt->close();
+      if (!$emp) {
+        throw new Exception('Employee not found');
+      }
+      $employeeId = (int)$emp['id'];
+
+      $today = date('Y-m-d');
+
+      $stmt = $mysqli->prepare("SELECT id, date, time_in, time_out, status, expected_start_time, expected_end_time FROM attendance_logs WHERE employee_id = ? AND date = ? LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('is', $employeeId, $today);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $log = $res->fetch_assoc();
+      $stmt->close();
+
+      $holidayType = null;
+      $holidayName = null;
+      $stmt = $mysqli->prepare("SELECT name, type FROM holidays WHERE start_date <= ? AND end_date >= ? LIMIT 1");
+      if ($stmt) {
+        $stmt->bind_param('ss', $today, $today);
+        $stmt->execute();
+        $hRes = $stmt->get_result();
+        if ($hRow = $hRes->fetch_assoc()) {
+          $holidayType = $hRow['type'] ?? null;
+          $holidayName = $hRow['name'] ?? null;
+        }
+        $stmt->close();
+      }
+
+      $leaveType = null;
+      $leaveSource = null;
+      $stmt = $mysqli->prepare("SELECT leave_type, deducted_from FROM leave_requests WHERE employee_id = ? AND status = 'Approved' AND ? BETWEEN start_date AND end_date LIMIT 1");
+      if ($stmt) {
+        $stmt->bind_param('is', $employeeId, $today);
+        $stmt->execute();
+        $lRes = $stmt->get_result();
+        if ($lRow = $lRes->fetch_assoc()) {
+          $leaveType = $lRow['leave_type'] ?? null;
+          $leaveSource = $lRow['deducted_from'] ?? null;
+        }
+        $stmt->close();
+      }
+
+      $baseStatus = $log ? ($log['status'] ?? '') : '';
+      $displayStatus = $baseStatus ?: 'No record yet today';
+      $onLeaveApplied = false;
+
+      if ($leaveType) {
+        $kind = $leaveSource ?: $leaveType;
+        $kindLabel = 'Leave';
+        if ($kind === 'Paid') {
+          $kindLabel = 'Paid Leave';
+        } elseif ($kind === 'Unpaid') {
+          $kindLabel = 'Unpaid Leave';
+        } elseif ($kind === 'Sick') {
+          $kindLabel = 'Sick Leave';
+        }
+
+        $displayStatus = 'On Leave';
+        if ($kindLabel) {
+          $displayStatus .= ' - ' . $kindLabel;
+        }
+
+        if ($holidayType === 'regular') {
+          $displayStatus .= ' (Regular Holiday)';
+        } elseif ($holidayType === 'special_non_working') {
+          $displayStatus .= ' (Special Non-Working Holiday)';
+        } elseif ($holidayType === 'special_working') {
+          $displayStatus .= ' (Special Working Holiday)';
+        }
+
+        $baseStatus = 'On Leave';
+        $onLeaveApplied = true;
+      }
+
+      $hasLog = $log && (!empty($log['time_in']) || !empty($log['time_out']));
+
+      if ($holidayType && !$onLeaveApplied) {
+        if ($holidayType === 'regular') {
+          if (!$hasLog) {
+            $displayStatus = 'Regular Holiday (No Work)';
+            $baseStatus = 'Holiday';
+          } else {
+            $displayStatus = 'Regular Holiday - Worked';
+          }
+        } elseif ($holidayType === 'special_non_working') {
+          if (!$hasLog) {
+            $displayStatus = 'Special Non-Working Holiday (No Work)';
+            $baseStatus = 'Holiday';
+          } else {
+            $displayStatus = 'Special Non-Working Holiday - Worked';
+          }
+        } elseif ($holidayType === 'special_working') {
+          if (!$hasLog) {
+            $displayStatus = 'Absent (Special Working Holiday)';
+            $baseStatus = 'Absent';
+          } else {
+            if ($baseStatus === 'Late') {
+              $displayStatus = 'Late (Special Working Holiday)';
+            } elseif ($baseStatus === 'Undertime') {
+              $displayStatus = 'Undertime (Special Working Holiday)';
+            } else {
+              $displayStatus = 'Present (Special Working Holiday)';
+              $baseStatus = 'Present';
+            }
+          }
+        }
+      }
+
+      if (!$log && !$leaveType && !$holidayType) {
+        $baseStatus = '';
+        $displayStatus = 'No record yet today';
+      }
+
+      $totalHours = 0.0;
+      $timeInFormatted = null;
+      $timeOutFormatted = null;
+      if ($log) {
+        if (!empty($log['time_in'])) {
+          $timeInFormatted = date('h:i A', strtotime($log['time_in']));
+        }
+        if (!empty($log['time_out'])) {
+          $timeOutFormatted = date('h:i A', strtotime($log['time_out']));
+        }
+        if (!empty($log['time_in']) && !empty($log['time_out'])) {
+          $inTs = strtotime($log['time_in']);
+          $outTs = strtotime($log['time_out']);
+          if ($outTs > $inTs) {
+            $totalHours = round(($outTs - $inTs) / 3600, 2);
+          }
+        }
+      }
+
+      $lateFlag = ($baseStatus === 'Late');
+      $undertimeFlag = ($baseStatus === 'Undertime');
+
+      echo json_encode([
+        'success' => true,
+        'data' => [
+          'status' => $displayStatus,
+          'base_status' => $baseStatus,
+          'time_in' => $timeInFormatted,
+          'time_out' => $timeOutFormatted,
+          'total_hours' => $totalHours,
+          'late' => $lateFlag,
+          'undertime' => $undertimeFlag,
+          'holiday_type' => $holidayType,
+          'holiday_name' => $holidayName
+        ]
+      ]);
+      break;
+
+    case 'monthly_summary':
+      if (!isset($_SESSION['user_id'])) {
+        throw new Exception('User not authenticated');
+      }
+      $userId = $_SESSION['user_id'];
+
+      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('i', $userId);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $emp = $res->fetch_assoc();
+      $stmt->close();
+      if (!$emp) {
+        throw new Exception('Employee not found');
+      }
+      $employeeId = (int)$emp['id'];
+
+      $firstDay = (new DateTime('first day of this month'))->format('Y-m-d');
+      $lastDay = (new DateTime('last day of this month'))->format('Y-m-d');
+
+      $holidays = [];
+      if ($hRes = $mysqli->query("SELECT id, name, type, start_date, end_date FROM holidays")) {
+        while ($hRow = $hRes->fetch_assoc()) {
+          $holidays[] = $hRow;
+        }
+        $hRes->free();
+      }
+
+      $sql = "SELECT 
+                al.id,
+                al.date,
+                al.time_in AS time_in,
+                al.time_out AS time_out,
+                al.status,
+                lr.leave_type,
+                lr.deducted_from AS leave_deducted_from
+              FROM attendance_logs al
+              LEFT JOIN leave_requests lr
+                ON lr.employee_id = al.employee_id
+               AND lr.status = 'Approved'
+               AND al.date BETWEEN lr.start_date AND lr.end_date
+              WHERE al.employee_id = ? AND al.date BETWEEN ? AND ?
+              ORDER BY al.date ASC";
+      $stmt = $mysqli->prepare($sql);
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('iss', $employeeId, $firstDay, $lastDay);
+      $stmt->execute();
+      $res = $stmt->get_result();
+
+      $map = ['Present' => 0, 'Late' => 0, 'Absent' => 0, 'Undertime' => 0];
+      $hoursPerDate = [];
+
+      while ($row = $res->fetch_assoc()) {
+        $holidayType = null;
+        if (!empty($holidays)) {
+          $dateVal = $row['date'];
+          foreach ($holidays as $h) {
+            if ($dateVal >= $h['start_date'] && $dateVal <= $h['end_date']) {
+              $holidayType = $h['type'] ?? null;
+              break;
+            }
+          }
+        }
+
+        $baseStatus = $row['status'] ?? '';
+
+        $leaveType = $row['leave_type'] ?? null;
+        $leaveSource = $row['leave_deducted_from'] ?? null;
+        $onLeaveApplied = false;
+
+        if ($leaveType) {
+          $kind = $leaveSource ?: $leaveType;
+          if ($kind === 'Paid' || $kind === 'Unpaid' || $kind === 'Sick') {
+            $baseStatus = 'On Leave';
+          } else {
+            $baseStatus = 'On Leave';
+          }
+          $onLeaveApplied = true;
+        }
+
+        $hasLog = !empty($row['time_in']) || !empty($row['time_out']);
+
+        if ($holidayType && !$onLeaveApplied) {
+          if ($holidayType === 'regular') {
+            if (!$hasLog) {
+              $baseStatus = 'Holiday';
+            }
+          } elseif ($holidayType === 'special_non_working') {
+            if (!$hasLog) {
+              $baseStatus = 'Holiday';
+            }
+          } elseif ($holidayType === 'special_working') {
+            if (!$hasLog) {
+              $baseStatus = 'Absent';
+            } else {
+              if ($baseStatus === 'Late' || $baseStatus === 'Undertime') {
+              } else {
+                $baseStatus = 'Present';
+              }
+            }
+          }
+        }
+
+        if (isset($map[$baseStatus])) {
+          $map[$baseStatus]++;
+        }
+
+        if (!empty($row['time_in']) && !empty($row['time_out'])) {
+          $inTs = strtotime($row['time_in']);
+          $outTs = strtotime($row['time_out']);
+          if ($outTs > $inTs) {
+            $hours = ($outTs - $inTs) / 3600;
+            $dateKey = $row['date'];
+            if (!isset($hoursPerDate[$dateKey])) {
+              $hoursPerDate[$dateKey] = 0.0;
+            }
+            $hoursPerDate[$dateKey] += $hours;
+          }
+        }
+      }
+      $stmt->close();
+
+      ksort($hoursPerDate);
+      $days = array_keys($hoursPerDate);
+      $hoursArr = [];
+      foreach ($hoursPerDate as $h) {
+        $hoursArr[] = round($h, 2);
+      }
+
+      $overtimeHours = 0.0;
+      if ($stmt = $mysqli->prepare("SELECT SUM(approved_ot_minutes) AS mins FROM overtime_requests WHERE employee_id = ? AND date BETWEEN ? AND ? AND status IN ('Approved','AutoApproved')")) {
+        $stmt->bind_param('iss', $employeeId, $firstDay, $lastDay);
+        $stmt->execute();
+        $oRes = $stmt->get_result();
+        if ($oRow = $oRes->fetch_assoc()) {
+          $mins = isset($oRow['mins']) ? (int)$oRow['mins'] : 0;
+          if ($mins > 0) {
+            $overtimeHours = round($mins / 60, 2);
+          }
+        }
+        $stmt->close();
+      }
+
+      $workingDays = computeEffectiveLeaveDays($mysqli, $employeeId, $firstDay, $lastDay);
+
+      echo json_encode([
+        'success' => true,
+        'data' => [
+          'present' => $map['Present'],
+          'absent' => $map['Absent'],
+          'lates' => $map['Late'],
+          'undertime' => $map['Undertime'],
+          'overtime' => $overtimeHours,
+          'working_days' => $workingDays,
+          'days' => $days,
+          'hours' => $hoursArr
+        ]
+      ]);
+      break;
+
+    case 'work_schedule':
+      if (!isset($_SESSION['user_id'])) {
+        throw new Exception('User not authenticated');
+      }
+      $userId = $_SESSION['user_id'];
+
+      $stmt = $mysqli->prepare("SELECT e.id, e.department_id, e.job_position_id, d.name AS dept_name, jp.name AS pos_name FROM employees e JOIN departments d ON e.department_id = d.id JOIN job_positions jp ON e.job_position_id = jp.id WHERE e.user_id = ? LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('i', $userId);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $emp = $res->fetch_assoc();
+      $stmt->close();
+      if (!$emp) {
+        throw new Exception('Employee not found');
+      }
+      $employeeId = (int)$emp['id'];
+
+      $stmt = $mysqli->prepare("SELECT day_of_week, start_time, end_time, is_working FROM schedules WHERE employee_id = ? ORDER BY FIELD(day_of_week,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('i', $employeeId);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $workingDays = [];
+      $restDaysSet = [
+        'Monday' => true,
+        'Tuesday' => true,
+        'Wednesday' => true,
+        'Thursday' => true,
+        'Friday' => true,
+        'Saturday' => true,
+        'Sunday' => true
+      ];
+      $earliestStart = null;
+      $latestEnd = null;
+      while ($row = $res->fetch_assoc()) {
+        $day = $row['day_of_week'];
+        $isWorking = (int)$row['is_working'] === 1;
+        if ($isWorking) {
+          $workingDays[] = $day;
+          unset($restDaysSet[$day]);
+          $s = $row['start_time'];
+          $e = $row['end_time'];
+          if ($s && ($earliestStart === null || strtotime($s) < strtotime($earliestStart))) {
+            $earliestStart = $s;
+          }
+          if ($e && ($latestEnd === null || strtotime($e) > strtotime($latestEnd))) {
+            $latestEnd = $e;
+          }
+        }
+      }
+      $stmt->close();
+
+      $scheduleStr = !empty($workingDays) ? implode(', ', $workingDays) : 'N/A';
+      $restDays = array_keys($restDaysSet);
+      $restDayStr = !empty($restDays) ? implode(', ', $restDays) : 'None';
+
+      $shiftTimeStr = 'N/A';
+      if ($earliestStart && $latestEnd) {
+        $shiftTimeStr = date('h:i A', strtotime($earliestStart)) . ' - ' . date('h:i A', strtotime($latestEnd));
+      }
+
+      echo json_encode([
+        'success' => true,
+        'data' => [
+          'schedule' => $scheduleStr,
+          'rest_day' => $restDayStr,
+          'shift_time' => $shiftTimeStr,
+          'department' => $emp['dept_name'],
+          'position' => $emp['pos_name']
+        ]
+      ]);
+      break;
+
+    case 'payroll_summary':
+      if (!isset($_SESSION['user_id'])) {
+        throw new Exception('User not authenticated');
+      }
+      $userId = $_SESSION['user_id'];
+
+      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('i', $userId);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $emp = $res->fetch_assoc();
+      $stmt->close();
+      if (!$emp) {
+        throw new Exception('Employee not found');
+      }
+      $employeeId = (int)$emp['id'];
+
+      $stmt = $mysqli->prepare("SELECT id, payroll_period_start, payroll_period_end, gross_pay, philhealth_deduction, sss_deduction, pagibig_deduction, other_deductions, total_deductions, net_pay, paid_status, payment_date FROM payroll WHERE employee_id = ? ORDER BY payment_date DESC, id DESC LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('i', $employeeId);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $row = $res->fetch_assoc();
+      $stmt->close();
+
+      $totalHours = 0.0;
+      $grossPay = 0.0;
+      $deductions = 0.0;
+      $netPay = 0.0;
+
+      if ($row) {
+        $periodStart = $row['payroll_period_start'];
+        $periodEnd = $row['payroll_period_end'];
+        $grossPay = (float)$row['gross_pay'];
+        $deductions = isset($row['total_deductions']) ? (float)$row['total_deductions'] : ((float)$row['philhealth_deduction'] + (float)$row['sss_deduction'] + (float)$row['pagibig_deduction'] + (float)$row['other_deductions']);
+        $netPay = isset($row['net_pay']) ? (float)$row['net_pay'] : ($grossPay - $deductions);
+
+        $stmt = $mysqli->prepare("SELECT time_in, time_out, date FROM attendance_logs WHERE employee_id = ? AND date BETWEEN ? AND ? AND time_in IS NOT NULL AND time_out IS NOT NULL");
+        if ($stmt) {
+          $stmt->bind_param('iss', $employeeId, $periodStart, $periodEnd);
+          $stmt->execute();
+          $aRes = $stmt->get_result();
+          while ($logRow = $aRes->fetch_assoc()) {
+            $inTs = strtotime($logRow['time_in']);
+            $outTs = strtotime($logRow['time_out']);
+            if ($outTs > $inTs) {
+              $totalHours += ($outTs - $inTs) / 3600;
+            }
+          }
+          $stmt->close();
+          $totalHours = round($totalHours, 2);
+        }
+      }
+
+      echo json_encode([
+        'success' => true,
+        'data' => [
+          'total_hours' => $totalHours,
+          'gross_pay' => number_format($grossPay, 2, '.', ''),
+          'deductions' => number_format($deductions, 2, '.', ''),
+          'net_pay' => number_format($netPay, 2, '.', '')
+        ]
+      ]);
+      break;
+
+    case 'profile_overview':
+      if (!isset($_SESSION['user_id'])) {
+        throw new Exception('User not authenticated');
+      }
+      $userId = $_SESSION['user_id'];
+
+      $stmt = $mysqli->prepare("SELECT e.id, e.first_name, e.last_name, e.contact_number, e.avatar_path, d.name AS dept_name, jp.name AS pos_name FROM employees e JOIN departments d ON e.department_id = d.id JOIN job_positions jp ON e.job_position_id = jp.id WHERE e.user_id = ? LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('i', $userId);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $emp = $res->fetch_assoc();
+      $stmt->close();
+      if (!$emp) {
+        throw new Exception('Employee not found');
+      }
+
+      $avatarPath = $emp['avatar_path'] ? ('../' . $emp['avatar_path']) : '../pages/img/user.jpg';
+
+      echo json_encode([
+        'success' => true,
+        'data' => [
+          'id' => (int)$emp['id'],
+          'name' => $emp['first_name'] . ' ' . $emp['last_name'],
+          'department' => $emp['dept_name'],
+          'position' => $emp['pos_name'],
+          'contact' => $emp['contact_number'],
+          'avatar' => $avatarPath
+        ]
+      ]);
+      break;
+
+    case 'get_qr':
+      if (!isset($_SESSION['user_id'])) {
+        throw new Exception('User not authenticated');
+      }
+      $userId = $_SESSION['user_id'];
+
+      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('i', $userId);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $emp = $res->fetch_assoc();
+      $stmt->close();
+      if (!$emp) {
+        throw new Exception('Employee not found');
+      }
+      $employeeId = (int)$emp['id'];
+
+      $stmt = $mysqli->prepare("SELECT qr_image_path FROM qr_codes WHERE employee_id = ? ORDER BY generated_at DESC, id DESC LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('i', $employeeId);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $row = $res->fetch_assoc();
+      $stmt->close();
+
+      $qrPath = null;
+      if ($row && !empty($row['qr_image_path'])) {
+        $qrPath = '../' . $row['qr_image_path'];
+      }
+
+      echo json_encode([
+        'success' => true,
+        'data' => [
+          'qr_path' => $qrPath
+        ]
+      ]);
+      break;
+
+    case 'notifications':
+      if (!isset($_SESSION['user_id'])) {
+        throw new Exception('User not authenticated');
+      }
+      $userId = $_SESSION['user_id'];
+
+      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param('i', $userId);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      $emp = $res->fetch_assoc();
+      $stmt->close();
+      if (!$emp) {
+        throw new Exception('Employee not found');
+      }
+      $employeeId = (int)$emp['id'];
+
+      $notifications = [];
+
+      $today = date('Y-m-d');
+      $twoWeeks = (new DateTime($today))->modify('+14 days')->format('Y-m-d');
+
+      if ($stmt = $mysqli->prepare("SELECT name, type, start_date FROM holidays WHERE start_date BETWEEN ? AND ? ORDER BY start_date ASC")) {
+        $stmt->bind_param('ss', $today, $twoWeeks);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+          $label = $row['type'] === 'regular' ? 'Regular Holiday' : ($row['type'] === 'special_non_working' ? 'Special Non-Working Holiday' : 'Special Working Holiday');
+          $notifications[] = [
+            'message' => $label . ' on ' . $row['start_date'] . ': ' . $row['name']
+          ];
+        }
+        $stmt->close();
+      }
+
+      if ($stmt = $mysqli->prepare("SELECT leave_type, start_date, end_date, status FROM leave_requests WHERE employee_id = ? AND status = 'Approved' AND end_date >= ? ORDER BY start_date ASC LIMIT 5")) {
+        $stmt->bind_param('is', $employeeId, $today);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+          $notifications[] = [
+            'message' => 'Approved ' . $row['leave_type'] . ' leave from ' . $row['start_date'] . ' to ' . $row['end_date']
+          ];
+        }
+        $stmt->close();
+      }
+
+      if ($stmt = $mysqli->prepare("SELECT payment_date, net_pay FROM payroll WHERE employee_id = ? AND paid_status = 'Paid' ORDER BY payment_date DESC, id DESC LIMIT 1")) {
+        $stmt->bind_param('i', $employeeId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($row = $res->fetch_assoc()) {
+          $notifications[] = [
+            'message' => 'Latest payroll paid on ' . $row['payment_date'] . ' (Net: ₱' . number_format((float)$row['net_pay'], 2, '.', '') . ')'
+          ];
+        }
+        $stmt->close();
+      }
+
+      echo json_encode([
+        'success' => true,
+        'data' => $notifications
+      ]);
+      break;
+
     case 'leave_balances':
       if (!isset($_SESSION['user_id'])) {
         throw new Exception('User not authenticated');
@@ -171,7 +798,7 @@ try {
       $employeeId = $emp['id'];
 
       // Fetch leave requests using employee_id, and alias leave_type as type
-      $stmt = $mysqli->prepare("SELECT id, leave_type AS type, start_date, end_date, days, reason, status, proof_path FROM leave_requests WHERE employee_id = ? ORDER BY submitted_at DESC");
+      $stmt = $mysqli->prepare("SELECT id, leave_type AS type, start_date, end_date, days, reason, status, proof_path, admin_feedback FROM leave_requests WHERE employee_id = ? ORDER BY submitted_at DESC");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }

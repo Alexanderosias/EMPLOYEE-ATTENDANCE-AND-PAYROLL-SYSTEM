@@ -350,14 +350,25 @@ document.addEventListener("DOMContentLoaded", () => {
       const paidLeave = parseInt(emp.annual_paid_leave_days, 10) || 15;
       const unpaidLeave = parseInt(emp.annual_unpaid_leave_days, 10) || 5;
       const sickLeave = parseInt(emp.annual_sick_leave_days, 10) || 10;
+
+      const todayCode = ((emp.today_status || "") + "").trim();
       let statusClass = "";
-      const status = emp.status || "Active";
-      if (status === "On Leave") {
+      let displayStatus = "";
+      if (todayCode === "on_leave") {
         statusClass = "status-on-leave";
-      } else if (status === "Active") {
-        statusClass = "status-active";
-      } else if (status === "Inactive") {
-        statusClass = "status-inactive";
+        displayStatus = "On Leave Today";
+      } else if (todayCode === "present_in") {
+        statusClass = "status-in-area";
+        displayStatus = "Present (Timed In)";
+      } else if (todayCode === "present_out") {
+        statusClass = "status-left-area";
+        displayStatus = "Timed Out (Left Area)";
+      } else if (todayCode === "no_schedule") {
+        statusClass = "status-no-schedule";
+        displayStatus = "No Schedule Today";
+      } else {
+        statusClass = "status-no-log";
+        displayStatus = "No Time-In Yet";
       }
 
       const formattedContact = formatPhoneForDisplay(emp.contact_number || "");
@@ -401,7 +412,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <p class="detail-item"><strong>Department:</strong> ${
             emp.department_name || "N/A"
           }</p>
-          <p class="expanded-item ${statusClass}"><strong>Status:</strong> ${status}</p>
+          <p class="expanded-item"><strong>Status:</strong><span class="status-pill ${statusClass}">${displayStatus}</span></p>
           <div class="expanded-details" aria-hidden="true">
             <p class="expanded-item"><strong>Gender:</strong> ${
               emp.gender || "N/A"

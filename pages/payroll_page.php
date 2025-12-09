@@ -220,12 +220,6 @@ require_once '../views/auth.php'; // path relative to the page
               <div style="width: 35%;">
                 <div style="display:flex; gap:0.5rem; margin-left: 20px; flex-direction: column;">
                   <div>
-                    <label for="role-filter">Job Role</label>
-                    <select id="role-filter">
-                      <option value="">All Roles</option>
-                    </select>
-                  </div>
-                  <div>
                     <label for="freq-select">Payroll Frequency</label>
                     <select id="freq-select">
                       <option value="">—</option>
@@ -234,6 +228,12 @@ require_once '../views/auth.php'; // path relative to the page
                       <option value="monthly">Monthly</option>
                     </select>
                   </div>  
+                  <div>
+                    <label for="role-filter">Job Role</label>
+                    <select id="role-filter">
+                      <option value="">All Roles</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div style="width: 30%; display: flex; flex-direction: column; justify-content: flex-start; gap: 20px; margin-left: 20px; margin-top: 30px; align-self: flex-start;">

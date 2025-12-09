@@ -151,47 +151,13 @@
   padding-bottom: 1rem;
 }
 
-.employee-card:nth-child(1) .card-index {
-  background: #007bff;
-}
-.employee-card:nth-child(2) .card-index {
-  background: #28a745;
-}
-.employee-card:nth-child(3) .card-index {
-  background: #ffc107;
-}
-.employee-card:nth-child(4) .card-index {
-  background: #dc3545;
-}
-.employee-card:nth-child(5) .card-index {
-  background: #6f42c1;
-}
-.employee-card:nth-child(6) .card-index {
-  background: #fd7e14;
-}
-.employee-card:nth-child(7) .card-index {
-  background: #20c997;
-}
-.employee-card:nth-child(8) .card-index {
-  background: #e83e8c;
-}
-.employee-card:nth-child(9) .card-index {
-  background: #17a2b8;
-}
-.employee-card:nth-child(10) .card-index {
-  background: #343a40;
-}
-.employee-card:nth-child(n+11) .card-index {
-  background: #007bff;
-}
-
 .card-index {
   position: absolute;
   top: 10px;
   left: 10px;
   width: 30px;
   height: 30px;
-  background-color: #333;
+  background-color: #2563eb;
   color: white;
   border-radius: 50%;
   display: flex;
@@ -318,6 +284,50 @@
   background-color: rgba(0, 123, 255, 0.15);
 }
 
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.35rem;
+}
+
+.status-pill.status-working {
+  background-color: #ecfdf5;
+  color: #166534;
+}
+
+.status-pill.status-inactive {
+  background-color: #fef9c3;
+  color: #92400e;
+}
+
+.status-pill.status-on-leave {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+.status-pill.status-in-area {
+  background-color: #ecfdf5;
+  color: #166534;
+}
+
+.status-pill.status-left-area {
+  background-color: #e0f2fe;
+  color: #075985;
+}
+
+.status-pill.status-no-log {
+  background-color: #fef9c3;
+  color: #92400e;
+}
+
+.status-pill.status-no-schedule {
+  background-color: #e5e7eb;
+  color: #374151;
+}
 
 @media (max-width: 768px) {
   .search-add-bar {
@@ -597,7 +607,6 @@
   }
 }
 
-
 .filter-group {
   margin-top: 16px;
   display: flex;
@@ -618,21 +627,6 @@
 .filter-select:focus {
   outline: none;
   border-color: var(--add-btn-color, #007bff);
-}
-
-.expanded-item.status-active {
-  color: green;
-  font-weight: bold;
-}
-
-.expanded-item.status-inactive {
-  color: orange;
-  font-weight: bold;
-}
-
-.expanded-item.status-on-leave {
-  color: red;
-  font-weight: bold;
 }
 
 .emergency-contact-section {

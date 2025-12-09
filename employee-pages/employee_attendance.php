@@ -124,6 +124,29 @@
                         <button id="att-apply" class="btn btn-primary">Apply</button>
                     </div>
 
+                    <div class="mt-1 mb-3 text-xs text-gray-600 flex flex-wrap gap-4">
+                        <div class="flex items-center">
+                            <span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+                            <span>Present / Worked</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+                            <span>Absent</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
+                            <span>Late / Undertime</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="inline-block w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
+                            <span>On Leave (Approved)</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                            <span>Holiday (No Work / Worked on Holiday)</span>
+                        </div>
+                    </div>
+
                     <div class="rounded-xl border bg-white shadow-sm p-2 overflow-x-auto">
                         <table class="min-w-full text-sm">
                             <thead class="bg-gray-50 text-gray-700">
@@ -160,13 +183,16 @@
 
         function pad(n){return n.toString().padStart(2,'0');}
         function ymd(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-        function statusBadge(s){
+        function statusBadge(base, display){
+            const s = (base || '').trim();
             let cls = 'bg-gray-100 text-gray-700 border-gray-200';
-            if (s === 'Present') cls = 'bg-green-50 text-green-700 border-green-200';
-            else if (s === 'Late') cls = 'bg-amber-50 text-amber-700 border-amber-200';
-            else if (s === 'Absent') cls = 'bg-rose-50 text-rose-700 border-rose-200';
-            else if (s === 'Undertime') cls = 'bg-blue-50 text-blue-700 border-blue-200';
-            return `<span class="inline-flex items-center px-2 py-0.5 rounded-full border text-xs ${cls}">${s}</span>`;
+            if (s === 'Absent') cls = 'bg-rose-50 text-rose-700 border-rose-200';
+            else if (s === 'Late' || s === 'Undertime') cls = 'bg-amber-50 text-amber-700 border-amber-200';
+            else if (s === 'On Leave') cls = 'bg-purple-50 text-purple-700 border-purple-200';
+            else if (s === 'Holiday') cls = 'bg-blue-50 text-blue-700 border-blue-200';
+            else if (s) cls = 'bg-green-50 text-green-700 border-green-200';
+            const label = (display || base || '-');
+            return `<span class="inline-flex items-center px-2 py-0.5 rounded-full border text-xs ${cls}">${label}</span>`;
         }
 
         async function loadSummary(){
@@ -200,7 +226,7 @@
                         <td class="p-2 whitespace-nowrap">${r.date}</td>
                         <td class="p-2 whitespace-nowrap">${r.time_in || '-'}</td>
                         <td class="p-2 whitespace-nowrap">${r.time_out || '-'}</td>
-                        <td class="p-2 whitespace-nowrap">${statusBadge(r.status||'-')}</td>
+                        <td class="p-2 whitespace-nowrap">${statusBadge(r.base_status || r.status || '-', r.display_status || r.status || '-')}</td>
                         <td class="p-2 whitespace-nowrap">${exp}</td>
                         <td class="p-2 whitespace-nowrap">${snap}</td>
                     `;

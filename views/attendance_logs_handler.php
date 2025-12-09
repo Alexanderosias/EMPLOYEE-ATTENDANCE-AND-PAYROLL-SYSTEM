@@ -12,6 +12,20 @@ try {
         $today = date('Y-m-d');
         $dayOfWeek = date('l');  // e.g., 'Monday'
 
+        // Determine if today is a holiday where employees are generally not expected to work
+        $todayHolidayType = null;
+        if ($stmtH = $mysqli->prepare("SELECT type FROM holidays WHERE start_date <= ? AND end_date >= ? LIMIT 1")) {
+            $stmtH->bind_param('ss', $today, $today);
+            if ($stmtH->execute()) {
+                $hRes = $stmtH->get_result();
+                if ($hRow = $hRes->fetch_assoc()) {
+                    $todayHolidayType = $hRow['type'] ?? null;
+                }
+            }
+            $stmtH->close();
+        }
+        $skipAutoAbsent = in_array($todayHolidayType, ['regular', 'special_non_working'], true);
+
         // Get all employees with schedules for today
         $scheduleQuery = "
         SELECT DISTINCT s.employee_id, e.first_name, e.last_name
@@ -35,31 +49,34 @@ try {
             $exists = $checkStmt->get_result()->num_rows > 0;
             $checkStmt->close();
 
-            if (!$exists) {
-                // Compute expected times: earliest start and latest end
-                $expectedQuery = "
-                SELECT MIN(start_time) AS expected_start, MAX(end_time) AS expected_end
-                FROM schedules
-                WHERE employee_id = ? AND day_of_week = ?
-            ";
-                $expStmt = $mysqli->prepare($expectedQuery);
-                $expStmt->bind_param('is', $employeeId, $dayOfWeek);
-                $expStmt->execute();
-                $expected = $expStmt->get_result()->fetch_assoc();
-                $expStmt->close();
-
-                $expectedStart = $expected['expected_start'] ?? null;
-                $expectedEnd = $expected['expected_end'] ?? null;
-
-                // Insert new attendance log
-                $insertStmt = $mysqli->prepare("
-                INSERT INTO attendance_logs (employee_id, date, status, time_in, time_out, expected_start_time, expected_end_time)
-                VALUES (?, ?, 'Absent', NULL, NULL, ?, ?)
-            ");
-                $insertStmt->bind_param('isss', $employeeId, $today, $expectedStart, $expectedEnd);
-                $insertStmt->execute();
-                $insertStmt->close();
+            // On Regular and Special Non-Working holidays, do not auto-mark employees as Absent
+            if ($exists || $skipAutoAbsent) {
+                continue;
             }
+
+            // Compute expected times: earliest start and latest end
+            $expectedQuery = "
+            SELECT MIN(start_time) AS expected_start, MAX(end_time) AS expected_end
+            FROM schedules
+            WHERE employee_id = ? AND day_of_week = ?
+        ";
+            $expStmt = $mysqli->prepare($expectedQuery);
+            $expStmt->bind_param('is', $employeeId, $dayOfWeek);
+            $expStmt->execute();
+            $expected = $expStmt->get_result()->fetch_assoc();
+            $expStmt->close();
+
+            $expectedStart = $expected['expected_start'] ?? null;
+            $expectedEnd = $expected['expected_end'] ?? null;
+
+            // Insert new attendance log as Absent for working days
+            $insertStmt = $mysqli->prepare("
+            INSERT INTO attendance_logs (employee_id, date, status, time_in, time_out, expected_start_time, expected_end_time)
+            VALUES (?, ?, 'Absent', NULL, NULL, ?, ?)
+        ");
+            $insertStmt->bind_param('isss', $employeeId, $today, $expectedStart, $expectedEnd);
+            $insertStmt->execute();
+            $insertStmt->close();
         }
 
         // Now fetch the attendance logs including snapshot info
@@ -74,6 +91,8 @@ try {
             DATE_FORMAT(al.time_out, '%h:%i %p') as time_out,
             al.status,
             al.snapshot_path,
+            lr.leave_type AS leave_type,
+            lr.deducted_from AS leave_deducted_from,
             (
                 SELECT GROUP_CONCAT(
                     JSON_OBJECT(
@@ -88,8 +107,21 @@ try {
             ) AS snapshots_json
         FROM attendance_logs al
         JOIN employees e ON al.employee_id = e.id
+        LEFT JOIN leave_requests lr
+            ON lr.employee_id = al.employee_id
+           AND lr.status = 'Approved'
+           AND al.date BETWEEN lr.start_date AND lr.end_date
         ORDER BY al.date DESC, al.time_in DESC
     ";
+
+        // Preload holidays for holiday-aware status mapping
+        $holidays = [];
+        if ($hRes = $mysqli->query("SELECT id, name, type, start_date, end_date FROM holidays")) {
+            while ($hRow = $hRes->fetch_assoc()) {
+                $holidays[] = $hRow;
+            }
+            $hRes->free();
+        }
 
         $result = $mysqli->query($query);
 
@@ -116,6 +148,100 @@ try {
             $row['snapshots'] = $snapshots;
             $row['hasSnapshot'] = (!empty($row['snapshot_path']) || !empty($snapshots)) ? 1 : 0;
             unset($row['snapshots_json']);
+
+            // Holiday-aware status mapping for display
+            $holidayType = null;
+            $holidayName = null;
+            if (!empty($holidays)) {
+                $dateVal = $row['date'];
+                foreach ($holidays as $h) {
+                    if ($dateVal >= $h['start_date'] && $dateVal <= $h['end_date']) {
+                        $holidayType = $h['type'] ?? null;
+                        $holidayName = $h['name'] ?? null;
+                        break;
+                    }
+                }
+            }
+
+            $baseStatus = $row['status'] ?? '';
+            $displayStatus = $baseStatus;
+
+            $leaveType = $row['leave_type'] ?? null;
+            $leaveSource = $row['leave_deducted_from'] ?? null;
+            $onLeaveApplied = false;
+
+            if ($leaveType) {
+                // Approved leave covers this date; treat as On Leave for attendance view
+                $kind = $leaveSource ?: $leaveType;
+                $kindLabel = 'Leave';
+                if ($kind === 'Paid') {
+                    $kindLabel = 'Paid Leave';
+                } elseif ($kind === 'Unpaid') {
+                    $kindLabel = 'Unpaid Leave';
+                } elseif ($kind === 'Sick') {
+                    $kindLabel = 'Sick Leave';
+                }
+
+                $displayStatus = 'On Leave';
+                if ($kindLabel) {
+                    $displayStatus .= ' - ' . $kindLabel;
+                }
+
+                // Add a short holiday hint if this leave day also falls on a holiday
+                if ($holidayType === 'regular') {
+                    $displayStatus .= ' (Regular Holiday)';
+                } elseif ($holidayType === 'special_non_working') {
+                    $displayStatus .= ' (Special Non-Working Holiday)';
+                } elseif ($holidayType === 'special_working') {
+                    $displayStatus .= ' (Special Working Holiday)';
+                }
+
+                $baseStatus = 'On Leave';
+                $onLeaveApplied = true;
+            }
+
+            $hasLog = !empty($row['time_in']) || !empty($row['time_out']);
+
+            // Apply holiday mapping only if this day is not already handled as On Leave
+            if ($holidayType && !$onLeaveApplied) {
+                if ($holidayType === 'regular') {
+                    if (!$hasLog) {
+                        // Regular Holiday where no work was logged
+                        $displayStatus = 'Regular Holiday (No Work)';
+                        $baseStatus = 'Holiday';
+                    } else {
+                        $displayStatus = 'Regular Holiday - Worked';
+                    }
+                } elseif ($holidayType === 'special_non_working') {
+                    if (!$hasLog) {
+                        // Special Non-Working Holiday, no work expected
+                        $displayStatus = 'Special Non-Working Holiday (No Work)';
+                        $baseStatus = 'Holiday';
+                    } else {
+                        $displayStatus = 'Special Non-Working Holiday - Worked';
+                    }
+                } elseif ($holidayType === 'special_working') {
+                    if (!$hasLog) {
+                        // Special Working Holiday behaves like a working day for attendance
+                        $displayStatus = 'Absent (Special Working Holiday)';
+                        $baseStatus = 'Absent';
+                    } else {
+                        if ($baseStatus === 'Late') {
+                            $displayStatus = 'Late (Special Working Holiday)';
+                        } elseif ($baseStatus === 'Undertime') {
+                            $displayStatus = 'Undertime (Special Working Holiday)';
+                        } else {
+                            $displayStatus = 'Present (Special Working Holiday)';
+                            $baseStatus = 'Present';
+                        }
+                    }
+                }
+            }
+
+            $row['holiday_type'] = $holidayType;
+            $row['holiday_name'] = $holidayName;
+            $row['base_status'] = $baseStatus;
+            $row['display_status'] = $displayStatus;
 
             $data[] = $row;
         }

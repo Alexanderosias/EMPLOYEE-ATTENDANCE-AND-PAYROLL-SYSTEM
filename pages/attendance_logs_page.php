@@ -148,7 +148,11 @@ require_once '../views/auth.php'; // path relative to the page
                 <option value="50">50</option>
               </select>
               <span class="text-gray-700 text-sm">entries</span>
-              <input type="date" id="filter-date"
+              <span class="text-gray-700 text-sm ml-2">From</span>
+              <input type="date" id="filter-start"
+                class="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <span class="text-gray-700 text-sm">To</span>
+              <input type="date" id="filter-end"
                 class="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <button id="filter-btn"
                 class="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 transition">Filter</button>
@@ -165,6 +169,29 @@ require_once '../views/auth.php'; // path relative to the page
                 </label>
                 <input type="file" id="import-attendance-file" accept=".zip" />
               </div>
+            </div>
+          </div>
+
+          <div class="mt-1 mb-3 text-xs text-gray-600 flex flex-wrap gap-4">
+            <div class="flex items-center">
+              <span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+              <span>Present / Worked</span>
+            </div>
+            <div class="flex items-center">
+              <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+              <span>Absent</span>
+            </div>
+            <div class="flex items-center">
+              <span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
+              <span>Late / Undertime</span>
+            </div>
+            <div class="flex items-center">
+              <span class="inline-block w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
+              <span>On Leave (Approved)</span>
+            </div>
+            <div class="flex items-center">
+              <span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+              <span>Holiday (No Work / Worked on Holiday)</span>
             </div>
           </div>
 

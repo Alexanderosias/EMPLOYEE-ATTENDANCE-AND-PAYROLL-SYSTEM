@@ -134,7 +134,7 @@
                                 <option value="Unpaid">Unpaid</option>
                             </select>
                         </div>
-                        <button id="pay-apply" class="btn btn-primary">Apply</button>
+                        <button id="pay-apply" class="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500">Apply</button>
                     </div>
 
                     <div class="rounded-xl border bg-white shadow-sm p-2 overflow-x-auto">
@@ -203,19 +203,33 @@
                 const tbody = document.getElementById('emp-pay-rows');
                 const none = document.getElementById('emp-pay-none');
                 tbody.innerHTML = '';
-                if(!out.success){ none.classList.remove('hidden'); return; }
+                if(!out.success){
+                    none.classList.remove('hidden');
+                    showStatus(out.message||'Failed to load list', 'error');
+                    return;
+                }
                 const rows = Array.isArray(out.data) ? out.data : [];
-                if(rows.length === 0){ none.classList.remove('hidden'); return; } else { none.classList.add('hidden'); }
+                if(rows.length === 0){
+                    none.classList.remove('hidden');
+                    return;
+                } else {
+                    none.classList.add('hidden');
+                }
                 rows.forEach(r => {
                     const tr = document.createElement('tr');
                     tr.className = 'border-b last:border-b-0';
                     const ded = `PH: ${formatPhp(r.philhealth)} • SSS: ${formatPhp(r.sss)} • Pag-IBIG: ${formatPhp(r.pagibig)} • Other: ${formatPhp(r.other)}`;
+                    const status = (r.paid_status || '').trim();
+                    let statusClass = 'bg-gray-100 text-gray-700 border-gray-200';
+                    if (status === 'Paid') statusClass = 'bg-green-50 text-green-700 border-green-200';
+                    else if (status === 'Unpaid') statusClass = 'bg-amber-50 text-amber-700 border-amber-200';
+                    const statusHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded-full border text-xs ${statusClass}">${status || '-'}</span>`;
                     tr.innerHTML = `
                         <td class="p-2 whitespace-nowrap">${r.period_start} to ${r.period_end}</td>
                         <td class="p-2 whitespace-nowrap">${formatPhp(r.gross)}</td>
                         <td class="p-2 whitespace-nowrap">${ded}</td>
                         <td class="p-2 whitespace-nowrap">${formatPhp(r.net)}</td>
-                        <td class="p-2 whitespace-nowrap">${r.paid_status}</td>
+                        <td class="p-2 whitespace-nowrap">${statusHtml}</td>
                         <td class="p-2 whitespace-nowrap">${r.payment_date || '-'}</td>
                     `;
                     tbody.appendChild(tr);

@@ -4,7 +4,8 @@ let attendanceData = [];
 let filteredData = [];
 
 const tableBody = document.getElementById("attendance-table-body");
-const filterDateInput = document.getElementById("filter-date");
+const filterStartInput = document.getElementById("filter-start");
+const filterEndInput = document.getElementById("filter-end");
 const filterBtn = document.getElementById("filter-btn");
 const clearFilterBtn = document.getElementById("clear-filter-btn");
 const prevPageBtn = document.getElementById("prev-page");
@@ -77,8 +78,7 @@ async function fetchAttendanceData() {
       throw new Error("Network response was not ok");
     }
     attendanceData = await response.json();
-    filteredData = attendanceData;
-    renderTablePage(currentPage);
+    applyDefaultTodayFilter();
   } catch (error) {
     console.error("Error fetching attendance data:", error);
     tableBody.innerHTML =
@@ -111,6 +111,20 @@ function renderTablePage(page) {
     const tr = document.createElement("tr");
     tr.className = "hover:bg-gray-50";
 
+    const baseStatus = (log.base_status || log.status || "").trim();
+    const displayStatus = (log.display_status || log.status || "").trim();
+
+    const statusClass =
+      baseStatus === "Absent"
+        ? "text-red-600"
+        : baseStatus === "Late" || baseStatus === "Undertime"
+        ? "text-yellow-600"
+        : baseStatus === "On Leave"
+        ? "text-purple-600"
+        : baseStatus === "Holiday"
+        ? "text-blue-600"
+        : "text-green-600";
+
     // Avatar path handling
     // The DB returns 'uploads/avatars/...'
     // We are in 'pages/', so we need '../uploads/avatars/...'
@@ -136,13 +150,7 @@ function renderTablePage(page) {
           <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700">${
             log.timeOut
           }</td>
-          <td class="px-6 py-3 whitespace-nowrap text-sm font-semibold ${
-            log.status === "Absent"
-              ? "text-red-600"
-              : log.status === "Late"
-              ? "text-yellow-600"
-              : "text-green-600"
-          }">${log.status}</td>
+          <td class="px-6 py-3 whitespace-nowrap text-sm font-semibold ${statusClass}">${displayStatus}</td>
           <td class="px-6 py-3 whitespace-nowrap text-center text-sm">
             ${
               log.hasSnapshot
@@ -191,22 +199,49 @@ function updatePaginationButtons() {
   nextPageBtn.disabled = currentPage * rowsPerPage >= filteredData.length;
 }
 
-filterBtn.addEventListener("click", () => {
-  const selectedDate = filterDateInput.value;
-  if (selectedDate) {
-    filteredData = attendanceData.filter((log) => log.date === selectedDate);
-  } else {
-    filteredData = attendanceData;
+function getTodayYmd() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function applyDefaultTodayFilter() {
+  if (!Array.isArray(attendanceData)) {
+    attendanceData = [];
   }
+  const todayStr = getTodayYmd();
+  filteredData = attendanceData.filter((log) => log.date === todayStr);
+  currentPage = 1;
+  renderTablePage(currentPage);
+}
+
+filterBtn.addEventListener("click", () => {
+  const start = filterStartInput ? filterStartInput.value : "";
+  const end = filterEndInput ? filterEndInput.value : "";
+
+  if (!start && !end) {
+    applyDefaultTodayFilter();
+    return;
+  }
+
+  const data = Array.isArray(attendanceData) ? attendanceData : [];
+  filteredData = data.filter((log) => {
+    const date = log.date || "";
+    if (!date) return false;
+    if (start && date < start) return false;
+    if (end && date > end) return false;
+    return true;
+  });
   currentPage = 1;
   renderTablePage(currentPage);
 });
 
 clearFilterBtn.addEventListener("click", () => {
-  filterDateInput.value = "";
-  filteredData = attendanceData;
-  currentPage = 1;
-  renderTablePage(currentPage);
+  if (filterStartInput) filterStartInput.value = "";
+  if (filterEndInput) filterEndInput.value = "";
+  applyDefaultTodayFilter();
 });
 
 prevPageBtn.addEventListener("click", () => {

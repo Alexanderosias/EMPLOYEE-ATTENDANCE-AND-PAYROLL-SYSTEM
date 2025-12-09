@@ -183,11 +183,6 @@ require_once '../views/auth.php'; // path relative to the page
             aria-label="Filter by department">
             <option value="">All Departments</option>
           </select>
-
-          <select id="filter-department" class="w-full sm:w-1/4 p-2 border border-gray-300 rounded-md"
-            aria-label="Filter by department">
-            <option value="">All Departments</option>
-          </select>
         </div>
 
         <div class="mb-6">

@@ -25,13 +25,14 @@
     user-select: none;
   }
 
-  #cards {
+  .dashboard-card {
     transform: translateY(0);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
-  #cards:hover {
+  .dashboard-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
 </style>
 
@@ -109,7 +110,7 @@
           <!-- Top Row: Key Metrics -->
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Today's Attendance Status -->
-            <div id="cards" class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+            <div class="dashboard-card bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
                 <i class="fas fa-clock"></i> Today's Attendance
               </h3>
@@ -124,7 +125,7 @@
             </div>
 
             <!-- Monthly Attendance Summary -->
-            <div id="cards" class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+            <div class="dashboard-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <i class="fas fa-chart-bar text-green-600"></i> Monthly Summary
               </h3>
@@ -140,7 +141,7 @@
             </div>
 
             <!-- Notifications -->
-            <div id="cards" class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-xl shadow-lg">
+            <div class="dashboard-card bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-xl shadow-lg">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <i class="fas fa-bell text-yellow-600"></i> Notifications
               </h3>
@@ -153,7 +154,7 @@
           <!-- Middle Row: Schedule and Payroll -->
           <div id="dashboard-content" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Work Schedule -->
-            <div id="cards" class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+            <div class="dashboard-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <i class="fas fa-calendar-alt text-green-600"></i> Work Schedule
               </h3>
@@ -167,7 +168,7 @@
             </div>
 
             <!-- Payroll Summary -->
-            <div id="cards" class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+            <div class="dashboard-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <i class="fas fa-money-bill-wave text-green-600"></i> Payroll Summary
               </h3>
@@ -186,7 +187,7 @@
           <!-- Bottom Row: Leave, Profile, QR -->
           <div id="dashboard-content" class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Leave Requests -->
-            <div id="cards" class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+            <div class="dashboard-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <i class="fas fa-calendar-times text-green-600"></i> Leave Requests
               </h3>
@@ -199,7 +200,7 @@
             </div>
 
             <!-- Personal Profile Overview -->
-            <div id="cards" class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+            <div class="dashboard-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <i class="fas fa-user text-green-600"></i> Personal Profile
               </h3>
@@ -219,7 +220,7 @@
             </div>
 
             <!-- QR Code -->
-            <div id="cards" class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+            <div class="dashboard-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <i class="fas fa-qrcode text-green-600"></i> QR Code
               </h3>

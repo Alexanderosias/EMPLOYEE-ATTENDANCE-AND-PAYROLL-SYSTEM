@@ -179,6 +179,66 @@ switch ($action) {
             $employees = $result->fetch_all(MYSQLI_ASSOC);
             $result->free();
 
+            // Compute per-employee status for *today* based on attendance and approved leave
+            $today = date('Y-m-d');
+            $todayAttendance = [];
+            $onLeaveToday = [];
+            $hasScheduleToday = [];
+            $todayDow = date('l');
+
+            // Attendance logs for today: track whether employee has timed in and/or out
+            if ($stmtAtt = $mysqli->prepare("SELECT employee_id, time_in, time_out FROM attendance_logs WHERE date = ?")) {
+                $stmtAtt->bind_param('s', $today);
+                if ($stmtAtt->execute()) {
+                    $attRes = $stmtAtt->get_result();
+                    while ($row = $attRes->fetch_assoc()) {
+                        $eid = (int)($row['employee_id'] ?? 0);
+                        if ($eid <= 0) {
+                            continue;
+                        }
+                        if (!isset($todayAttendance[$eid])) {
+                            $todayAttendance[$eid] = ['has_in' => false, 'has_out' => false];
+                        }
+                        if (!empty($row['time_in'])) {
+                            $todayAttendance[$eid]['has_in'] = true;
+                        }
+                        if (!empty($row['time_out'])) {
+                            $todayAttendance[$eid]['has_out'] = true;
+                        }
+                    }
+                }
+                $stmtAtt->close();
+            }
+
+            // Employees with approved leave that covers today
+            if ($stmtLeave = $mysqli->prepare("SELECT employee_id FROM leave_requests WHERE status = 'Approved' AND start_date <= ? AND end_date >= ?")) {
+                $stmtLeave->bind_param('ss', $today, $today);
+                if ($stmtLeave->execute()) {
+                    $leaveRes = $stmtLeave->get_result();
+                    while ($row = $leaveRes->fetch_assoc()) {
+                        $eid = (int)($row['employee_id'] ?? 0);
+                        if ($eid > 0) {
+                            $onLeaveToday[$eid] = true;
+                        }
+                    }
+                }
+                $stmtLeave->close();
+            }
+
+            if ($stmtSched = $mysqli->prepare("SELECT DISTINCT employee_id FROM schedules WHERE day_of_week = ? AND is_working = 1")) {
+                $stmtSched->bind_param('s', $todayDow);
+                if ($stmtSched->execute()) {
+                    $schedRes = $stmtSched->get_result();
+                    while ($row = $schedRes->fetch_assoc()) {
+                        $eid = (int)($row['employee_id'] ?? 0);
+                        if ($eid > 0) {
+                            $hasScheduleToday[$eid] = true;
+                        }
+                    }
+                }
+                $stmtSched->close();
+            }
+
             foreach ($employees as &$emp) {
                 $emp['id'] = (int)($emp['id'] ?? 0);
                 $emp['first_name'] = trim($emp['first_name'] ?? '');
@@ -207,6 +267,28 @@ switch ($action) {
                 $emp['updated_at'] = trim($emp['updated_at'] ?? '');
                 $emp['department_name'] = trim($emp['department_name'] ?? 'Unassigned');
                 $emp['position_name'] = trim($emp['position_name'] ?? 'Unassigned');
+
+                // Derive a simple per-day status used by the UI
+                $eid = (int)$emp['id'];
+                if (!empty($onLeaveToday[$eid])) {
+                    $emp['today_status'] = 'on_leave';
+                } elseif (!empty($todayAttendance[$eid])) {
+                    $hasIn = !empty($todayAttendance[$eid]['has_in']);
+                    $hasOut = !empty($todayAttendance[$eid]['has_out']);
+                    if ($hasIn && !$hasOut) {
+                        $emp['today_status'] = 'present_in';
+                    } elseif ($hasOut) {
+                        $emp['today_status'] = 'present_out';
+                    } else {
+                        $emp['today_status'] = 'no_log';
+                    }
+                } else {
+                    if (!empty($hasScheduleToday[$eid])) {
+                        $emp['today_status'] = 'no_log';
+                    } else {
+                        $emp['today_status'] = 'no_schedule';
+                    }
+                }
             }
             unset($emp);
 

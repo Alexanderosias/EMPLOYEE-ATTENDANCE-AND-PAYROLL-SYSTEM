@@ -293,6 +293,10 @@
             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</label>
             <span id="view-modal-status" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800"></span>
           </div>
+          <div id="view-modal-feedback-wrapper" class="hidden">
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Admin Feedback</label>
+            <p id="view-modal-feedback" class="text-sm text-gray-900 bg-gray-50 p-3 rounded text-justify" style="max-height: 220px; min-height: 80px; overflow: auto;"></p>
+          </div>
         </div>
         <div class="mt-6 flex justify-end gap-5">
           <button id="cancel-request-btn" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
