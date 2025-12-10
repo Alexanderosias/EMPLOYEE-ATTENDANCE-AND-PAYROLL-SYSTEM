@@ -257,6 +257,21 @@ document.addEventListener("DOMContentLoaded", () => {
         ).className = `px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(
           req.status
         )}`;
+
+        const fbWrapper = document.getElementById(
+          "view-modal-feedback-wrapper"
+        );
+        const fbEl = document.getElementById("view-modal-feedback");
+        if (fbWrapper && fbEl) {
+          const fb = (req.admin_feedback || "").trim();
+          if (fb) {
+            fbEl.textContent = fb;
+            fbWrapper.classList.remove("hidden");
+          } else {
+            fbEl.textContent = "";
+            fbWrapper.classList.add("hidden");
+          }
+        }
         // Show cancel button only if Pending
         cancelRequestBtn.style.display =
           req.status === "Pending" ? "block" : "none";
@@ -574,7 +589,9 @@ document.addEventListener("DOMContentLoaded", () => {
               : effective;
           totalDaysInput.value = effective;
           if (daysBreakdown) {
-            if (calendar !== effective) {
+            if (effective === 0) {
+              daysBreakdown.textContent = `Calendar days: ${calendar}, No working days to deduct (holiday / no schedule).`;
+            } else if (calendar !== effective) {
               daysBreakdown.textContent = `Calendar days: ${calendar}, Deducted days: ${effective}`;
             } else {
               daysBreakdown.textContent = `Days to be deducted: ${effective}`;
@@ -632,7 +649,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (overlapError) error = overlapError;
       }
     }
-    if (totalDays <= 0) error = "Total days must be greater than 0.";
+    if (totalDays < 0) error = "Total days cannot be negative.";
     else if (totalDays > available)
       error = `Requested days (${totalDays}) exceed your available ${selectedType} balance (${available}).`;
     else if (!reason) error = "Please provide a reason.";

@@ -9,7 +9,16 @@
 
 <body>
   <?php
-  require "phpqrcode/qrlib.php";
+  // Load Composer autoload and modern QR library (chillerlan/php-qrcode)
+  $vendorAutoload = __DIR__ . '/../vendor/autoload.php';
+  if (file_exists($vendorAutoload)) {
+    require_once $vendorAutoload;
+  } else {
+    die('Composer autoload not found for QR library.');
+  }
+
+  use chillerlan\QRCode\QRCode;
+  use chillerlan\QRCode\QROptions;
 
   // Include the database connection file
   include 'conn.php';
@@ -36,8 +45,20 @@
       "last_name"  => $row['last_name']
     ]);
 
-    // Generate QR code
-    QRcode::png($qrContent, $qrFile, QR_ECLEVEL_L, 5);
+    // Generate QR code as PNG using chillerlan/php-qrcode
+    $options = new QROptions([
+      'outputType' => QRCode::OUTPUT_IMAGE_PNG,
+      'eccLevel'   => QRCode::ECC_L,
+    ]);
+
+    $imageData = (new QRCode($options))->render($qrContent);
+    if ($imageData === null || $imageData === '') {
+      continue; // skip if generation failed
+    }
+
+    if (file_put_contents($qrFile, $imageData) === false) {
+      continue; // skip if write failed
+    }
 
     // Update DB with QR code path
     $stmt = $conn->prepare("UPDATE employees SET qr_code_path = ? WHERE employee_id = ?");

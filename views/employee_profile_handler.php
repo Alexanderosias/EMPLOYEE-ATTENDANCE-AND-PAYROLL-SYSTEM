@@ -8,12 +8,24 @@ ini_set('error_log', __DIR__ . '/php_errors.log');
 require_once 'auth.php';
 require_once 'conn.php';
 
+// Load Composer autoload for modern QR library (chillerlan/php-qrcode)
+$vendorAutoload = __DIR__ . '/../vendor/autoload.php';
+if (file_exists($vendorAutoload)) {
+    require_once $vendorAutoload;
+} else {
+    error_log('Composer autoload not found for QR library in employee_profile_handler.php');
+}
+
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
+
 // QR helpers (duplicate of logic in employees.php simplified for profile updates)
 function ep_generate_qr($mysqli, $employeeId)
 {
-    $qr_lib_path = '../phpqrcode/qrlib.php';
-    if (!file_exists($qr_lib_path)) return [null, null];
-    require_once $qr_lib_path;
+    if (!class_exists(QRCode::class)) {
+        error_log('QR Library not loaded  chillerlan/php-qrcode QRCode class missing (ep_generate_qr)');
+        return [null, null];
+    }
 
     // Fetch fresh employee with position
     $stmt = $mysqli->prepare("SELECT e.id, e.first_name, e.last_name, e.date_joined, jp.name AS position_name FROM employees e LEFT JOIN job_positions jp ON e.job_position_id = jp.id WHERE e.id = ?");
@@ -44,12 +56,23 @@ function ep_generate_qr($mysqli, $employeeId)
     $file_path = $dir . $filename;
     $web_path = 'qrcodes/' . $filename;
 
-    // Suppress accidental output
-    $obLevel = ob_get_level();
-    ob_start();
-    $ecc = defined('QR_ECLEVEL_L') ? QR_ECLEVEL_L : 0;
-    QRcode::png($qr_data, $file_path, $ecc, 10, 2);
-    while (ob_get_level() > $obLevel) { ob_end_clean(); }
+    // Generate PNG data using chillerlan/php-qrcode and write it to file
+    $options = new QROptions([
+        'outputType' => QRCode::OUTPUT_IMAGE_PNG,
+        'eccLevel'   => QRCode::ECC_L,
+    ]);
+
+    $imageData = (new QRCode($options))->render($qr_data);
+
+    if ($imageData === null || $imageData === '') {
+        error_log('QR generation returned empty image data (ep_generate_qr)');
+        return [null, null];
+    }
+
+    if (file_put_contents($file_path, $imageData) === false) {
+        error_log('Failed to write QR image file (ep_generate_qr): ' . $file_path);
+        return [null, null];
+    }
 
     if (!file_exists($file_path)) return [null, null];
     return [$web_path, $qr_data];

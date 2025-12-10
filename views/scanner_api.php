@@ -87,17 +87,23 @@ switch ($action) {
             }
 
             $parsed = parseQRData($qrData);
-            if (!isset($parsed['ID']) || !isset($parsed['First']) || !isset($parsed['Last'])) {
+            if (!isset($parsed['First']) || !isset($parsed['Last']) || !isset($parsed['Position']) || !isset($parsed['Joined'])) {
                 throw new Exception('Invalid QR code format.');
             }
 
-            $employeeId = (int)$parsed['ID'];
             $firstName = $parsed['First'];
             $lastName = $parsed['Last'];
+            $positionName = $parsed['Position'];
+            $dateJoined = $parsed['Joined'];
 
-            // Validate employee
-            $stmt = $mysqli->prepare("SELECT id, status FROM employees WHERE id = ? AND first_name = ? AND last_name = ? AND status = 'Active'");
-            $stmt->bind_param('iss', $employeeId, $firstName, $lastName);
+            // Validate employee by First Name + Last Name + Position + Date Joined
+            $stmt = $mysqli->prepare("
+                SELECT e.id, e.status 
+                FROM employees e
+                LEFT JOIN job_positions jp ON e.job_position_id = jp.id
+                WHERE e.first_name = ? AND e.last_name = ? AND jp.name = ? AND e.date_joined = ? AND e.status = 'Active'
+            ");
+            $stmt->bind_param('ssss', $firstName, $lastName, $positionName, $dateJoined);
             $stmt->execute();
             $result = $stmt->get_result();
             $employee = $result->fetch_assoc();
@@ -106,6 +112,8 @@ switch ($action) {
             if (!$employee) {
                 throw new Exception('Invalid QR code or employee not found/active.');
             }
+
+            $employeeId = (int)$employee['id'];
 
             $today = date('Y-m-d');
             $now = date('Y-m-d H:i:s');
@@ -274,35 +282,54 @@ switch ($action) {
                         KEY idx_ot_employee_date (employee_id, date)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
-                    // Decide if OT is auto-approved or requires head admin approval
-                    $statusOt = 'Pending';
-                    $approvedMinutes = 0;
+                    // If OT is within the auto-OT limit, treat it as no overtime (no request)
                     if ($rawOtMinutes <= $autoOtMinutes) {
-                        $statusOt = 'AutoApproved';
-                        $approvedMinutes = $rawOtMinutes;
-                    }
+                        if ($stmt = $mysqli->prepare("DELETE FROM overtime_requests WHERE attendance_log_id = ?")) {
+                            $stmt->bind_param('i', $logId);
+                            $stmt->execute();
+                            $stmt->close();
+                        }
+                    } else {
+                        // Only minutes beyond the auto-OT limit are considered overtime needing approval
+                        $effectiveOt = $rawOtMinutes - $autoOtMinutes;
+                        if ($effectiveOt < 0) {
+                            $effectiveOt = 0;
+                        }
 
-                    // Upsert overtime request for this attendance log
-                    $stmt = $mysqli->prepare("SELECT id FROM overtime_requests WHERE attendance_log_id = ? LIMIT 1");
-                    if ($stmt) {
-                        $stmt->bind_param('i', $logId);
-                        $stmt->execute();
-                        $res = $stmt->get_result();
-                        $existingOt = $res->fetch_assoc();
-                        $stmt->close();
+                        if ($effectiveOt > 0) {
+                            $statusOt = 'Pending';
+                            $approvedMinutes = 0;
 
-                        if ($existingOt) {
-                            $otId = (int)$existingOt['id'];
-                            $stmt = $mysqli->prepare("UPDATE overtime_requests SET date = ?, scheduled_end_time = ?, actual_out_time = ?, raw_ot_minutes = ?, approved_ot_minutes = ?, status = ?, updated_at = NOW() WHERE id = ?");
+                            // Upsert overtime request for this attendance log
+                            $stmt = $mysqli->prepare("SELECT id FROM overtime_requests WHERE attendance_log_id = ? LIMIT 1");
                             if ($stmt) {
-                                $stmt->bind_param('sssissi', $today, $latestEnd, $timeOut, $rawOtMinutes, $approvedMinutes, $statusOt, $otId);
+                                $stmt->bind_param('i', $logId);
                                 $stmt->execute();
+                                $res = $stmt->get_result();
+                                $existingOt = $res->fetch_assoc();
                                 $stmt->close();
+
+                                if ($existingOt) {
+                                    $otId = (int)$existingOt['id'];
+                                    $stmt = $mysqli->prepare("UPDATE overtime_requests SET date = ?, scheduled_end_time = ?, actual_out_time = ?, raw_ot_minutes = ?, approved_ot_minutes = ?, status = ?, updated_at = NOW() WHERE id = ?");
+                                    if ($stmt) {
+                                        $stmt->bind_param('sssissi', $today, $latestEnd, $timeOut, $effectiveOt, $approvedMinutes, $statusOt, $otId);
+                                        $stmt->execute();
+                                        $stmt->close();
+                                    }
+                                } else {
+                                    $stmt = $mysqli->prepare("INSERT INTO overtime_requests (attendance_log_id, employee_id, date, scheduled_end_time, actual_out_time, raw_ot_minutes, approved_ot_minutes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                                    if ($stmt) {
+                                        $stmt->bind_param('iisssiis', $logId, $employeeId, $today, $latestEnd, $timeOut, $effectiveOt, $approvedMinutes, $statusOt);
+                                        $stmt->execute();
+                                        $stmt->close();
+                                    }
+                                }
                             }
                         } else {
-                            $stmt = $mysqli->prepare("INSERT INTO overtime_requests (attendance_log_id, employee_id, date, scheduled_end_time, actual_out_time, raw_ot_minutes, approved_ot_minutes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                            if ($stmt) {
-                                $stmt->bind_param('iisssiis', $logId, $employeeId, $today, $latestEnd, $timeOut, $rawOtMinutes, $approvedMinutes, $statusOt);
+                            // Safety: if effective OT is 0, remove any existing request
+                            if ($stmt = $mysqli->prepare("DELETE FROM overtime_requests WHERE attendance_log_id = ?")) {
+                                $stmt->bind_param('i', $logId);
                                 $stmt->execute();
                                 $stmt->close();
                             }
@@ -343,7 +370,7 @@ switch ($action) {
                 header('Content-Type: text/plain; charset=utf-8');
                 http_response_code(500);
                 echo "Export failed: PHP ZipArchive extension is not enabled.\n" .
-                     "Please enable the php_zip extension in your php.ini (XAMPP: enable ;extension=zip), then restart Apache.";
+                    "Please enable the php_zip extension in your php.ini (XAMPP: enable ;extension=zip), then restart Apache.";
                 exit;
             }
             // Prepare ZIP
@@ -601,7 +628,7 @@ switch ($action) {
             } else {
                 // Insert new
                 $stmt = $mysqli->prepare("
-                    INSERT INTO attendance_logs (employee_id, date, time_in, time_out, qr_snapshot_path, check_type, synced)
+                    INSERT INTO attendance_logs (employee_id, date, time_in, time_out, qr_snapshot_path, check_type, is_synced)
                     VALUES (?, ?, ?, ?, ?, ?, 0)
                 ");
                 $stmt->bind_param('isssss', $employeeId, $date, $timeIn, $timeOut, $snapshotPath, $checkType);
@@ -646,7 +673,7 @@ switch ($action) {
                 $checkType = $log['check_type'] ?? 'in';
 
                 $stmt = $mysqli->prepare("
-                    INSERT INTO attendance_logs (employee_id, date, time_in, time_out, qr_snapshot_path, check_type, synced)
+                    INSERT INTO attendance_logs (employee_id, date, time_in, time_out, qr_snapshot_path, check_type, is_synced)
                     VALUES (?, ?, ?, ?, ?, ?, 0)
                     ON DUPLICATE KEY UPDATE time_in = VALUES(time_in), time_out = VALUES(time_out), qr_snapshot_path = VALUES(qr_snapshot_path)
                 ");
@@ -705,7 +732,7 @@ switch ($action) {
 
     case 'get_unsynced_count':
         try {
-            $result = $mysqli->query("SELECT COUNT(*) AS count FROM attendance_logs WHERE synced = 0");
+            $result = $mysqli->query("SELECT COUNT(*) AS count FROM attendance_logs WHERE is_synced = 0");
             $row = $result->fetch_assoc();
             $count = (int)$row['count'];
             $result->free();
@@ -723,7 +750,7 @@ switch ($action) {
     case 'sync_attendance':
         try {
             // Mark as synced (no Firebase, just update DB)
-            $stmt = $mysqli->prepare("UPDATE attendance_logs SET synced = 1 WHERE synced = 0");
+            $stmt = $mysqli->prepare("UPDATE attendance_logs SET is_synced = 1 WHERE is_synced = 0");
             $stmt->execute();
             $syncedCount = $stmt->affected_rows;
             $stmt->close();

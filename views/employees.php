@@ -17,12 +17,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'conn.php';  // Adjusted path for views/ location
 
-$qr_lib_path = '../phpqrcode/qrlib.php'; // Fixed path
-if (file_exists($qr_lib_path)) {
-    require_once $qr_lib_path;
+// Use modern QR library via Composer (chillerlan/php-qrcode)
+$vendorAutoload = __DIR__ . '/../vendor/autoload.php';
+if (file_exists($vendorAutoload)) {
+    require_once $vendorAutoload;
 } else {
-    error_log("QR Library missing: Place qrlib.php in root/phpqrcode/");
+    error_log('Composer autoload not found for QR library');
 }
+
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 
 $db = null;
 $mysqli = null;
@@ -42,13 +46,9 @@ try {
 
 function generateQRCode($employee_data, $qr_dir = '../qrcodes/') // Fixed default path
 {
-    // Ensure library and GD are available
-    if (!class_exists('QRcode')) {
-        error_log("QR Library not loaded – class QRcode not found");
-        return ['path' => null, 'data' => null];
-    }
-    if (!extension_loaded('gd') || !function_exists('imagepng')) {
-        error_log("GD extension not available – skipping QR generation");
+    // Ensure modern QR library is available
+    if (!class_exists(QRCode::class)) {
+        error_log('QR Library not loaded – chillerlan/php-qrcode QRCode class missing');
         return ['path' => null, 'data' => null];
     }
 
@@ -69,17 +69,17 @@ function generateQRCode($employee_data, $qr_dir = '../qrcodes/') // Fixed defaul
             }
         }
 
-        // Build data: First name, last name, position name, date joined
+        // Build data: First name, last name, position name, date joined (no ID)
         $id = (int)($employee_data['id'] ?? 0);
         // Allow spaces and other characters, only remove QR delimiters (| and :)
         $first = trim(preg_replace('/[|:]/', '', $employee_data['first_name'] ?? 'EMP'));
         if ($first === '') $first = 'EMP';
         $last  = trim(preg_replace('/[|:]/', '', $employee_data['last_name'] ?? ''));
-        $pos = trim($employee_data['position_name'] ?? 'N/A');  // Job position name from joined table
+        $pos = trim(preg_replace('/[|:]/', '', $employee_data['position_name'] ?? 'N/A'));  // Job position name from joined table
         $joined = (!empty($employee_data['date_joined']) && $employee_data['date_joined'] !== '0000-00-00')
             ? $employee_data['date_joined'] : 'N/A';
 
-        $qr_data = "ID:$id|First:$first|Last:$last|Position:$pos|Joined:$joined";
+        $qr_data = "First:$first|Last:$last|Position:$pos|Joined:$joined";
 
         // Unique filename
         $base = $first . $last;
@@ -94,13 +94,34 @@ function generateQRCode($employee_data, $qr_dir = '../qrcodes/') // Fixed defaul
         $file_path = $dir . $filename;
         $web_path  = 'qrcodes/' . $filename;
 
-        // Prevent accidental output from library breaking JSON
-        $obLevel = ob_get_level();
-        ob_start();
-        $ecc = defined('QR_ECLEVEL_L') ? QR_ECLEVEL_L : 0;
-        QRcode::png($qr_data, $file_path, $ecc, 10, 2);
-        while (ob_get_level() > $obLevel) {
-            ob_end_clean();
+        // Generate PNG data using chillerlan/php-qrcode and write it to file
+        $options = new QROptions([
+            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
+            'eccLevel'   => QRCode::ECC_L,
+        ]);
+
+        $imageData = (new QRCode($options))->render($qr_data);
+
+        if ($imageData === null || $imageData === '') {
+            error_log('QR generation returned empty image data');
+            return ['path' => null, 'data' => null];
+        }
+
+        // The render() method returns a Base64 data URI (e.g., "data:image/png;base64,...")
+        // We need to extract and decode the Base64 portion to get raw binary PNG data
+        if (strpos($imageData, 'data:') === 0) {
+            // Extract the Base64 portion after the comma
+            $base64Data = substr($imageData, strpos($imageData, ',') + 1);
+            $imageData = base64_decode($base64Data);
+            if ($imageData === false) {
+                error_log('Failed to decode Base64 QR image data');
+                return ['path' => null, 'data' => null];
+            }
+        }
+
+        if (file_put_contents($file_path, $imageData) === false) {
+            error_log('Failed to write QR image file: ' . $file_path);
+            return ['path' => null, 'data' => null];
         }
 
         if (!file_exists($file_path)) {
@@ -179,6 +200,66 @@ switch ($action) {
             $employees = $result->fetch_all(MYSQLI_ASSOC);
             $result->free();
 
+            // Compute per-employee status for *today* based on attendance and approved leave
+            $today = date('Y-m-d');
+            $todayAttendance = [];
+            $onLeaveToday = [];
+            $hasScheduleToday = [];
+            $todayDow = date('l');
+
+            // Attendance logs for today: track whether employee has timed in and/or out
+            if ($stmtAtt = $mysqli->prepare("SELECT employee_id, time_in, time_out FROM attendance_logs WHERE date = ?")) {
+                $stmtAtt->bind_param('s', $today);
+                if ($stmtAtt->execute()) {
+                    $attRes = $stmtAtt->get_result();
+                    while ($row = $attRes->fetch_assoc()) {
+                        $eid = (int)($row['employee_id'] ?? 0);
+                        if ($eid <= 0) {
+                            continue;
+                        }
+                        if (!isset($todayAttendance[$eid])) {
+                            $todayAttendance[$eid] = ['has_in' => false, 'has_out' => false];
+                        }
+                        if (!empty($row['time_in'])) {
+                            $todayAttendance[$eid]['has_in'] = true;
+                        }
+                        if (!empty($row['time_out'])) {
+                            $todayAttendance[$eid]['has_out'] = true;
+                        }
+                    }
+                }
+                $stmtAtt->close();
+            }
+
+            // Employees with approved leave that covers today
+            if ($stmtLeave = $mysqli->prepare("SELECT employee_id FROM leave_requests WHERE status = 'Approved' AND start_date <= ? AND end_date >= ?")) {
+                $stmtLeave->bind_param('ss', $today, $today);
+                if ($stmtLeave->execute()) {
+                    $leaveRes = $stmtLeave->get_result();
+                    while ($row = $leaveRes->fetch_assoc()) {
+                        $eid = (int)($row['employee_id'] ?? 0);
+                        if ($eid > 0) {
+                            $onLeaveToday[$eid] = true;
+                        }
+                    }
+                }
+                $stmtLeave->close();
+            }
+
+            if ($stmtSched = $mysqli->prepare("SELECT DISTINCT employee_id FROM schedules WHERE day_of_week = ? AND is_working = 1")) {
+                $stmtSched->bind_param('s', $todayDow);
+                if ($stmtSched->execute()) {
+                    $schedRes = $stmtSched->get_result();
+                    while ($row = $schedRes->fetch_assoc()) {
+                        $eid = (int)($row['employee_id'] ?? 0);
+                        if ($eid > 0) {
+                            $hasScheduleToday[$eid] = true;
+                        }
+                    }
+                }
+                $stmtSched->close();
+            }
+
             foreach ($employees as &$emp) {
                 $emp['id'] = (int)($emp['id'] ?? 0);
                 $emp['first_name'] = trim($emp['first_name'] ?? '');
@@ -207,6 +288,28 @@ switch ($action) {
                 $emp['updated_at'] = trim($emp['updated_at'] ?? '');
                 $emp['department_name'] = trim($emp['department_name'] ?? 'Unassigned');
                 $emp['position_name'] = trim($emp['position_name'] ?? 'Unassigned');
+
+                // Derive a simple per-day status used by the UI
+                $eid = (int)$emp['id'];
+                if (!empty($onLeaveToday[$eid])) {
+                    $emp['today_status'] = 'on_leave';
+                } elseif (!empty($todayAttendance[$eid])) {
+                    $hasIn = !empty($todayAttendance[$eid]['has_in']);
+                    $hasOut = !empty($todayAttendance[$eid]['has_out']);
+                    if ($hasIn && !$hasOut) {
+                        $emp['today_status'] = 'present_in';
+                    } elseif ($hasOut) {
+                        $emp['today_status'] = 'present_out';
+                    } else {
+                        $emp['today_status'] = 'no_log';
+                    }
+                } else {
+                    if (!empty($hasScheduleToday[$eid])) {
+                        $emp['today_status'] = 'no_log';
+                    } else {
+                        $emp['today_status'] = 'no_schedule';
+                    }
+                }
             }
             unset($emp);
 

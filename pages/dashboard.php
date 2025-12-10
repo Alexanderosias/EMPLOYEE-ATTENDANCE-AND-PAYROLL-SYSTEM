@@ -151,6 +151,10 @@ require_once '../views/auth.php'; // Check login
                         <p>Late Today</p>
                         <h3 id="late-today-count">--</h3>
                     </div>
+                    <div class="card card-purple">
+                        <p>Pending Payroll</p>
+                        <h3 id="pending-payroll-count">--</h3>
+                    </div>
                 </div>
 
                 <!-- Side by side charts container -->
@@ -177,7 +181,7 @@ require_once '../views/auth.php'; // Check login
                     </section>
 
                     <section class="dashboard-section chart-section">
-                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Holidays & Events</h3>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Holidays &amp; Events</h3>
                         <div id="calendar-container">
                             <div id="calendar-header">
                                 <button id="cal-prev" aria-label="Previous Month">◀</button>
@@ -186,7 +190,6 @@ require_once '../views/auth.php'; // Check login
                             </div>
                             <div id="calendar-grid"></div>
                         </div>
-                        <ul id="events-list"></ul>
                     </section>
                 </div>
             </div>
@@ -219,9 +222,11 @@ require_once '../views/auth.php'; // Check login
                       const elTot = document.getElementById('total-employees-count');
                       const elPre = document.getElementById('present-today-count');
                       const elLate = document.getElementById('late-today-count');
+                      const elPend = document.getElementById('pending-payroll-count');
                       if (elTot) elTot.textContent = (d.total_employees ?? 0);
                       if (elPre) elPre.textContent = (d.present_today ?? 0);
                       if (elLate) elLate.textContent = (d.late_today ?? 0);
+                      if (elPend) elPend.textContent = (d.pending_payroll ?? 0);
                   })
                   .catch(() => {});
             }
@@ -258,10 +263,12 @@ require_once '../views/auth.php'; // Check login
                 const title = document.getElementById('cal-title');
                 if (!grid || !title) return;
                 grid.innerHTML = '';
+
                 const firstDay = new Date(year, month, 1).getDay();
                 const totalDays = daysInMonth(year, month);
                 const monthName = new Date(year, month, 1).toLocaleString('default', { month: 'long' });
                 title.textContent = `${monthName} ${year}`;
+
                 const weekDays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
                 weekDays.forEach(w => {
                   const h = document.createElement('div');
@@ -269,31 +276,86 @@ require_once '../views/auth.php'; // Check login
                   h.textContent = w;
                   grid.appendChild(h);
                 });
-                for (let i=0;i<firstDay;i++) {
-                  const e = document.createElement('div'); e.className = 'cal-cell cal-empty'; grid.appendChild(e);
+
+                for (let i = 0; i < firstDay; i++) {
+                  const e = document.createElement('div');
+                  e.className = 'cal-cell cal-empty';
+                  grid.appendChild(e);
                 }
+
                 const map = {};
-                (events||[]).forEach(ev => {
+                (events || []).forEach(ev => {
                   const sd = new Date(ev.start_date);
                   const ed = new Date(ev.end_date);
-                  for (let d=new Date(sd); d<=ed; d.setDate(d.getDate()+1)) {
-                    if (d.getFullYear()===year && d.getMonth()===month) {
+                  for (let d = new Date(sd); d <= ed; d.setDate(d.getDate() + 1)) {
+                    if (d.getFullYear() === year && d.getMonth() === month) {
                       const key = d.getDate();
                       if (!map[key]) map[key] = [];
                       map[key].push(ev);
                     }
                   }
                 });
-                for (let day=1; day<=totalDays; day++) {
+
+                const today = new Date();
+                const isSameDay = (y, m, day) => (
+                  y === today.getFullYear() &&
+                  m === today.getMonth() &&
+                  day === today.getDate()
+                );
+
+                for (let day = 1; day <= totalDays; day++) {
                   const cell = document.createElement('div');
                   cell.className = 'cal-cell cal-day';
-                  const n = document.createElement('span'); n.className = 'cal-daynum'; n.textContent = day;
-                  cell.appendChild(n);
-                  const evs = map[day] || [];
-                  if (evs.length>0) {
-                    cell.classList.add('has-event');
-                    const dot = document.createElement('span'); dot.className = 'cal-dot'; cell.appendChild(dot);
+                  if (isSameDay(year, month, day)) {
+                    cell.classList.add('cal-today');
                   }
+
+                  const n = document.createElement('span');
+                  n.className = 'cal-daynum';
+                  n.textContent = day;
+                  cell.appendChild(n);
+
+                  const evs = map[day] || [];
+                  if (evs.length > 0) {
+                    cell.classList.add('has-event');
+                    const dot = document.createElement('span');
+                    dot.className = 'cal-dot';
+                    cell.appendChild(dot);
+
+                    const names = [];
+                    evs.forEach(ev => {
+                      const label = ev.name || '';
+                      if (!label) return;
+                      if (ev.category === 'holiday') {
+                        names.push(`Holiday: ${label}`);
+                      } else {
+                        names.push(`Event: ${label}`);
+                      }
+                    });
+
+                    if (names.length > 0) {
+                      cell.title = names.join('\n');
+                      const list = document.createElement('div');
+                      list.className = 'cal-events';
+
+                      const maxShow = 2;
+                      names.slice(0, maxShow).forEach(text => {
+                        const line = document.createElement('div');
+                        line.textContent = text;
+                        list.appendChild(line);
+                      });
+
+                      if (names.length > maxShow) {
+                        const more = document.createElement('div');
+                        more.className = 'cal-events-more';
+                        more.textContent = `+${names.length - maxShow} more`;
+                        list.appendChild(more);
+                      }
+
+                      cell.appendChild(list);
+                    }
+                  }
+
                   grid.appendChild(cell);
                 }
             }
@@ -305,15 +367,6 @@ require_once '../views/auth.php'; // Check login
                   .then(res => {
                     if (!res.success) return;
                     renderCalendarGrid(year, month, res.data || []);
-                    const list = document.getElementById('events-list');
-                    if (list) {
-                      list.innerHTML = '';
-                      (res.data||[]).forEach(ev => {
-                        const li = document.createElement('li');
-                        li.textContent = `${ev.start_date} - ${ev.end_date}: ${ev.name}`;
-                        list.appendChild(li);
-                      });
-                    }
                   })
                   .catch(() => {});
             }

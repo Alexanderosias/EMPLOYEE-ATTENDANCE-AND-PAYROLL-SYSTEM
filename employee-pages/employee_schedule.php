@@ -97,7 +97,7 @@
             </header>
 
             <div class="scrollbar-container">
-                <section class="px-6 py-6">
+                <section>
                     <div class="mb-6">
                         <h3 class="text-2xl font-semibold" style="color: var(--royal-blue);">My Weekly Schedule</h3>
                         <p class="text-gray-600">View your assigned shifts for the week.</p>
@@ -105,19 +105,17 @@
 
                     <div class="flex flex-col lg:flex-row gap-6">
                         <div class="w-full lg:w-3/5">
-                            <div class="relative">
-                                <button id="prev-btn" type="button" aria-label="Previous"
-                                        class="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white border shadow rounded-full w-10 h-10 flex items-center justify-center text-gray-700 hover:bg-gray-50">
-                                    <i class="fas fa-chevron-left"></i>
-                                </button>
-                                <div id="schedule-carousel" class="no-scrollbar flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2">
+                            <div class="rounded-xl border bg-white shadow-sm p-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">Weekly Overview</h4>
+                                        <p class="text-xs text-gray-500">Your assigned shifts for each day.</p>
+                                    </div>
+                                    <span id="current-week-label" class="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600">This week</span>
                                 </div>
-                                <button id="next-btn" type="button" aria-label="Next"
-                                        class="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white border shadow rounded-full w-10 h-10 flex items-center justify-center text-gray-700 hover:bg-gray-50">
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
+                                <div id="weekly-schedule" class="divide-y divide-gray-100"></div>
+                                <div id="no-schedule" class="hidden text-center text-gray-500 mt-4 text-sm">No schedules found.</div>
                             </div>
-                            <div id="no-schedule" class="hidden text-center text-gray-600 mt-4">No schedules found.</div>
                         </div>
 
                         <div class="w-full lg:w-2/5">
@@ -172,65 +170,86 @@
             return `${hh}:${m} ${ampm}`;
         }
 
+        function setWeekLabel() {
+            const el = document.getElementById('current-week-label');
+            if (!el) return;
+            const today = new Date();
+            const day = today.getDay(); // 0 (Sun) - 6 (Sat)
+            const monday = new Date(today);
+            const diffToMonday = (day + 6) % 7; // convert Sunday-based index to Monday-based
+            monday.setDate(today.getDate() - diffToMonday);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            const opts = { month: 'short', day: 'numeric' };
+            const startLabel = monday.toLocaleDateString(undefined, opts);
+            const endLabel = sunday.toLocaleDateString(undefined, opts);
+            el.textContent = `${startLabel} – ${endLabel}`;
+        }
+
         function renderSchedule(weekly) {
-            const carousel = document.getElementById('schedule-carousel');
+            const container = document.getElementById('weekly-schedule');
             const noEl = document.getElementById('no-schedule');
-            carousel.innerHTML = '';
+            if (!container || !noEl) return;
+
+            container.innerHTML = '';
 
             const todayIdx = new Date().getDay();
             let hasAny = false;
 
             for (let i = 0; i < 7; i++) {
-                const ringCls = i === todayIdx ? ' ring-2 ring-blue-500' : '';
-                const dayBox = document.createElement('div');
-                dayBox.className = 'day-card snap-start shrink-0 w-[420px] sm:w-[520px] lg:w-[600px] rounded-xl border shadow-sm p-4 bg-white transition hover:-translate-y-0.5 hover:shadow-md overflow-y-auto' + ringCls;
-
-                const header = document.createElement('div');
-                header.className = 'flex items-center justify-between mb-3';
-                header.innerHTML = `<span class="font-semibold text-gray-800">${dayNames[i]}</span>${i === todayIdx ? '<span class="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600">Today</span>' : ''}`;
-                dayBox.appendChild(header);
-
                 const items = weekly[i] || [];
-                if (items.length === 0) {
-                    const empty = document.createElement('div');
-                    empty.className = 'text-sm text-gray-400';
-                    empty.textContent = 'No shift';
-                    dayBox.appendChild(empty);
-                } else {
+                if (items.length > 0) {
                     hasAny = true;
-                    items.sort((a, b) => (a.start_time > b.start_time ? 1 : -1));
-                    items.forEach((s) => {
-                        const chip = document.createElement('div');
-                        chip.className = 'mb-2 rounded-lg border px-3 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-indigo-800 transition hover:from-indigo-100 hover:to-blue-100 hover:shadow-sm';
-                        const work = parseInt(s.is_working, 10) === 1;
-                        chip.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <span class="font-medium">${s.shift_name || 'Shift'}</span>
-                                <span class="text-xs ${work ? 'text-green-700' : 'text-red-700'}">${work ? 'Working' : 'Off'}</span>
-                            </div>
-                            <div class="text-sm text-gray-700">${formatTime(s.start_time)} - ${formatTime(s.end_time)}</div>
-                            ${s.break_minutes ? `<div class="text-xs text-gray-500">Break: ${s.break_minutes} min</div>` : ''}
-                        `;
-                        dayBox.appendChild(chip);
-                    });
                 }
-                carousel.appendChild(dayBox);
+
+                const row = document.createElement('div');
+                row.className = 'flex items-start justify-between py-2 px-1';
+
+                const left = document.createElement('div');
+                left.className = 'flex flex-col';
+
+                let headerHtml = `<div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-gray-800">${dayNames[i]}</span>`;
+                if (i === todayIdx) {
+                    headerHtml += '<span class="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Today</span>';
+                }
+                headerHtml += '</div>';
+
+                let descText;
+                let descClass;
+                if (items.length === 0) {
+                    descText = 'No shift';
+                    descClass = 'text-xs text-gray-400 mt-1';
+                } else {
+                    const parts = items
+                        .filter(s => s.start_time && s.end_time)
+                        .map(s => `${formatTime(s.start_time)} – ${formatTime(s.end_time)}`);
+                    descText = parts.length ? parts.join(', ') : 'No time set';
+                    descClass = 'text-xs text-gray-600 mt-1';
+                }
+
+                left.innerHTML = headerHtml + `<div class="${descClass}">${descText}</div>`;
+                row.appendChild(left);
+
+                const right = document.createElement('div');
+                right.className = 'mt-1 text-xs';
+
+                if (items.length === 0) {
+                    right.innerHTML = '<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">Off</span>';
+                } else {
+                    const anyWorking = items.some(s => parseInt(s.is_working, 10) === 1);
+                    const label = anyWorking ? 'Working' : 'Off';
+                    const cls = anyWorking
+                        ? 'inline-flex items-center px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200'
+                        : 'inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200';
+                    right.innerHTML = `<span class="${cls}">${label}</span>`;
+                }
+
+                row.appendChild(right);
+                container.appendChild(row);
             }
 
-            scrollToToday();
-
             noEl.classList.toggle('hidden', hasAny);
-            // adjust heights after rendering
-            setTimeout(adjustHeights, 0);
-        }
-
-        function scrollByCard(direction = 1) {
-            const carousel = document.getElementById('schedule-carousel');
-            const card = carousel.querySelector('.day-card');
-            if (!card) return;
-            const gap = 16; // gap-4
-            const amount = card.getBoundingClientRect().width + gap;
-            carousel.scrollBy({ left: direction * amount, behavior: 'smooth' });
         }
 
         async function loadSchedule() {
@@ -297,6 +316,7 @@
             });
 
             const firstDow = start.getDay();
+
             const daysInMonth = end.getDate();
             for (let i = 0; i < firstDow; i++) {
                 const cell = document.createElement('div');
@@ -320,6 +340,7 @@
                 cell.appendChild(header);
                 const list = document.createElement('div');
                 list.className = 'mt-1 space-y-1';
+
                 const addPill = (name, type) => {
                     const pill = document.createElement('div');
                     if (type === 'holiday') pill.className = 'inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full bg-rose-50 text-rose-700 border border-rose-200';
@@ -334,6 +355,7 @@
                 };
                 data.holidays.slice(0, 2).forEach(n => addPill(n, 'holiday'));
                 data.events.slice(0, 2 - Math.min(2, data.holidays.length)).forEach(n => addPill(n, 'event'));
+
                 const extra = data.holidays.length + data.events.length - list.childElementCount;
                 if (extra > 0) {
                     const more = document.createElement('div');
@@ -344,64 +366,12 @@
                 cell.appendChild(list);
                 grid.appendChild(cell);
             }
-            // adjust heights after calendar render
-            setTimeout(adjustHeights, 0);
-        }
-
-        function adjustHeights() {
-            const calendar = document.getElementById('calendarCard');
-            const carousel = document.getElementById('schedule-carousel');
-            if (!calendar || !carousel) return;
-            const h = Math.round(calendar.getBoundingClientRect().height);
-            if (h > 0) {
-                carousel.style.height = h + 'px';
-                carousel.querySelectorAll('.day-card').forEach(c => { c.style.height = h + 'px'; });
-            }
-            // keep today's card visible after layout changes
-            scrollToToday();
-        }
-
-        function scrollToToday() {
-            const carousel = document.getElementById('schedule-carousel');
-            const firstCard = carousel.querySelector('.day-card');
-            if (!firstCard) return;
-            const todayIdx = new Date().getDay();
-            const gap = 16; // gap-4
-            const cardWidth = firstCard.getBoundingClientRect().width + gap;
-            const containerWidth = carousel.clientWidth;
-            let targetLeft = todayIdx * cardWidth - (containerWidth - cardWidth) / 2; // center today's card
-            if (targetLeft < 0) targetLeft = 0;
-            const maxLeft = carousel.scrollWidth - containerWidth;
-            if (targetLeft > maxLeft) targetLeft = maxLeft;
-            carousel.scrollTo({ left: targetLeft, behavior: 'smooth' });
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            setWeekLabel();
             loadSchedule();
             loadCalendar();
-            document.getElementById('prev-btn').addEventListener('click', () => scrollByCard(-1));
-            document.getElementById('next-btn').addEventListener('click', () => scrollByCard(1));
-            window.addEventListener('resize', () => { adjustHeights(); });
-            // Drag-to-scroll for carousel
-            const carousel = document.getElementById('schedule-carousel');
-
-            let isDown = false, startX = 0, scrollStart = 0;
-            carousel.addEventListener('mousedown', (e) => {
-                isDown = true;
-                carousel.classList.add('cursor-grabbing');
-                startX = e.pageX - carousel.getBoundingClientRect().left;
-                scrollStart = carousel.scrollLeft;
-            });
-            ['mouseleave','mouseup'].forEach(evt => carousel.addEventListener(evt, () => {
-                isDown = false;
-                carousel.classList.remove('cursor-grabbing');
-            }));
-            carousel.addEventListener('mousemove', (e) => {
-                if (!isDown) return;
-                e.preventDefault();
-                const x = e.pageX - carousel.getBoundingClientRect().left;
-                carousel.scrollLeft = scrollStart - (x - startX);
-            });
         });
     </script>
 </body>

@@ -98,6 +98,13 @@ ul.item-list li:last-child {
   border-bottom: none;
 }
 
+/* Limit list height for departments and job positions so they don’t grow too tall */
+#departments-list,
+#job-positions-list {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
 .btn-add {
   align-self: flex-start;
   background-color: var(--add-btn-color, #007bff);

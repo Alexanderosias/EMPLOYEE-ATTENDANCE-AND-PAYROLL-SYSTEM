@@ -166,7 +166,7 @@ CREATE TABLE `job_positions` (
   `working_hours_per_day` decimal(5,2) NOT NULL DEFAULT 8.00,
   `rate_per_day` decimal(10,2) NOT NULL DEFAULT 0.00,
   `rate_per_hour` decimal(10,2) DEFAULT 0.00,
-  `payroll_frequency` enum('daily','weekly','bi-weekly','monthly') DEFAULT 'bi-weekly',
+  `payroll_frequency` enum('weekly','bi-weekly','monthly') DEFAULT 'bi-weekly',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

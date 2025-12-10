@@ -239,6 +239,10 @@ require_once '../views/auth.php';  // path relative to the page
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</label>
                             <span id="modal-status" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800"></span>
                         </div>
+                        <div id="modal-feedback-wrapper" class="hidden">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Admin Feedback</label>
+                            <p style="max-height: 250px; overflow-y: auto;" id="modal-feedback" class="text-sm text-gray-900 bg-gray-50 p-3 rounded text-justify"></p>
+                        </div>
                     </div>
                     <div style="display: flex; justify-content: space-between; gap: 10px;" class="mt-6 flex justify-end gap-5">
                         <button id="modal-decline-btn" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
@@ -276,6 +280,32 @@ require_once '../views/auth.php';  // path relative to the page
                         </button>
                         <button id="confirmation-confirm-btn" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
                             Confirm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Decline Feedback Modal -->
+        <div style="background-color: rgba(0, 0, 0, 0.5); z-index: 1003;" id="decline-feedback-modal" class="fixed inset-0 bg-gray-600 bg-opacity-40 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center" role="dialog" aria-labelledby="decline-feedback-title" aria-modal="true" aria-hidden="true">
+            <div style="padding: 20px;" class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="decline-feedback-title">Decline Leave Request</h3>
+                        <button id="decline-feedback-close-x" class="text-gray-400 hover:text-gray-500 focus:outline-none" aria-label="Close modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2 space-y-3">
+                        <p class="text-sm text-gray-600">Please provide a reason for declining this leave request.</p>
+                        <textarea id="decline-feedback-text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" style="resize: vertical; min-height: 100px; max-height: 220px; overflow: auto;" placeholder="Enter feedback (required)"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;" class="mt-6 flex justify-end gap-3">
+                        <button id="decline-feedback-cancel" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none">
+                            Cancel
+                        </button>
+                        <button id="decline-feedback-confirm" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                            Submit
                         </button>
                     </div>
                 </div>

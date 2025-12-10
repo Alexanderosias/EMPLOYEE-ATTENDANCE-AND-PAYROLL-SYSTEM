@@ -260,8 +260,12 @@ try {
 
         case 'decline_leave':
             $requestId = (int)$_POST['id'];
-            $stmt = $mysqli->prepare("UPDATE leave_requests SET status = 'Rejected', approved_at = NOW(), approved_by = ? WHERE id = ? AND status = 'Pending'");
-            $stmt->bind_param('ii', $_SESSION['user_id'], $requestId);
+            $feedback = trim($_POST['admin_feedback'] ?? '');
+            $stmt = $mysqli->prepare("UPDATE leave_requests SET status = 'Rejected', admin_feedback = ?, approved_at = NOW(), approved_by = ? WHERE id = ? AND status = 'Pending'");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . $mysqli->error);
+            }
+            $stmt->bind_param('sii', $feedback, $_SESSION['user_id'], $requestId);
             $stmt->execute();
             if ($stmt->affected_rows > 0) {
                 echo json_encode(['success' => true, 'message' => 'Request declined']);

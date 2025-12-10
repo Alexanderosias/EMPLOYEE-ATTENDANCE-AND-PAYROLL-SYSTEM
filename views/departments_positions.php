@@ -35,7 +35,7 @@ try {
         $desc->free();
     }
     if (!$hasPayrollFreq) {
-        @$mysqli->query("ALTER TABLE job_positions ADD COLUMN payroll_frequency ENUM('daily','weekly','bi-weekly','monthly') NOT NULL DEFAULT 'bi-weekly'");
+        @$mysqli->query("ALTER TABLE job_positions ADD COLUMN payroll_frequency ENUM('weekly','bi-weekly','monthly') NOT NULL DEFAULT 'bi-weekly'");
     }
 } catch (Exception $e) {
     ob_end_clean();
@@ -92,7 +92,7 @@ switch ($action) {
             $name = trim($_POST['name'] ?? '');
             $ratePerDay = floatval($_POST['rate_per_day'] ?? 0);
             $payrollFrequency = strtolower(trim($_POST['payroll_frequency'] ?? 'bi-weekly'));
-            $allowedFreq = ['daily','weekly','bi-weekly','monthly'];
+            $allowedFreq = ['weekly','bi-weekly','monthly'];
             if (!in_array($payrollFrequency, $allowedFreq, true)) { $payrollFrequency = 'bi-weekly'; }
 
             if ($id <= 0) throw new Exception('Invalid job position ID.');
@@ -157,7 +157,7 @@ switch ($action) {
             }
             $id = intval($_POST['id'] ?? 0);
             $freq = strtolower(trim($_POST['payroll_frequency'] ?? ''));
-            $allowed = ['daily','weekly','bi-weekly','monthly'];
+            $allowed = ['weekly','bi-weekly','monthly'];
             if ($id <= 0 || !in_array($freq, $allowed, true)) {
                 throw new Exception('Invalid parameters.');
             }
@@ -303,9 +303,9 @@ switch ($action) {
             }
             $name = trim($_POST['name'] ?? '');
             $ratePerDay = floatval($_POST['rate_per_day'] ?? 0);
-            $payrollFrequency = strtolower(trim($_POST['payroll_frequency'] ?? 'monthly'));
-            $allowedFreq = ['weekly','biweekly','semimonthly','monthly'];
-            if (!in_array($payrollFrequency, $allowedFreq, true)) { $payrollFrequency = 'monthly'; }
+            $payrollFrequency = strtolower(trim($_POST['payroll_frequency'] ?? 'bi-weekly'));
+            $allowedFreq = ['weekly','bi-weekly','monthly'];
+            if (!in_array($payrollFrequency, $allowedFreq, true)) { $payrollFrequency = 'bi-weekly'; }
 
             if (empty($name)) {
                 throw new Exception('Job position name is required.');

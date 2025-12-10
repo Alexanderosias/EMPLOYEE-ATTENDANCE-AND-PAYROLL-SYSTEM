@@ -32,12 +32,18 @@ try {
         }
         $stmt->close();
 
+        // Pending payroll (unpaid payroll rows)
+        $res2 = $mysqli->query("SELECT COUNT(*) AS c FROM payroll WHERE paid_status = 'Unpaid'");
+        $row2 = $res2 ? $res2->fetch_assoc() : ['c' => 0];
+        $pendingPayroll = (int)($row2['c'] ?? 0);
+
         echo json_encode([
             'success' => true,
             'data' => [
                 'total_employees' => $totalEmployees,
                 'present_today' => $map['Present'] ?? 0,
                 'late_today' => $map['Late'] ?? 0,
+                'pending_payroll' => $pendingPayroll,
             ]
         ]);
         exit;

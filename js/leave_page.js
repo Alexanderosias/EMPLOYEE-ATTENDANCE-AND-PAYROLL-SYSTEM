@@ -10,6 +10,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const dateInputs = document.querySelectorAll('input[type="date"]');
   const tableBody = document.getElementById("leave-table-body");
 
+  const declineFeedbackModal = document.getElementById(
+    "decline-feedback-modal"
+  );
+  const declineFeedbackCloseX = document.getElementById(
+    "decline-feedback-close-x"
+  );
+  const declineFeedbackCancel = document.getElementById(
+    "decline-feedback-cancel"
+  );
+  const declineFeedbackConfirm = document.getElementById(
+    "decline-feedback-confirm"
+  );
+  const declineFeedbackText = document.getElementById(
+    "decline-feedback-text"
+  );
+  let pendingDeclineId = null;
+
   // Load initial data
   loadLeaveRequests();
 
@@ -117,6 +134,46 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !modal.classList.contains("hidden")) closeModal();
   });
+
+  function openDeclineFeedbackModal(id) {
+    pendingDeclineId = id;
+    if (declineFeedbackText) {
+      declineFeedbackText.value = "";
+    }
+    declineFeedbackModal.classList.remove("hidden");
+    declineFeedbackModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeDeclineFeedbackModal() {
+    declineFeedbackModal.classList.add("hidden");
+    declineFeedbackModal.setAttribute("aria-hidden", "true");
+    pendingDeclineId = null;
+  }
+
+  if (declineFeedbackCloseX)
+    declineFeedbackCloseX.addEventListener("click", closeDeclineFeedbackModal);
+  if (declineFeedbackCancel)
+    declineFeedbackCancel.addEventListener("click", closeDeclineFeedbackModal);
+  if (declineFeedbackModal)
+    declineFeedbackModal.addEventListener("click", (e) => {
+      if (e.target === declineFeedbackModal) closeDeclineFeedbackModal();
+    });
+
+  if (declineFeedbackConfirm)
+    declineFeedbackConfirm.addEventListener("click", async () => {
+      const id = pendingDeclineId;
+      if (!id) {
+        closeDeclineFeedbackModal();
+        return;
+      }
+      const feedback = (declineFeedbackText.value || "").trim();
+      if (!feedback) {
+        showStatus("Please provide a feedback reason before submitting.", "error");
+        return;
+      }
+      await handleAction(id, "decline_leave", "Request declined", feedback);
+      closeDeclineFeedbackModal();
+    });
 
   // Load and populate table
   async function loadLeaveRequests() {
@@ -260,9 +317,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.querySelectorAll(".btn-decline").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", async (e) => {
         const id = e.currentTarget.getAttribute("data-id");
-        handleAction(id, "decline_leave", "Request declined");
+        const confirmed = await showConfirmation(
+          "Are you sure you want to decline this request?",
+          "Confirm Decline",
+          "red"
+        );
+        if (!confirmed) return;
+        openDeclineFeedbackModal(id);
       });
     });
 
@@ -277,9 +340,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document
       .getElementById("modal-decline-btn")
-      .addEventListener("click", (e) => {
+      .addEventListener("click", async (e) => {
         const id = e.currentTarget.getAttribute("data-id");
-        handleAction(id, "decline_leave", "Request declined");
+        const confirmed = await showConfirmation(
+          "Are you sure you want to decline this request?",
+          "Confirm Decline",
+          "red"
+        );
+        if (!confirmed) return;
+        openDeclineFeedbackModal(id);
         // Remove closeModal() here to allow overlay
       });
   }
@@ -348,6 +417,21 @@ document.addEventListener("DOMContentLoaded", () => {
         ).className = `px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(
           req.status
         )}`;
+
+        const feedbackWrapper = document.getElementById(
+          "modal-feedback-wrapper"
+        );
+        const feedbackEl = document.getElementById("modal-feedback");
+        if (feedbackWrapper && feedbackEl) {
+          const fb = (req.admin_feedback || "").trim();
+          if (fb) {
+            feedbackEl.textContent = fb;
+            feedbackWrapper.classList.remove("hidden");
+          } else {
+            feedbackEl.textContent = "";
+            feedbackWrapper.classList.add("hidden");
+          }
+        }
         // Hide approve/decline buttons if not Pending
         const approveBtn = document.getElementById("modal-approve-btn");
         const declineBtn = document.getElementById("modal-decline-btn");
@@ -375,18 +459,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function handleAction(id, action, successMsg) {
+  async function handleAction(id, action, successMsg, feedbackOverride = null) {
     const actionText = action === "approve_leave" ? "approve" : "decline";
-    const confirmed = await showConfirmation(
-      `Are you sure you want to ${actionText} this request?`,
-      `Confirm ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}`,
-      action === "approve_leave" ? "green" : "red"
-    );
-    if (!confirmed) return;
-
     const formData = new FormData();
     formData.append("action", action);
     formData.append("id", id);
+
+    if (action === "decline_leave") {
+      const feedback = feedbackOverride || "";
+      formData.append("admin_feedback", feedback);
+    }
 
     try {
       const response = await fetch(API_BASE, {

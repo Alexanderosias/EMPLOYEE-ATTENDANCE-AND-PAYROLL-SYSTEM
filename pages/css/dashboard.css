@@ -404,7 +404,7 @@ main::-webkit-scrollbar-thumb:hover {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 12px;
+  padding: 8px;
 }
 
 #calendar-header {
@@ -434,14 +434,14 @@ main::-webkit-scrollbar-thumb:hover {
 #calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  gap: 4px;
 }
 
 .cal-cell {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
-  min-height: 80px;
+  min-height: 60px;
   position: relative;
   padding: 6px;
 }
@@ -478,6 +478,30 @@ main::-webkit-scrollbar-thumb:hover {
 
 .has-event {
   outline: 2px solid rgba(34, 197, 94, 0.15);
+}
+
+/* Smaller calendar day cell content and holiday/event labels */
+.cal-day {
+  cursor: pointer;
+}
+
+.cal-events {
+  margin-top: 18px;
+  font-size: 0.65rem;
+  line-height: 1.1;
+  color: #4b5563;
+}
+
+.cal-events-more {
+  margin-top: 2px;
+  font-size: 0.6rem;
+  color: #6b7280;
+}
+
+/* Highlight current day in calendar with blue border */
+.cal-today {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
 }
 
 #events-list {
