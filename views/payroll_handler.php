@@ -3,9 +3,13 @@ require_once 'auth.php';
 require_once 'conn.php';
 header('Content-Type: application/json');
 
-function fmt2($n){ return number_format((float)$n, 2, '.', ''); }
+function fmt2($n)
+{
+    return number_format((float)$n, 2, '.', '');
+}
 
-function ensure_thirteenth_month_table($mysqli) {
+function ensure_thirteenth_month_table($mysqli)
+{
     @$mysqli->query("CREATE TABLE IF NOT EXISTS thirteenth_month_payroll (
         id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
         employee_id INT(11) NOT NULL,
@@ -23,7 +27,8 @@ function ensure_thirteenth_month_table($mysqli) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 }
 
-function ensure_payroll_audit_table($mysqli) {
+function ensure_payroll_audit_table($mysqli)
+{
     @$mysqli->query("CREATE TABLE IF NOT EXISTS payroll_audit (
         id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
         action VARCHAR(50) NOT NULL,
@@ -36,15 +41,36 @@ function ensure_payroll_audit_table($mysqli) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 }
 
-function normalize_payroll_frequency($raw) {
+function ensure_payroll_ot_holiday_columns($mysqli)
+{
+    // Add overtime_pay column if not exists
+    $result = $mysqli->query("SHOW COLUMNS FROM payroll LIKE 'overtime_pay'");
+    if ($result && $result->num_rows === 0) {
+        @$mysqli->query("ALTER TABLE payroll ADD COLUMN overtime_pay DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER gross_pay");
+    }
+    // Add holiday_pay column if not exists
+    $result = $mysqli->query("SHOW COLUMNS FROM payroll LIKE 'holiday_pay'");
+    if ($result && $result->num_rows === 0) {
+        @$mysqli->query("ALTER TABLE payroll ADD COLUMN holiday_pay DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER overtime_pay");
+    }
+    // Add basic_pay column if not exists
+    $result = $mysqli->query("SHOW COLUMNS FROM payroll LIKE 'basic_pay'");
+    if ($result && $result->num_rows === 0) {
+        @$mysqli->query("ALTER TABLE payroll ADD COLUMN basic_pay DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER employee_id");
+    }
+}
+
+function normalize_payroll_frequency($raw)
+{
     $raw = strtolower(trim((string)$raw));
-    if (in_array($raw, ['weekly','bi-weekly','monthly'], true)) {
+    if (in_array($raw, ['weekly', 'bi-weekly', 'monthly'], true)) {
         return $raw;
     }
     return 'bi-weekly';
 }
 
-function get_periods_per_month_from_frequency($freq) {
+function get_periods_per_month_from_frequency($freq)
+{
     $f = normalize_payroll_frequency($freq);
     switch ($f) {
         case 'weekly':
@@ -57,7 +83,8 @@ function get_periods_per_month_from_frequency($freq) {
     }
 }
 
-function get_sss_2025_brackets() {
+function get_sss_2025_brackets()
+{
     static $rows = null;
     if ($rows !== null) {
         return $rows;
@@ -83,7 +110,8 @@ function get_sss_2025_brackets() {
     return $rows;
 }
 
-function compute_sss_2025_employee_share($monthlyComp) {
+function compute_sss_2025_employee_share($monthlyComp)
+{
     $monthlyComp = (float)$monthlyComp;
     if ($monthlyComp <= 0.0) return 0.0;
 
@@ -113,7 +141,8 @@ function compute_sss_2025_employee_share($monthlyComp) {
     return (float)$selected['ee'];
 }
 
-function compute_sss_2025_for_period($monthlyBase, $roleFrequency) {
+function compute_sss_2025_for_period($monthlyBase, $roleFrequency)
+{
     $monthlyBase = (float)$monthlyBase;
     if ($monthlyBase <= 0.0) return 0.0;
 
@@ -126,7 +155,8 @@ function compute_sss_2025_for_period($monthlyBase, $roleFrequency) {
     return $monthlySss / $periodsPerMonth;
 }
 
-function compute_philhealth_for_period($monthlyBase, $roleFrequency, $phRate, $phMin, $phMax, $phSplit) {
+function compute_philhealth_for_period($monthlyBase, $roleFrequency, $phRate, $phMin, $phMax, $phSplit)
+{
     $monthlyBase = (float)$monthlyBase;
     $phRate = (float)$phRate;
     $phMin = (float)$phMin;
@@ -161,7 +191,8 @@ function compute_philhealth_for_period($monthlyBase, $roleFrequency, $phRate, $p
     return $employeeShare / $periodsPerMonth;
 }
 
-function compute_pagibig_for_period($monthlyBase, $roleFrequency, $salaryCeiling, $employeeRate) {
+function compute_pagibig_for_period($monthlyBase, $roleFrequency, $salaryCeiling, $employeeRate)
+{
     $monthlyBase = (float)$monthlyBase;
     $salaryCeiling = (float)$salaryCeiling;
     $employeeRate = (float)$employeeRate;
@@ -213,7 +244,7 @@ try {
         while ($r = $res->fetch_assoc()) {
             $rawFreq = strtolower($r['payroll_frequency'] ?? 'bi-weekly');
             // Normalize to supported frequencies; fallback to bi-weekly for any unknown/legacy values (e.g., 'daily')
-            if (in_array($rawFreq, ['weekly','bi-weekly','monthly'], true)) {
+            if (in_array($rawFreq, ['weekly', 'bi-weekly', 'monthly'], true)) {
                 $freq = $rawFreq;
             } else {
                 $freq = 'bi-weekly';
@@ -496,7 +527,9 @@ try {
         $res = $mysqli->query($sql);
 
         $rows = [];
-        $sumGross = 0.0; $sumDeductions = 0.0; $sumNet = 0.0;
+        $sumGross = 0.0;
+        $sumDeductions = 0.0;
+        $sumNet = 0.0;
 
         while ($emp = $res->fetch_assoc()) {
             $empId = (int)$emp['emp_id'];
@@ -590,12 +623,44 @@ try {
                 if ($holidayType) {
                     // Holiday rules take precedence over normal/leave rules
                     if ($holidayType === 'regular') {
+                        // Regular holiday: apply DOLE qualification rule for non-working holiday pay
                         if ($worked) {
                             // Worked on regular holiday: 200% by default
                             $mult = $phRegular;
                         } else {
-                            // Absent on regular holiday: paid 100%
-                            $mult = 1.0;
+                            // Non-working regular holiday: check qualification based on last workday before the holiday
+                            $qualifies = true;
+
+                            // Look backwards from the holiday date to find the last day with either attendance or approved leave
+                            $prev = (clone $d)->modify('-1 day');
+                            while ($prev >= $periodStart) {
+                                $prevStr = $prev->format('Y-m-d');
+                                $prevLog = $attendanceByDate[$prevStr] ?? null;
+                                $prevLeaveType = $leaveByDate[$prevStr] ?? null;
+
+                                if ($prevLog || $prevLeaveType) {
+                                    // Treat this as the "workday immediately preceding" (or last scheduled workday)
+                                    if ($prevLeaveType === 'Paid' || $prevLeaveType === 'Sick') {
+                                        // On leave with pay before the holiday -> still qualified
+                                        $qualifies = true;
+                                    } elseif ($prevLeaveType === 'Unpaid') {
+                                        // Unpaid leave before the holiday -> disqualified
+                                        $qualifies = false;
+                                    } else {
+                                        $prevStatus = $prevLog['status'] ?? '';
+                                        $prevTimeIn = $prevLog['time_in'] ?? null;
+                                        $prevWorked = !empty($prevTimeIn) && $prevStatus !== 'Absent';
+                                        // If it was a scheduled workday and they were absent/AWOL (no time-in), disqualify
+                                        $qualifies = $prevWorked;
+                                    }
+                                    break;
+                                }
+
+                                $prev->modify('-1 day');
+                            }
+
+                            // If we never found any previous workday within the period, keep them qualified by default
+                            $mult = $qualifies ? 1.0 : 0.0;
                         }
                     } elseif ($holidayType === 'special_non_working') {
                         if ($worked) {
@@ -953,6 +1018,37 @@ try {
             $hStmt->close();
         }
 
+        // Preload special events (e.g., disasters/emergencies) in the period into a date => paid flag map
+        // paid: 'yes' | 'no' | 'partial'
+        $eventsByDate = [];
+        if ($eStmt = $mysqli->prepare("SELECT paid, start_date, end_date FROM special_events WHERE end_date >= ? AND start_date <= ?")) {
+            $eStmt->bind_param('ss', $start, $end);
+            if ($eStmt->execute()) {
+                $eRes = $eStmt->get_result();
+                while ($ev = $eRes->fetch_assoc()) {
+                    $es = new DateTime($ev['start_date']);
+                    $ee = new DateTime($ev['end_date']);
+                    $paidFlag = $ev['paid'] ?? null;
+                    if ($paidFlag === null) continue;
+                    for ($d = clone $es; $d <= $ee; $d->modify('+1 day')) {
+                        $ds = $d->format('Y-m-d');
+                        if (!isset($eventsByDate[$ds])) {
+                            $eventsByDate[$ds] = $paidFlag;
+                        } else {
+                            // Prioritize 'no' over 'partial' over 'yes' if multiple events overlap
+                            $current = $eventsByDate[$ds];
+                            if ($current === 'yes' && $paidFlag !== 'yes') {
+                                $eventsByDate[$ds] = $paidFlag;
+                            } elseif ($current === 'partial' && $paidFlag === 'no') {
+                                $eventsByDate[$ds] = 'no';
+                            }
+                        }
+                    }
+                }
+            }
+            $eStmt->close();
+        }
+
         // Load employees with their role, rates, filtered by optional role and frequency
         $sql = "SELECT e.id AS emp_id, e.first_name, e.last_name,
                        e.rate_per_day AS e_rpd, e.rate_per_hour AS e_rph,
@@ -1050,7 +1146,9 @@ try {
             $periodStart = new DateTime($start);
             $periodEnd = new DateTime($end);
             $totalDayEquivalent = 0.0;
+            $totalBaseDays = 0.0;  // Normal day equivalents (without holiday premium)
             $totalOtPay = 0.0;
+            $totalHolidayPay = 0.0;  // Track holiday premium separately
 
             for ($d = clone $periodStart; $d <= $periodEnd; $d->modify('+1 day')) {
                 $dateStr = $d->format('Y-m-d');
@@ -1123,6 +1221,16 @@ try {
 
                 $totalDayEquivalent += $mult;
 
+                // Calculate holiday premium (the portion above 100%)
+                if ($holidayType && $mult > 1.0) {
+                    // Holiday premium = (multiplier - 1.0) * daily rate
+                    // We track this separately from base pay
+                    $totalBaseDays += 1.0;  // Base day
+                    // Holiday pay will be calculated after we know the rate
+                } elseif ($mult > 0.0) {
+                    $totalBaseDays += $mult;  // Normal day or leave
+                }
+
                 // Compute overtime pay for this date (if any approved OT minutes)
                 if ($approvedOtMinutes > 0 && $ratePerHour > 0) {
                     $otHours = $approvedOtMinutes / 60.0;
@@ -1143,12 +1251,18 @@ try {
 
             // Determine gross using day-equivalent logic
             $grossBase = 0.0;
+            $basicPay = 0.0;
             if ($ratePerDay > 0) {
                 $grossBase = $totalDayEquivalent * $ratePerDay;
+                $basicPay = $totalBaseDays * $ratePerDay;
+                $totalHolidayPay = ($totalDayEquivalent - $totalBaseDays) * $ratePerDay;
             } else {
                 // Fall back to hourly: convert day-equivalent to hours using working hours per day
                 $equivHours = $totalDayEquivalent * $roleHoursPerDay;
+                $baseHours = $totalBaseDays * $roleHoursPerDay;
                 $grossBase = $equivHours * $ratePerHour;
+                $basicPay = $baseHours * $ratePerHour;
+                $totalHolidayPay = ($equivHours - $baseHours) * $ratePerHour;
             }
 
             $gross = $grossBase + $totalOtPay;
@@ -1229,6 +1343,9 @@ try {
             // Store income tax together with other/manual deductions for now
             $other = $perEmpDeduction + $incomeTax;
 
+            // Ensure overtime_pay and holiday_pay columns exist
+            ensure_payroll_ot_holiday_columns($mysqli);
+
             // Upsert into payroll table for this employee and period
             $check = $mysqli->prepare("SELECT id FROM payroll WHERE employee_id = ? AND payroll_period_start = ? AND payroll_period_end = ? LIMIT 1");
             $check->bind_param('iss', $empId, $start, $end);
@@ -1238,14 +1355,15 @@ try {
 
             if ($existing) {
                 $pid = (int)$existing['id'];
-                $upd = $mysqli->prepare("UPDATE payroll SET gross_pay = ?, philhealth_deduction = ?, sss_deduction = ?, pagibig_deduction = ?, other_deductions = ?, paid_status = 'Unpaid', payment_date = NULL WHERE id = ?");
-                $upd->bind_param('dddddi', $gross, $philhealth, $sss, $pagibig, $other, $pid);
+                $upd = $mysqli->prepare("UPDATE payroll SET basic_pay = ?, gross_pay = ?, overtime_pay = ?, holiday_pay = ?, philhealth_deduction = ?, sss_deduction = ?, pagibig_deduction = ?, other_deductions = ?, paid_status = 'Unpaid', payment_date = NULL WHERE id = ?");
+                $upd->bind_param('ddddddddi', $basicPay, $gross, $totalOtPay, $totalHolidayPay, $philhealth, $sss, $pagibig, $other, $pid);
                 $upd->execute();
                 $upd->close();
                 $updated++;
             } else {
-                $ins = $mysqli->prepare("INSERT INTO payroll (employee_id, payroll_period_start, payroll_period_end, gross_pay, philhealth_deduction, sss_deduction, pagibig_deduction, other_deductions, paid_status, payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Unpaid', NULL)");
-                $ins->bind_param('issddddd', $empId, $start, $end, $gross, $philhealth, $sss, $pagibig, $other);
+                $ins = $mysqli->prepare("INSERT INTO payroll (employee_id, basic_pay, payroll_period_start, payroll_period_end, gross_pay, overtime_pay, holiday_pay, philhealth_deduction, sss_deduction, pagibig_deduction, other_deductions, paid_status, payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Unpaid', NULL)");
+                // 11 placeholders above => 11 types here: i (employee_id), d (basic), s,s (dates), then 7x d for monetary columns
+                $ins->bind_param('idssddddddd', $empId, $basicPay, $start, $end, $gross, $totalOtPay, $totalHolidayPay, $philhealth, $sss, $pagibig, $other);
                 $ins->execute();
                 $ins->close();
                 $inserted++;
@@ -1291,13 +1409,19 @@ try {
             exit;
         }
 
+        // Ensure overtime_pay and holiday_pay columns exist before querying
+        ensure_payroll_ot_holiday_columns($mysqli);
+
         $rows = [];
 
         if ($roleId > 0) {
             $sql = "SELECT p.id,
                            p.payroll_period_start,
                            p.payroll_period_end,
+                           COALESCE(p.basic_pay, 0) AS basic_pay,
                            p.gross_pay,
+                           COALESCE(p.overtime_pay, 0) AS overtime_pay,
+                           COALESCE(p.holiday_pay, 0) AS holiday_pay,
                            p.philhealth_deduction,
                            p.sss_deduction,
                            p.pagibig_deduction,
@@ -1307,10 +1431,12 @@ try {
                            p.payment_date,
                            e.first_name,
                            e.last_name,
+                           d.name AS department_name,
                            jp.name AS role_name
                     FROM payroll p
                     JOIN employees e ON e.id = p.employee_id
                     JOIN job_positions jp ON e.job_position_id = jp.id
+                    JOIN departments d ON e.department_id = d.id
                     WHERE p.payroll_period_start = ? AND p.payroll_period_end = ? AND jp.id = ?";
             if ($frequency !== '') {
                 $sql .= " AND LOWER(COALESCE(jp.payroll_frequency, 'bi-weekly')) = ?";
@@ -1330,7 +1456,10 @@ try {
             $sql = "SELECT p.id,
                            p.payroll_period_start,
                            p.payroll_period_end,
+                           COALESCE(p.basic_pay, 0) AS basic_pay,
                            p.gross_pay,
+                           COALESCE(p.overtime_pay, 0) AS overtime_pay,
+                           COALESCE(p.holiday_pay, 0) AS holiday_pay,
                            p.philhealth_deduction,
                            p.sss_deduction,
                            p.pagibig_deduction,
@@ -1340,10 +1469,12 @@ try {
                            p.payment_date,
                            e.first_name,
                            e.last_name,
+                           d.name AS department_name,
                            jp.name AS role_name
                     FROM payroll p
                     JOIN employees e ON e.id = p.employee_id
                     JOIN job_positions jp ON e.job_position_id = jp.id
+                    JOIN departments d ON e.department_id = d.id
                     WHERE p.payroll_period_start = ? AND p.payroll_period_end = ?";
             if ($frequency !== '') {
                 $sql .= " AND LOWER(COALESCE(jp.payroll_frequency, 'bi-weekly')) = ?";
@@ -1366,7 +1497,10 @@ try {
                 $res = $stmt->get_result();
                 while ($r = $res->fetch_assoc()) {
                     $name = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
+                    $basicPay = (float)($r['basic_pay'] ?? 0);
                     $gross = (float)($r['gross_pay'] ?? 0);
+                    $overtimePay = (float)($r['overtime_pay'] ?? 0);
+                    $holidayPay = (float)($r['holiday_pay'] ?? 0);
                     $phil = (float)($r['philhealth_deduction'] ?? 0);
                     $sss = (float)($r['sss_deduction'] ?? 0);
                     $pagibig = (float)($r['pagibig_deduction'] ?? 0);
@@ -1376,9 +1510,13 @@ try {
                     $rows[] = [
                         'id' => (int)$r['id'],
                         'employee' => $name,
+                        'department' => $r['department_name'] ?? '',
                         'role' => $r['role_name'] ?? '',
                         'period' => ($r['payroll_period_start'] ?? '') . ' to ' . ($r['payroll_period_end'] ?? ''),
+                        'basic_pay' => fmt2($basicPay),
                         'gross' => fmt2($gross),
+                        'overtime_pay' => fmt2($overtimePay),
+                        'holiday_pay' => fmt2($holidayPay),
                         'philhealth' => fmt2($phil),
                         'sss' => fmt2($sss),
                         'pagibig' => fmt2($pagibig),

@@ -655,9 +655,11 @@ input:checked + .slider:before {
     background: #ffffff;
     border-radius: 0.75rem;
     box-shadow: 0 10px 25px rgba(15, 23, 42, 0.35);
-    max-width: 520px;
+    max-width: 720px;
     width: 100%;
+    max-height: 80vh;
     padding: 1rem 1.25rem 1.25rem;
+    overflow-y: auto;
 }
 
 .payslip-header {

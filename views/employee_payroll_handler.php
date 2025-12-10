@@ -3,7 +3,10 @@ require_once 'auth.php';
 require_once 'conn.php';
 header('Content-Type: application/json');
 
-function fmt2($n){ return number_format((float)$n, 2, '.', ''); }
+function fmt2($n)
+{
+    return number_format((float)$n, 2, '.', '');
+}
 
 try {
     $db = conn();
@@ -47,8 +50,8 @@ try {
                 SUM(paid_status = 'Paid') AS paid_count,
                 SUM(paid_status = 'Unpaid') AS unpaid_count
             FROM payroll
-            WHERE employee_id = ? AND payroll_period_start >= ? AND payroll_period_end <= ?");
-        $stmt->bind_param('iss', $employeeId, $start, $end);
+            WHERE employee_id = ? AND payroll_period_start <= ? AND payroll_period_end >= ?");
+        $stmt->bind_param('iss', $employeeId, $end, $start);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
         $stmt->close();
@@ -79,9 +82,9 @@ try {
                        other_deductions, total_deductions, net_pay, paid_status,
                        payment_date
                 FROM payroll
-                WHERE employee_id = ? AND payroll_period_start >= ? AND payroll_period_end <= ?";
+                WHERE employee_id = ? AND payroll_period_start <= ? AND payroll_period_end >= ?";
         $types = 'iss';
-        $params = [$employeeId, $start, $end];
+        $params = [$employeeId, $end, $start];
         if ($status === 'Paid' || $status === 'Unpaid') {
             $sql .= " AND paid_status = ?";
             $types .= 's';

@@ -299,6 +299,7 @@ importFileInput.addEventListener("change", async (event) => {
         alert(`Import completed. Imported ${result.imported || 0} logs.`);
       }
       await fetchAttendanceData();
+      await fetchOvertimeRequests();
     } else {
       const msg = result.message || "Import failed.";
       if (typeof showMessage === "function") {
@@ -376,8 +377,9 @@ editForm.addEventListener("submit", async (e) => {
 
     const result = await response.json();
     if (result.success) {
-      // Refresh data to get calculated status
+      // Refresh data to get calculated status and overtime list
       fetchAttendanceData();
+      fetchOvertimeRequests();
       modalOverlay.classList.remove("active");
       currentEditIndex = null;
     } else {
@@ -433,63 +435,6 @@ modalOverlay.addEventListener("click", (e) => {
   if (e.target === modalOverlay) {
     modalOverlay.classList.remove("active");
     currentEditIndex = null;
-  }
-});
-
-editForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (currentEditIndex === null) return;
-
-  const timeInVal = editTimeIn.value.trim();
-  const timeOutVal = editTimeOut.value.trim();
-
-  // Validation: Time-out cannot be entered without time-in
-  if (timeOutVal && !timeInVal) {
-    showMessage("Time-out cannot be entered without time-in.", "error");
-    return;
-  }
-
-  // Validation: Time-in cannot be later than or equal to time-out
-  if (timeInVal && timeOutVal) {
-    const timeInDate = new Date(`1970-01-01T${timeInVal}:00`);
-    const timeOutDate = new Date(`1970-01-01T${timeOutVal}:00`);
-    if (timeInDate >= timeOutDate) {
-      showMessage(
-        "Time-in cannot be later than or equal to time-out.",
-        "error"
-      );
-      return;
-    }
-  }
-
-  const record = filteredData[currentEditIndex];
-
-  try {
-    const response = await fetch("../views/attendance_logs_handler.php", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: "update",
-        id: record.id,
-        timeIn: timeInVal,
-        timeOut: timeOutVal,
-      }),
-    });
-
-    const result = await response.json();
-    if (result.success) {
-      // Refresh data to get calculated status
-      fetchAttendanceData();
-      modalOverlay.classList.remove("active");
-      currentEditIndex = null;
-    } else {
-      showMessage(result.message, "error");
-    }
-  } catch (error) {
-    console.error("Error updating record:", error);
-    showMessage("An error occurred while updating.", "error");
   }
 });
 

@@ -87,17 +87,23 @@ switch ($action) {
             }
 
             $parsed = parseQRData($qrData);
-            if (!isset($parsed['ID']) || !isset($parsed['First']) || !isset($parsed['Last'])) {
+            if (!isset($parsed['First']) || !isset($parsed['Last']) || !isset($parsed['Position']) || !isset($parsed['Joined'])) {
                 throw new Exception('Invalid QR code format.');
             }
 
-            $employeeId = (int)$parsed['ID'];
             $firstName = $parsed['First'];
             $lastName = $parsed['Last'];
+            $positionName = $parsed['Position'];
+            $dateJoined = $parsed['Joined'];
 
-            // Validate employee
-            $stmt = $mysqli->prepare("SELECT id, status FROM employees WHERE id = ? AND first_name = ? AND last_name = ? AND status = 'Active'");
-            $stmt->bind_param('iss', $employeeId, $firstName, $lastName);
+            // Validate employee by First Name + Last Name + Position + Date Joined
+            $stmt = $mysqli->prepare("
+                SELECT e.id, e.status 
+                FROM employees e
+                LEFT JOIN job_positions jp ON e.job_position_id = jp.id
+                WHERE e.first_name = ? AND e.last_name = ? AND jp.name = ? AND e.date_joined = ? AND e.status = 'Active'
+            ");
+            $stmt->bind_param('ssss', $firstName, $lastName, $positionName, $dateJoined);
             $stmt->execute();
             $result = $stmt->get_result();
             $employee = $result->fetch_assoc();
@@ -106,6 +112,8 @@ switch ($action) {
             if (!$employee) {
                 throw new Exception('Invalid QR code or employee not found/active.');
             }
+
+            $employeeId = (int)$employee['id'];
 
             $today = date('Y-m-d');
             $now = date('Y-m-d H:i:s');
@@ -362,7 +370,7 @@ switch ($action) {
                 header('Content-Type: text/plain; charset=utf-8');
                 http_response_code(500);
                 echo "Export failed: PHP ZipArchive extension is not enabled.\n" .
-                     "Please enable the php_zip extension in your php.ini (XAMPP: enable ;extension=zip), then restart Apache.";
+                    "Please enable the php_zip extension in your php.ini (XAMPP: enable ;extension=zip), then restart Apache.";
                 exit;
             }
             // Prepare ZIP

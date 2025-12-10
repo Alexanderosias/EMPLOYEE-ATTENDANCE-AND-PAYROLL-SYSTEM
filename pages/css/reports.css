@@ -1,14 +1,18 @@
 .reports-content {
       max-width: 900px;
       margin: 0 auto;
-      padding: 1rem 1.5rem;
+      padding: 1rem 1.5rem 1.5rem;
       background: white;
-      border-radius: 0.5rem;
-      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 14px rgb(15 23 42 / 0.18);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
         Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
       color: #1f2937;
       line-height: 1.5;
+    }
+
+    .reports-intro {
+      margin-bottom: 1.5rem;
     }
 
     h2.section-title {
@@ -19,6 +23,48 @@
       border-left: 4px solid #2563eb;
       padding-left: 0.75rem;
       color: #2563eb;
+    }
+
+    .section-description {
+      margin: 0.25rem 0 0;
+      font-size: 0.95rem;
+      color: #6b7280;
+    }
+
+    .reports-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+      .reports-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .report-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      margin-bottom: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .report-filter-item label {
+      font-size: 0.85rem;
+      color: #4b5563;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .report-filter-item input[type="date"] {
+      padding: 0.35rem 0.5rem;
+      border-radius: 0.375rem;
+      border: 1px solid #d1d5db;
+      font-size: 0.9rem;
+      color: #111827;
     }
 
     h3.report-subtitle {
@@ -56,10 +102,14 @@
 
     .report-card {
       background: #f9fafb;
-      border-radius: 0.5rem;
-      padding: 1rem 1.5rem;
-      margin-bottom: 2rem;
+      border-radius: 0.75rem;
+      padding: 1rem 1.5rem 1.25rem;
       box-shadow: 0 1px 4px rgb(0 0 0 / 0.1);
+      border: 1px solid #e5e7eb;
+    }
+
+    #payroll-report.report-card {
+      border-left: 4px solid #2563eb;
     }
 
     .report-card h3 {
@@ -139,29 +189,334 @@
       margin-top: 1rem;
     }
 
+    /* Table-style output for Payroll Register */
+    .report-output.table-output {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      white-space: normal;
+      padding: 0.75rem 0.75rem 0.5rem;
+      overflow: auto;
+      max-height: 320px;
+    }
+
+    .report-summary {
+      font-size: 0.85rem;
+      color: #4b5563;
+      margin-bottom: 0.5rem;
+    }
+
+    .report-loading {
+      font-size: 0.9rem;
+      color: #4b5563;
+    }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .report-table thead {
+      background-color: #eff6ff;
+    }
+
+    .report-table th,
+    .report-table td {
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      color: #111827;
+    }
+
+    .report-table th.numeric,
+    .report-table td.numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .report-table tbody tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    .report-table-total-row {
+      background-color: #f3f4f6;
+      font-weight: 600;
+    }
+
+    .report-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .report-modal.open {
+      display: flex;
+    }
+
+    .report-modal-dialog {
+      background: #ffffff;
+      border-radius: 0.75rem;
+      box-shadow: 0 20px 40px rgb(15 23 42 / 0.35);
+      width: min(210mm, 100% - 3rem);
+      max-height: 90vh;
+      padding: 1rem 1.25rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .report-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .report-modal-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .report-modal-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .report-modal-btn {
+      background-color: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 0.375rem;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .report-modal-btn.secondary {
+      background-color: #6b7280;
+    }
+
+    .report-modal-body {
+      overflow: auto;
+      padding-top: 0.25rem;
+    }
+
+    .register-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 0.5rem;
+      gap: 0.75rem;
+    }
+
+    .register-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .register-subtitle {
+      font-size: 0.85rem;
+      color: #4b5563;
+    }
+
+    .register-meta {
+      font-size: 0.8rem;
+      color: #4b5563;
+      text-align: right;
+    }
+
+    .register-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 2.4fr) repeat(7, minmax(0, 1.1fr)) minmax(0, 1.4fr);
+      column-gap: 0.5rem;
+      row-gap: 0.15rem;
+      padding: 0.15rem 0;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+
+    .register-grid-header {
+      border-bottom: 1px solid #d1d5db;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #4b5563;
+    }
+
+    .register-grid-row {
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .register-grid-row:last-of-type {
+      border-bottom: none;
+    }
+
+    .register-grid-total {
+      margin-top: 0.25rem;
+      font-weight: 600;
+      background-color: #f3f4f6;
+      border-top: 1px solid #d1d5db;
+      border-bottom: 1px solid #d1d5db;
+    }
+
+    .register-emp-name {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .register-emp-meta {
+      font-size: 0.7rem;
+      color: #6b7280;
+    }
+
+    .register-grid .numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .register-status {
+      font-size: 0.75rem;
+      color: #111827;
+    }
+
+    .register-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .register-employee-card {
+      border-radius: 0.5rem;
+      border: 1px solid #e5e7eb;
+      padding: 0.5rem 0.75rem;
+      background: #f9fafb;
+    }
+
+    .register-employee-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .register-amount-rows {
+      margin-top: 0.35rem;
+      display: grid;
+      row-gap: 0.15rem;
+    }
+
+    .register-amount-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.8rem;
+    }
+
+    .register-amount-row .label {
+      color: #4b5563;
+    }
+
+    .register-amount-row .value {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      font-weight: 500;
+      margin-left: 0.75rem;
+    }
+
+    .register-totals-card {
+      margin-top: 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid #d1d5db;
+      background: #e5f2ff;
+      padding: 0.5rem 0.75rem;
+    }
+
+    .register-totals-title {
+      margin: 0 0 0.35rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .register-totals-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      row-gap: 0.15rem;
+      column-gap: 1rem;
+      font-size: 0.8rem;
+    }
+
+    .register-totals-grid .label {
+      color: #374151;
+    }
+
+    .register-totals-grid .value {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
     @media print {
-      body * {
-        visibility: hidden;
+      body {
+        margin: 0;
       }
 
+      /* Hide everything by default to avoid blank printed pages */
+      body * {
+        display: none !important;
+      }
+
+      /* Non-payroll-register reports: print only the selected card */
       .report-card.printable,
       .report-card.printable * {
-        visibility: visible;
+        display: block !important;
       }
 
       .report-card.printable {
-        position: absolute;
-        left: 0;
-        top: 0;
+        position: static;
         width: 100%;
-        max-width: none;
+        max-width: 100%;
         box-shadow: none !important;
         border: none !important;
-        background: white !important;
+        background: #ffffff !important;
         padding: 0 !important;
         margin: 0 !important;
       }
 
+      /* Payroll Register: print only the open modal (A4 width) */
+      #report-modal.open,
+      #report-modal.open * {
+        display: block !important;
+      }
+
+      #report-modal.open {
+        position: static;
+        inset: auto;
+        background: #ffffff;
+      }
+
+      .report-modal-dialog {
+        width: 210mm;
+        max-width: 210mm;
+        margin: 0 auto;
+        box-shadow: none !important;
+        border: none !important;
+      }
+
+      /* Hide interactive controls in print */
+      .report-modal-actions,
       .frequency-select,
       button.generate-btn,
       button.print-btn {

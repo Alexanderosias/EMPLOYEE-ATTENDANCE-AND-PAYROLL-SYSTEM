@@ -136,74 +136,113 @@ require_once '../views/auth.php'; // path relative to the page
 
       <div class="scrollbar-container">
         <article class="reports-content" aria-label="Reports content">
+          <header class="reports-intro">
+            <h2 class="section-title">Reports &amp; Analytics</h2>
+            <p class="section-description">
+              Generate attendance, payroll, and HR reports. Choose a report type below, then click
+              <strong>Generate</strong> to preview or <strong>Print</strong> for a printer-friendly copy.
+            </p>
+          </header>
 
-          <!-- Attendance Reports -->
-          <section class="report-card" id="attendance-report">
-            <h3>Attendance Reports</h3>
-            <select class="frequency-select" aria-label="Select attendance report frequency">
-              <option value="daily">Daily Attendance Report</option>
-              <option value="weekly">Weekly Attendance Report</option>
-              <option value="biweekly">Bi-Monthly / 15-Day Report</option>
-              <option value="monthly">Monthly Attendance Report</option>
-              <option value="yearly">Yearly Attendance Summary</option>
-              <option value="employee">Employee Attendance Record</option>
-            </select>
-            <div class="btn-container">
-              <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
-              <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
-            </div>
-            <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
+          <div class="reports-grid">
+            <!-- Attendance Reports -->
+            <section class="report-card" id="attendance-report">
+              <h3>Attendance Reports</h3>
+              <select class="frequency-select" aria-label="Select attendance report frequency">
+                <option value="daily">Daily Attendance Report</option>
+                <option value="weekly">Weekly Attendance Report</option>
+                <option value="biweekly">Bi-Monthly / 15-Day Report</option>
+                <option value="monthly">Monthly Attendance Report</option>
+                <option value="yearly">Yearly Attendance Summary</option>
+                <option value="employee">Employee Attendance Record</option>
+              </select>
+              <div class="btn-container">
+                <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
+                <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
+              </div>
+              <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
 Select a report and click Generate.
-          </pre>
-          </section>
+              </pre>
+            </section>
 
-          <!-- Payroll Reports -->
-          <section class="report-card" id="payroll-report">
-            <h3>Payroll Reports</h3>
-            <select class="frequency-select" aria-label="Select payroll report frequency">
-              <option value="register">Payroll Register Report</option>
-              <option value="payslip">Payslip Report</option>
-              <option value="overtime">Overtime Report</option>
-              <option value="deductions">Deductions Report</option>
-              <option value="bonus">13th Month / Bonus Report</option>
-              <option value="yearend">Year-End Payroll Summary</option>
-            </select>
-            <div class="btn-container">
-              <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
-              <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
-            </div>
-            <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
+            <!-- Payroll Reports -->
+            <section class="report-card" id="payroll-report">
+              <h3>Payroll Reports</h3>
+              <div class="report-filters" aria-label="Payroll report filters">
+                <div class="report-filter-item">
+                  <label for="payroll-start-date">Start Date
+                    <input type="date" id="payroll-start-date" class="report-start-date" />
+                  </label>
+                </div>
+                <div class="report-filter-item">
+                  <label for="payroll-end-date">End Date
+                    <input type="date" id="payroll-end-date" class="report-end-date" />
+                  </label>
+                </div>
+              </div>
+              <select class="frequency-select" aria-label="Select payroll report frequency">
+                <option value="register">Payroll Register Report</option>
+                <option value="payslip">Payslip Report</option>
+                <option value="overtime">Overtime Report</option>
+                <option value="deductions">Deductions Report</option>
+                <option value="government">Government Contributions Report</option>
+                <option value="tax">Withholding Tax Report</option>
+                <option value="per_employee">Employee Payroll History</option>
+                <option value="per_department">Department / Position Payroll Summary</option>
+                <option value="bonus">13th Month / Bonus Report</option>
+                <option value="yearend">Year-End Payroll Summary</option>
+              </select>
+              <div class="btn-container">
+                <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
+                <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
+              </div>
+              <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
 Select a report and click Generate.
-          </pre>
-          </section>
+              </pre>
+            </section>
 
-          <!-- Other Useful Reports -->
-          <section class="report-card" id="other-report">
-            <h3>Other Useful Reports</h3>
-            <select class="frequency-select" aria-label="Select other report frequency">
-              <option value="leave">Leave Report</option>
-              <option value="deptpos">Department/Position-wise Report</option>
-              <option value="performance">Employee Performance Report (Attendance-Based)</option>
-              <option value="audit">Audit Report</option>
-            </select>
-            <div class="btn-container">
-              <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
-              <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
-            </div>
-            <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
+            <!-- Other Useful Reports -->
+            <section class="report-card" id="other-report">
+              <h3>Other Useful Reports</h3>
+              <select class="frequency-select" aria-label="Select other report frequency">
+                <option value="leave">Leave Report</option>
+                <option value="deptpos">Department/Position-wise Report</option>
+                <option value="performance">Employee Performance Report (Attendance-Based)</option>
+                <option value="audit">Audit Report</option>
+              </select>
+              <div class="btn-container">
+                <button class="generate-btn"><i class="fas fa-file-alt"></i> Generate</button>
+                <button class="print-btn" disabled><i class="fas fa-print"></i> Print</button>
+              </div>
+              <pre class="report-output" aria-live="polite" aria-atomic="true" tabindex="0">
 Select a report and click Generate.
-          </pre>
-          </section>
+              </pre>
+            </section>
+          </div>
 
         </article>
       </div>
     </main>
   </div>
 
+  <div id="report-modal" class="report-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="report-modal-dialog">
+      <div class="report-modal-header">
+        <h3 id="report-modal-title">Payroll Register</h3>
+        <div class="report-modal-actions">
+          <button type="button" id="report-modal-print" class="report-modal-btn">Print</button>
+          <button type="button" id="report-modal-close" class="report-modal-btn secondary">Close</button>
+        </div>
+      </div>
+      <div id="report-modal-body" class="report-modal-body"></div>
+    </div>
+  </div>
+
   <script src="../js/current_time.js"></script>
   <script src="../js/sidebar_update.js"></script>
   <script src="../js/reports.js"></script>
   <script src="../js/auto_logout.js"></script>
+
 </body>
 
 </html>
