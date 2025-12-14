@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 03, 2025 at 09:05 AM
+-- Generation Time: Dec 11, 2025 at 12:55 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -48,7 +48,32 @@ CREATE TABLE `attendance_logs` (
 --
 
 INSERT INTO `attendance_logs` (`id`, `employee_id`, `date`, `time_in`, `time_out`, `expected_start_time`, `expected_end_time`, `status`, `snapshot_path`, `check_type`, `is_synced`, `created_at`, `updated_at`) VALUES
-(81, 53, '2025-12-03', NULL, NULL, '03:30:00', '10:00:00', 'Absent', NULL, 'in', 0, '2025-12-03 06:38:44', '2025-12-03 06:38:44');
+(87, 56, '2025-12-11', '2025-12-11 13:29:48', '2025-12-11 13:35:53', '13:22:00', '17:30:00', 'Undertime', 'uploads/snapshots/snapshot_87_1765431353.png', 'in', 1, '2025-12-11 05:29:48', '2025-12-11 05:35:53'),
+(88, 57, '2025-12-11', '2025-12-11 20:34:00', '2025-12-11 23:30:00', '20:30:00', '22:00:00', 'Present', NULL, 'in', 1, '2025-12-11 11:40:17', '2025-12-11 11:49:07');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `attendance_settings`
+--
+
+CREATE TABLE `attendance_settings` (
+  `id` int(11) NOT NULL,
+  `late_threshold_minutes` int(11) DEFAULT 15,
+  `undertime_threshold_minutes` int(11) DEFAULT 30,
+  `regular_overtime_multiplier` decimal(5,2) DEFAULT 1.25,
+  `holiday_overtime_multiplier` decimal(5,2) DEFAULT 2.00,
+  `auto_ot_minutes` int(11) DEFAULT 30,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `attendance_settings`
+--
+
+INSERT INTO `attendance_settings` (`id`, `late_threshold_minutes`, `undertime_threshold_minutes`, `regular_overtime_multiplier`, `holiday_overtime_multiplier`, `auto_ot_minutes`, `created_at`, `updated_at`) VALUES
+(1, 15, 30, 1.25, 2.00, 30, '2025-11-21 12:44:20', '2025-11-21 12:44:20');
 
 -- --------------------------------------------------------
 
@@ -90,7 +115,8 @@ CREATE TABLE `departments` (
 --
 
 INSERT INTO `departments` (`id`, `name`, `created_at`, `updated_at`) VALUES
-(12, 'Computer Engineering', '2025-11-30 15:35:13', '2025-11-30 15:35:13');
+(12, 'Computer Engineering', '2025-11-30 15:35:13', '2025-11-30 15:35:13'),
+(13, 'Engineering Department', '2025-12-11 02:18:40', '2025-12-11 02:18:40');
 
 -- --------------------------------------------------------
 
@@ -131,7 +157,9 @@ CREATE TABLE `employees` (
 --
 
 INSERT INTO `employees` (`id`, `user_id`, `first_name`, `last_name`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `date_joined`, `department_id`, `job_position_id`, `rate_per_hour`, `rate_per_day`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`, `date_of_birth`) VALUES
-(53, 92, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Father', '2025-12-03', 12, 26, 15.00, 120.00, 10, 10, 10, NULL, '2025-12-02 19:23:45', '2025-12-02 19:28:12', '2003-04-05');
+(56, 97, 'Alvin', 'Marone', 'basey samar', 'Male', 'Single', 'Active', 'marone@gmail.com', '09876543211', 'narlitosi', '09123456789', 'Father', '2025-12-11', 13, 26, 15.00, 120.00, 10, 10, 10, NULL, '2025-12-11 02:21:39', '2025-12-11 11:34:19', '2005-01-02'),
+(57, 98, 'Katrina', 'Cadevero', 'Mudboron, Alangalang Leyte', 'Female', 'Single', 'Active', 'katrina@gmail.com', '09876385422', 'Lina Cadavero', '09827837284', 'Mother', '2025-12-11', 12, 26, 15.00, 120.00, 10, 10, 10, NULL, '2025-12-11 02:48:49', '2025-12-11 02:48:49', '2025-02-04'),
+(58, 99, 'Alexander', 'Osias', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'brother', '2025-12-11', 13, 26, 15.00, 120.00, 9, 10, 9, NULL, '2025-12-11 05:39:39', '2025-12-11 11:51:26', '2013-01-01');
 
 -- --------------------------------------------------------
 
@@ -176,7 +204,7 @@ CREATE TABLE `job_positions` (
 --
 
 INSERT INTO `job_positions` (`id`, `name`, `working_hours_per_day`, `rate_per_day`, `rate_per_hour`, `payroll_frequency`, `created_at`, `updated_at`) VALUES
-(26, 'Instructor', 8.00, 120.00, 15.00, '', '2025-12-01 01:20:56', '2025-12-03 08:02:25'),
+(26, 'Instructor', 8.00, 120.00, 15.00, 'bi-weekly', '2025-12-01 01:20:56', '2025-12-10 08:00:16'),
 (27, 'System Administrator', 8.00, 100.00, 12.50, '', '2025-12-03 07:56:37', '2025-12-03 07:56:37');
 
 -- --------------------------------------------------------
@@ -202,6 +230,44 @@ CREATE TABLE `leave_requests` (
   `admin_feedback` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `leave_requests`
+--
+
+INSERT INTO `leave_requests` (`id`, `employee_id`, `leave_type`, `start_date`, `end_date`, `days`, `reason`, `status`, `deducted_from`, `submitted_at`, `approved_at`, `approved_by`, `proof_path`, `admin_feedback`) VALUES
+(42, 58, 'Sick', '2025-12-14', '2025-12-16', 1, 'Masakit tak ulo boss. Labi na kay mag iiba pat database. Tala ito. ', 'Approved', 'Sick', '2025-12-11 11:47:06', '2025-12-11 11:51:20', 68, 'uploads/proofs/693aaf3aafd17_headache.gif', NULL),
+(43, 58, 'Paid', '2025-12-22', '2025-12-28', 1, 'Mabakasyon la anay ak sir usa ka semana. ', 'Approved', 'Paid', '2025-12-11 11:50:08', '2025-12-11 11:51:26', 68, 'uploads/proofs/693aaff053f2f_cda0805154cbc6b788fa1427c608b0c5--finger-monkeys.jpg', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `overtime_requests`
+--
+
+CREATE TABLE `overtime_requests` (
+  `id` int(11) NOT NULL,
+  `attendance_log_id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL,
+  `date` date NOT NULL,
+  `scheduled_end_time` time NOT NULL,
+  `actual_out_time` datetime NOT NULL,
+  `raw_ot_minutes` int(11) NOT NULL DEFAULT 0,
+  `approved_ot_minutes` int(11) NOT NULL DEFAULT 0,
+  `status` enum('Pending','Approved','Rejected','AutoApproved') DEFAULT 'Pending',
+  `approved_by` int(11) DEFAULT NULL,
+  `approved_at` datetime DEFAULT NULL,
+  `remarks` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `overtime_requests`
+--
+
+INSERT INTO `overtime_requests` (`id`, `attendance_log_id`, `employee_id`, `date`, `scheduled_end_time`, `actual_out_time`, `raw_ot_minutes`, `approved_ot_minutes`, `status`, `approved_by`, `approved_at`, `remarks`, `created_at`, `updated_at`) VALUES
+(4, 88, 57, '2025-12-11', '22:00:00', '2025-12-11 23:30:00', 60, 60, 'Approved', 68, '2025-12-11 19:41:19', 'Ok', '2025-12-11 11:40:48', '2025-12-11 11:41:19');
+
 -- --------------------------------------------------------
 
 --
@@ -221,7 +287,7 @@ CREATE TABLE `password_resets` (
 --
 
 INSERT INTO `password_resets` (`id`, `email`, `code`, `expires_at`, `created_at`) VALUES
-(53, 'alexanderosias123@gmail.com', '976709', '2025-11-21 10:24:22', '2025-11-21 17:14:22');
+(54, 'alexanderosias123@gmail.com', '784432', '2025-12-10 22:50:00', '2025-12-11 05:40:00');
 
 -- --------------------------------------------------------
 
@@ -232,9 +298,12 @@ INSERT INTO `password_resets` (`id`, `email`, `code`, `expires_at`, `created_at`
 CREATE TABLE `payroll` (
   `id` int(11) NOT NULL,
   `employee_id` int(11) NOT NULL,
+  `basic_pay` decimal(12,2) NOT NULL DEFAULT 0.00,
   `payroll_period_start` date NOT NULL,
   `payroll_period_end` date NOT NULL,
   `gross_pay` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `overtime_pay` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `holiday_pay` decimal(12,2) NOT NULL DEFAULT 0.00,
   `philhealth_deduction` decimal(10,2) DEFAULT 0.00,
   `sss_deduction` decimal(10,2) DEFAULT 0.00,
   `pagibig_deduction` decimal(10,2) DEFAULT 0.00,
@@ -246,6 +315,63 @@ CREATE TABLE `payroll` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `payroll`
+--
+
+INSERT INTO `payroll` (`id`, `employee_id`, `basic_pay`, `payroll_period_start`, `payroll_period_end`, `gross_pay`, `overtime_pay`, `holiday_pay`, `philhealth_deduction`, `sss_deduction`, `pagibig_deduction`, `other_deductions`, `paid_status`, `payment_date`, `created_at`, `updated_at`) VALUES
+(5, 56, 360.00, '2025-12-01', '2025-12-14', 480.00, 0.00, 120.00, 125.00, 125.00, 7.50, 22.25, 'Paid', '2025-12-11', '2025-12-11 11:36:06', '2025-12-11 11:36:11'),
+(6, 57, 360.00, '2025-12-01', '2025-12-14', 360.00, 0.00, 0.00, 125.00, 125.00, 7.50, 10.25, 'Paid', '2025-12-11', '2025-12-11 11:36:06', '2025-12-11 11:36:14'),
+(7, 58, 360.00, '2025-12-01', '2025-12-14', 360.00, 0.00, 0.00, 125.00, 125.00, 7.50, 10.25, 'Unpaid', NULL, '2025-12-11 11:36:07', '2025-12-11 11:36:07');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `payroll_audit`
+--
+
+CREATE TABLE `payroll_audit` (
+  `id` int(11) NOT NULL,
+  `action` varchar(50) NOT NULL,
+  `period_start` date NOT NULL,
+  `period_end` date NOT NULL,
+  `role_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `payroll_audit`
+--
+
+INSERT INTO `payroll_audit` (`id`, `action`, `period_start`, `period_end`, `role_id`, `created_at`) VALUES
+(8, 'finalize_payroll', '2025-12-01', '2025-12-14', 26, '2025-12-10 13:43:47'),
+(9, 'finalize_payroll', '2025-12-01', '2025-12-14', 26, '2025-12-11 11:36:07');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `payroll_settings`
+--
+
+CREATE TABLE `payroll_settings` (
+  `id` int(11) NOT NULL,
+  `regular_holiday_rate` decimal(5,2) DEFAULT 2.00,
+  `regular_holiday_ot_rate` decimal(5,2) DEFAULT 2.60,
+  `special_nonworking_rate` decimal(5,2) DEFAULT 1.30,
+  `special_nonworking_ot_rate` decimal(5,2) DEFAULT 1.69,
+  `special_working_rate` decimal(5,2) DEFAULT 1.30,
+  `special_working_ot_rate` decimal(5,2) DEFAULT 1.69,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `payroll_settings`
+--
+
+INSERT INTO `payroll_settings` (`id`, `regular_holiday_rate`, `regular_holiday_ot_rate`, `special_nonworking_rate`, `special_nonworking_ot_rate`, `special_working_rate`, `special_working_ot_rate`, `created_at`, `updated_at`) VALUES
+(1, 2.00, 2.60, 1.30, 1.69, 1.30, 1.69, '2025-11-21 12:44:20', '2025-11-21 12:44:20');
 
 -- --------------------------------------------------------
 
@@ -266,7 +392,9 @@ CREATE TABLE `qr_codes` (
 --
 
 INSERT INTO `qr_codes` (`id`, `employee_id`, `qr_data`, `qr_image_path`, `generated_at`) VALUES
-(56, 53, 'ID:53|First:Alexander|Last:Osias|Position:Instructor|Joined:2025-12-03', 'qrcodes/AlexanderOsias.png', '2025-12-02 19:28:12');
+(65, 57, 'First:Katrina|Last:Cadevero|Position:Instructor|Joined:2025-12-11', 'qrcodes/KatrinaCadevero.png', '2025-12-11 02:48:49'),
+(66, 58, 'First:Alexander|Last:Osias|Position:Instructor|Joined:2025-12-11', 'qrcodes/AlexanderOsias_58_1.png', '2025-12-11 05:39:40'),
+(68, 56, 'First:Alvin|Last:Marone|Position:Instructor|Joined:2025-12-11', 'qrcodes/AlvinMarone.png', '2025-12-11 11:34:19');
 
 -- --------------------------------------------------------
 
@@ -292,9 +420,9 @@ CREATE TABLE `schedules` (
 --
 
 INSERT INTO `schedules` (`id`, `employee_id`, `day_of_week`, `shift_name`, `start_time`, `end_time`, `break_minutes`, `is_working`, `created_at`, `updated_at`) VALUES
-(87, 53, 'Wednesday', 'PE', '03:30:00', '05:00:00', 0, 1, '2025-12-02 19:35:16', '2025-12-02 19:35:16'),
-(88, 53, 'Wednesday', 'ITP 101 - Lab 3', '06:00:00', '07:30:00', 0, 1, '2025-12-02 19:35:44', '2025-12-02 19:35:44'),
-(89, 53, 'Wednesday', 'Ethics', '07:30:00', '10:00:00', 0, 1, '2025-12-02 19:36:08', '2025-12-02 19:36:08');
+(100, 56, 'Thursday', 'Ethics', '13:22:00', '17:30:00', 0, 1, '2025-12-11 02:22:55', '2025-12-11 02:22:55'),
+(101, 58, 'Monday', 'Regular Shift', '08:30:00', '17:30:00', 0, 1, '2025-12-11 11:35:27', '2025-12-11 11:35:27'),
+(102, 57, 'Thursday', 'Night Shift', '20:30:00', '22:00:00', 0, 1, '2025-12-11 11:40:12', '2025-12-11 11:40:12');
 
 -- --------------------------------------------------------
 
@@ -333,6 +461,14 @@ CREATE TABLE `snapshots` (
   `captured_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `snapshots`
+--
+
+INSERT INTO `snapshots` (`id`, `attendance_log_id`, `image_path`, `captured_at`) VALUES
+(79, 87, 'uploads/snapshots/snapshot_87_1765430988.png', '2025-12-11 05:29:48'),
+(80, 87, 'uploads/snapshots/snapshot_87_1765431353.png', '2025-12-11 05:35:53');
+
 -- --------------------------------------------------------
 
 --
@@ -348,77 +484,12 @@ CREATE TABLE `special_events` (
   `description` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
 --
--- Table structure for table `attendance_settings`
+-- Dumping data for table `special_events`
 --
 
-CREATE TABLE `attendance_settings` (
-  `id` int(11) NOT NULL,
-  `late_threshold_minutes` int(11) DEFAULT 15,
-  `undertime_threshold_minutes` int(11) DEFAULT 30,
-  `regular_overtime_multiplier` decimal(5,2) DEFAULT 1.25,
-  `holiday_overtime_multiplier` decimal(5,2) DEFAULT 2.00,
-  `auto_ot_minutes` int(11) DEFAULT 30,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `attendance_settings`
---
-
-INSERT INTO `attendance_settings` (`id`, `late_threshold_minutes`, `undertime_threshold_minutes`, `regular_overtime_multiplier`, `holiday_overtime_multiplier`, `auto_ot_minutes`, `created_at`, `updated_at`) VALUES
-(1, 15, 30, 1.25, 2.00, 30, '2025-11-21 12:44:20', '2025-11-21 12:44:20');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `overtime_requests`
---
-
-CREATE TABLE `overtime_requests` (
-  `id` int(11) NOT NULL,
-  `attendance_log_id` int(11) NOT NULL,
-  `employee_id` int(11) NOT NULL,
-  `date` date NOT NULL,
-  `scheduled_end_time` time NOT NULL,
-  `actual_out_time` datetime NOT NULL,
-  `raw_ot_minutes` int(11) NOT NULL DEFAULT 0,
-  `approved_ot_minutes` int(11) NOT NULL DEFAULT 0,
-  `status` enum('Pending','Approved','Rejected','AutoApproved') DEFAULT 'Pending',
-  `approved_by` int(11) DEFAULT NULL,
-  `approved_at` datetime DEFAULT NULL,
-  `remarks` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `payroll_settings`
---
-
-CREATE TABLE `payroll_settings` (
-  `id` int(11) NOT NULL,
-  `regular_holiday_rate` decimal(5,2) DEFAULT 2.00,
-  `regular_holiday_ot_rate` decimal(5,2) DEFAULT 2.60,
-  `special_nonworking_rate` decimal(5,2) DEFAULT 1.30,
-  `special_nonworking_ot_rate` decimal(5,2) DEFAULT 1.69,
-  `special_working_rate` decimal(5,2) DEFAULT 1.30,
-  `special_working_ot_rate` decimal(5,2) DEFAULT 1.69,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `payroll_settings`
---
-
-INSERT INTO `payroll_settings` (`id`, `regular_holiday_rate`, `regular_holiday_ot_rate`, `special_nonworking_rate`, `special_nonworking_ot_rate`, `special_working_rate`, `special_working_ot_rate`, `created_at`, `updated_at`) VALUES
-(1, 2.00, 2.60, 1.30, 1.69, 1.30, 1.69, '2025-11-21 12:44:20', '2025-11-21 12:44:20');
+INSERT INTO `special_events` (`id`, `name`, `start_date`, `end_date`, `paid`, `description`) VALUES
+(8, 'Emergency Suspension', '2025-12-11', '2025-12-11', 'yes', 'Emergency suspension due to earthquake.');
 
 -- --------------------------------------------------------
 
@@ -454,6 +525,26 @@ CREATE TABLE `tax_deduction_settings` (
 
 INSERT INTO `tax_deduction_settings` (`id`, `philhealth_rate`, `philhealth_min`, `philhealth_max`, `philhealth_split_5050`, `pagibig_threshold`, `pagibig_employee_low_rate`, `pagibig_employee_high_rate`, `pagibig_employer_rate`, `sss_msc_min`, `sss_msc_max`, `sss_er_contribution`, `sss_ee_contribution`, `income_tax_rate`, `tax_calculation_rule`, `custom_tax_formula`, `auto_apply_deductions`, `created_at`, `updated_at`) VALUES
 (1, 5.00, 500.00, 5000.00, 1, 1500.00, 1.00, 2.00, 2.00, 10000, 20000, 1160.00, 450.00, 10.00, 'flat', NULL, 1, '2025-11-21 12:44:20', '2025-11-21 12:44:20');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `thirteenth_month_payroll`
+--
+
+CREATE TABLE `thirteenth_month_payroll` (
+  `id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL,
+  `year` int(11) NOT NULL,
+  `period_start` date NOT NULL,
+  `period_end` date NOT NULL,
+  `total_basic` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `thirteenth_amount` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `paid_status` enum('Paid','Unpaid') NOT NULL DEFAULT 'Unpaid',
+  `payment_date` date DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -508,7 +599,10 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `phone_number`, `address`, `department_id`, `password_hash`, `is_active`, `created_at`, `updated_at`, `avatar_path`, `roles`) VALUES
 (68, 'Admin', 'Admin', 'superadmin@gmail.com', '09305909175', 'Tacloban City', 12, '$2y$10$eFmGsmOld4JDMgkJunzcx.IQo6gPwS8CvtMecl0rY21mm30oZgCYy', 1, '2025-11-25 09:15:54', '2025-12-01 09:04:35', 'uploads/avatars/user_68_1764516943.png', '[\"head_admin\"]'),
-(92, 'Alexander', 'Osias', 'alexanderosias123@gmail.com', '09305909175', 'So. Bugho', 12, '$2y$10$P.8LgZf/O29cglAanvyD0OFSlUaVwMwz1a3Gi3HWU3z8XWgUmSYca', 1, '2025-12-02 19:23:45', '2025-12-02 19:28:12', NULL, '[\"employee\"]');
+(94, 'admin', 'admin', 'admin@gmail.com', '09305909175', 'So. Bugho\r\nBarangay Dampigan', 12, '$2y$10$CR/6WFBZwGu5HfvkwIf.Q.IY7S1WlYbxC9VXBdSKfdBv6ElU5wNOO', 1, '2025-12-11 01:26:55', '2025-12-11 11:52:11', NULL, '[\"admin\"]'),
+(97, 'Alvin', 'Marone', 'marone@gmail.com', '09876543211', 'basey samar', 13, '$2y$10$VP3KmauW/f3fZR515JJ/xOIWBTRA1upRsQ0LtGiD0ZN6qYUppLYE.', 1, '2025-12-11 02:21:39', '2025-12-11 11:34:19', NULL, '[\"employee\"]'),
+(98, 'Katrina', 'Cadevero', 'katrina@gmail.com', '09876385422', 'Mudboron, Alangalang Leyte', 12, '$2y$10$lh3wX7IbKyHRXWvVGzJPtODwNqxyRYXNfC2PCZAtdJNTiEbveNnGm', 1, '2025-12-11 02:48:49', '2025-12-11 02:50:01', NULL, '[\"employee\"]'),
+(99, 'Alexander', 'Osias', 'alexanderosias123@gmail.com', '09305909175', 'So. Bugho', 13, '$2y$10$5unqPdo6h5WT/vgfTOXZtedgu5OvuLOCmxHtOLK8Lnppq4cWl4ua6', 1, '2025-12-11 05:39:39', '2025-12-11 05:39:39', NULL, '[\"employee\"]');
 
 --
 -- Indexes for dumped tables
@@ -522,6 +616,12 @@ ALTER TABLE `attendance_logs`
   ADD KEY `idx_employee_date` (`employee_id`,`date`),
   ADD KEY `idx_date` (`date`),
   ADD KEY `idx_status` (`status`);
+
+--
+-- Indexes for table `attendance_settings`
+--
+ALTER TABLE `attendance_settings`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `backup_restore_settings`
@@ -574,6 +674,14 @@ ALTER TABLE `leave_requests`
   ADD KEY `approved_by` (`approved_by`);
 
 --
+-- Indexes for table `overtime_requests`
+--
+ALTER TABLE `overtime_requests`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_ot_attendance` (`attendance_log_id`),
+  ADD KEY `idx_ot_employee_date` (`employee_id`,`date`);
+
+--
 -- Indexes for table `password_resets`
 --
 ALTER TABLE `password_resets`
@@ -589,6 +697,20 @@ ALTER TABLE `payroll`
   ADD KEY `idx_employee_period` (`employee_id`,`payroll_period_start`),
   ADD KEY `idx_period` (`payroll_period_start`,`payroll_period_end`),
   ADD KEY `idx_paid_status` (`paid_status`);
+
+--
+-- Indexes for table `payroll_audit`
+--
+ALTER TABLE `payroll_audit`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_period` (`period_start`,`period_end`),
+  ADD KEY `idx_role` (`role_id`);
+
+--
+-- Indexes for table `payroll_settings`
+--
+ALTER TABLE `payroll_settings`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `qr_codes`
@@ -626,30 +748,18 @@ ALTER TABLE `special_events`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `attendance_settings`
---
-ALTER TABLE `attendance_settings`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `overtime_requests`
---
-ALTER TABLE `overtime_requests`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_ot_attendance` (`attendance_log_id`),
-  ADD KEY `idx_ot_employee_date` (`employee_id`,`date`);
-
---
--- Indexes for table `payroll_settings`
---
-ALTER TABLE `payroll_settings`
-  ADD PRIMARY KEY (`id`);
-
---
 -- Indexes for table `tax_deduction_settings`
 --
 ALTER TABLE `tax_deduction_settings`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `thirteenth_month_payroll`
+--
+ALTER TABLE `thirteenth_month_payroll`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_emp_year` (`employee_id`,`year`),
+  ADD KEY `idx_year_status` (`year`,`paid_status`);
 
 --
 -- Indexes for table `time_date_settings`
@@ -674,7 +784,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `attendance_logs`
 --
 ALTER TABLE `attendance_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=89;
+
+--
+-- AUTO_INCREMENT for table `attendance_settings`
+--
+ALTER TABLE `attendance_settings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `backup_restore_settings`
@@ -686,19 +802,19 @@ ALTER TABLE `backup_restore_settings`
 -- AUTO_INCREMENT for table `departments`
 --
 ALTER TABLE `departments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
 
 --
 -- AUTO_INCREMENT for table `holidays`
 --
 ALTER TABLE `holidays`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `job_positions`
@@ -710,31 +826,49 @@ ALTER TABLE `job_positions`
 -- AUTO_INCREMENT for table `leave_requests`
 --
 ALTER TABLE `leave_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+
+--
+-- AUTO_INCREMENT for table `overtime_requests`
+--
+ALTER TABLE `overtime_requests`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
 --
 ALTER TABLE `password_resets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
 
 --
 -- AUTO_INCREMENT for table `payroll`
 --
 ALTER TABLE `payroll`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT for table `payroll_audit`
+--
+ALTER TABLE `payroll_audit`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `payroll_settings`
+--
+ALTER TABLE `payroll_settings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT for table `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=103;
 
 --
 -- AUTO_INCREMENT for table `school_settings`
@@ -746,37 +880,25 @@ ALTER TABLE `school_settings`
 -- AUTO_INCREMENT for table `snapshots`
 --
 ALTER TABLE `snapshots`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
 
 --
 -- AUTO_INCREMENT for table `special_events`
 --
 ALTER TABLE `special_events`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
-
---
--- AUTO_INCREMENT for table `attendance_settings`
---
-ALTER TABLE `attendance_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `overtime_requests`
---
-ALTER TABLE `overtime_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `payroll_settings`
---
-ALTER TABLE `payroll_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `tax_deduction_settings`
 --
 ALTER TABLE `tax_deduction_settings`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `thirteenth_month_payroll`
+--
+ALTER TABLE `thirteenth_month_payroll`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `time_date_settings`
@@ -788,7 +910,7 @@ ALTER TABLE `time_date_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=93;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
 
 --
 -- Constraints for dumped tables
@@ -809,18 +931,18 @@ ALTER TABLE `employees`
   ADD CONSTRAINT `fk_employees_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `overtime_requests`
---
-ALTER TABLE `overtime_requests`
-  ADD CONSTRAINT `fk_ot_attendance` FOREIGN KEY (`attendance_log_id`) REFERENCES `attendance_logs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_ot_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
 -- Constraints for table `leave_requests`
 --
 ALTER TABLE `leave_requests`
   ADD CONSTRAINT `leave_requests_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `leave_requests_ibfk_2` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `overtime_requests`
+--
+ALTER TABLE `overtime_requests`
+  ADD CONSTRAINT `fk_ot_attendance` FOREIGN KEY (`attendance_log_id`) REFERENCES `attendance_logs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_ot_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `payroll`
