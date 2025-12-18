@@ -35,7 +35,7 @@ $action = $_GET['action'] ?? '';
 switch ($action) {
   case 'list_departments':
     try {
-      $query = "SELECT id, name FROM departments ORDER BY name ASC";
+      $query = "SELECT department_id AS id, department_name AS name FROM departments ORDER BY department_name ASC";
       $result = $mysqli->query($query);
       if (!$result) {
         throw new Exception('Query failed: ' . $mysqli->error);

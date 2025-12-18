@@ -27,14 +27,14 @@ try {
             $holidays = [];
             $events = [];
             // Fetch holidays (fixed bind_param: 6 params for 6 placeholders)
-            $stmt = $mysqli->prepare("SELECT id, name, type, start_date, end_date, 'holidays' as `table` FROM holidays WHERE (? = '' OR name LIKE ?) AND (? = '' OR start_date >= ?) AND (? = '' OR end_date <= ?) AND (? = 'all' OR type = ?)");
+            $stmt = $mysqli->prepare("SELECT holiday_id AS id, holiday_name AS name, holiday_type AS type, start_date, end_date, 'holidays' as `table` FROM holidays WHERE (? = '' OR holiday_name LIKE ?) AND (? = '' OR start_date >= ?) AND (? = '' OR end_date <= ?) AND (? = 'all' OR holiday_type = ?)");
             $searchParam = "%$search%";
             $stmt->bind_param('ssssssss', $search, $searchParam, $startDate, $startDate, $endDate, $endDate, $type, $type);
             $stmt->execute();
             $holidays = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             $stmt->close();
             // Fetch events (fixed bind_param: 6 params for 6 placeholders)
-            $stmt = $mysqli->prepare("SELECT id, name, start_date, end_date, paid, description, 'special_events' as `table` FROM special_events WHERE (? = '' OR name LIKE ?) AND (? = '' OR start_date >= ?) AND (? = '' OR end_date <= ?) AND (? = 'all' OR paid = ?)");
+            $stmt = $mysqli->prepare("SELECT event_id AS id, event_name AS name, start_date, end_date, paid, description, 'special_events' as `table` FROM special_events WHERE (? = '' OR event_name LIKE ?) AND (? = '' OR start_date >= ?) AND (? = '' OR end_date <= ?) AND (? = 'all' OR paid = ?)");
             $stmt->bind_param('ssssssss', $search, $searchParam, $startDate, $startDate, $endDate, $endDate, $type, $type);
             $stmt->execute();
             $events = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -53,7 +53,7 @@ try {
             if (!in_array($type, ['regular', 'special_non_working', 'special_working'])) throw new Exception('Invalid type.');
             if ($startDate > $endDate) throw new Exception('Invalid dates.');
 
-            $stmt = $mysqli->prepare("INSERT INTO holidays (name, type, start_date, end_date) VALUES (?, ?, ?, ?)");
+            $stmt = $mysqli->prepare("INSERT INTO holidays (holiday_name, holiday_type, start_date, end_date) VALUES (?, ?, ?, ?)");
             $stmt->bind_param('ssss', $name, $type, $startDate, $endDate);
             $stmt->execute();
             $id = $mysqli->insert_id;
@@ -72,7 +72,7 @@ try {
             if (!in_array($paid, ['yes', 'no', 'partial'])) throw new Exception('Invalid paid status.');
             if ($startDate > $endDate) throw new Exception('Invalid dates.');
 
-            $stmt = $mysqli->prepare("INSERT INTO special_events (name, start_date, end_date, paid, description) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $mysqli->prepare("INSERT INTO special_events (event_name, start_date, end_date, paid, description) VALUES (?, ?, ?, ?, ?)");
             $stmt->bind_param('sssss', $name, $startDate, $endDate, $paid, $description);
             $stmt->execute();
             $id = $mysqli->insert_id;
@@ -82,7 +82,7 @@ try {
 
         case 'view_holiday':
             $id = (int)$_GET['id'];
-            $stmt = $mysqli->prepare("SELECT * FROM holidays WHERE id = ?");
+            $stmt = $mysqli->prepare("SELECT holiday_id AS id, holiday_name AS name, holiday_type AS type, start_date, end_date FROM holidays WHERE holiday_id = ?");
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $result = $stmt->get_result()->fetch_assoc();
@@ -93,7 +93,7 @@ try {
 
         case 'view_event':
             $id = (int)$_GET['id'];
-            $stmt = $mysqli->prepare("SELECT * FROM special_events WHERE id = ?");
+            $stmt = $mysqli->prepare("SELECT event_id AS id, event_name AS name, start_date, end_date, paid, description FROM special_events WHERE event_id = ?");
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $result = $stmt->get_result()->fetch_assoc();
@@ -113,7 +113,7 @@ try {
             if (!in_array($type, ['regular', 'special_non_working', 'special_working'])) throw new Exception('Invalid type.');
             if ($startDate > $endDate) throw new Exception('Invalid dates.');
 
-            $stmt = $mysqli->prepare("UPDATE holidays SET name = ?, type = ?, start_date = ?, end_date = ? WHERE id = ?");
+            $stmt = $mysqli->prepare("UPDATE holidays SET holiday_name = ?, holiday_type = ?, start_date = ?, end_date = ? WHERE holiday_id = ?");
             $stmt->bind_param('ssssi', $name, $type, $startDate, $endDate, $id);
             $stmt->execute();
             $affected = $stmt->affected_rows;
@@ -134,7 +134,7 @@ try {
             if (!in_array($paid, ['yes', 'no', 'partial'])) throw new Exception('Invalid paid status.');
             if ($startDate > $endDate) throw new Exception('Invalid dates.');
 
-            $stmt = $mysqli->prepare("UPDATE special_events SET name = ?, start_date = ?, end_date = ?, paid = ?, description = ? WHERE id = ?");
+            $stmt = $mysqli->prepare("UPDATE special_events SET event_name = ?, start_date = ?, end_date = ?, paid = ?, description = ? WHERE event_id = ?");
             $stmt->bind_param('sssssi', $name, $startDate, $endDate, $paid, $description, $id);
             $stmt->execute();
             $affected = $stmt->affected_rows;
@@ -145,7 +145,7 @@ try {
 
         case 'delete_holiday':
             $id = (int)$_GET['id'];
-            $stmt = $mysqli->prepare("DELETE FROM holidays WHERE id = ?");
+            $stmt = $mysqli->prepare("DELETE FROM holidays WHERE holiday_id = ?");
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $affected = $stmt->affected_rows;
@@ -156,7 +156,7 @@ try {
 
         case 'delete_event':
             $id = (int)$_GET['id'];
-            $stmt = $mysqli->prepare("DELETE FROM special_events WHERE id = ?");
+            $stmt = $mysqli->prepare("DELETE FROM special_events WHERE event_id = ?");
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $affected = $stmt->affected_rows;

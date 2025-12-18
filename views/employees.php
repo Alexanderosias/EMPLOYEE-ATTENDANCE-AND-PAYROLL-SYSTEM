@@ -185,12 +185,18 @@ switch ($action) {
     case 'list_employees':
         try {
             $query = "
-                SELECT e.*, d.name AS department_name, jp.name AS position_name,
+                SELECT e.employee_id AS id, e.user_id, e.first_name, e.last_name, e.department_id, 
+                       e.position_id AS job_position_id, e.hire_date AS date_joined, e.address, e.gender, 
+                       e.marital_status, e.status, e.email, e.contact_number, e.emergency_contact_name, 
+                       e.emergency_contact_phone, e.emergency_contact_relationship, e.rate_per_hour, 
+                       e.rate_per_day, e.annual_paid_leave_days, e.annual_unpaid_leave_days, 
+                       e.annual_sick_leave_days, e.avatar_path, e.created_at, e.updated_at, e.date_of_birth,
+                       d.department_name AS department_name, jp.position_name AS position_name,
                        qc.qr_data, qc.qr_image_path
                 FROM employees e
-                LEFT JOIN departments d ON e.department_id = d.id
-                LEFT JOIN job_positions jp ON e.job_position_id = jp.id
-                LEFT JOIN qr_codes qc ON e.id = qc.employee_id
+                LEFT JOIN departments d ON e.department_id = d.department_id
+                LEFT JOIN job_positions jp ON e.position_id = jp.position_id
+                LEFT JOIN qr_codes qc ON e.employee_id = qc.employee_id
                 ORDER BY e.last_name, e.first_name
             ";
             $result = $mysqli->query($query);
@@ -208,7 +214,7 @@ switch ($action) {
             $todayDow = date('l');
 
             // Attendance logs for today: track whether employee has timed in and/or out
-            if ($stmtAtt = $mysqli->prepare("SELECT employee_id, time_in, time_out FROM attendance_logs WHERE date = ?")) {
+            if ($stmtAtt = $mysqli->prepare("SELECT employee_id, time_in, time_out FROM attendance_logs WHERE attendance_date = ?")) {
                 $stmtAtt->bind_param('s', $today);
                 if ($stmtAtt->execute()) {
                     $attRes = $stmtAtt->get_result();
@@ -246,7 +252,7 @@ switch ($action) {
                 $stmtLeave->close();
             }
 
-            if ($stmtSched = $mysqli->prepare("SELECT DISTINCT employee_id FROM schedules WHERE day_of_week = ? AND is_working = 1")) {
+            if ($stmtSched = $mysqli->prepare("SELECT DISTINCT employee_id FROM employee_schedules WHERE day_of_week = ? AND is_working = 1")) {
                 $stmtSched->bind_param('s', $todayDow);
                 if ($stmtSched->execute()) {
                     $schedRes = $stmtSched->get_result();
@@ -331,13 +337,19 @@ switch ($action) {
         }
         try {
             $query = "
-                SELECT e.*, d.name AS department_name, jp.name AS position_name,
+                SELECT e.employee_id AS id, e.user_id, e.first_name, e.last_name, e.department_id, 
+                       e.position_id AS job_position_id, e.hire_date AS date_joined, e.address, e.gender, 
+                       e.marital_status, e.status, e.email, e.contact_number, e.emergency_contact_name, 
+                       e.emergency_contact_phone, e.emergency_contact_relationship, e.rate_per_hour, 
+                       e.rate_per_day, e.annual_paid_leave_days, e.annual_unpaid_leave_days, 
+                       e.annual_sick_leave_days, e.avatar_path, e.created_at, e.updated_at, e.date_of_birth,
+                       d.department_name AS department_name, jp.position_name AS position_name,
                        qc.qr_data, qc.qr_image_path
                 FROM employees e
-                LEFT JOIN departments d ON e.department_id = d.id
-                LEFT JOIN job_positions jp ON e.job_position_id = jp.id
-                LEFT JOIN qr_codes qc ON e.id = qc.employee_id
-                WHERE e.id = ?
+                LEFT JOIN departments d ON e.department_id = d.department_id
+                LEFT JOIN job_positions jp ON e.position_id = jp.position_id
+                LEFT JOIN qr_codes qc ON e.employee_id = qc.employee_id
+                WHERE e.employee_id = ?
             ";
             $stmt = $mysqli->prepare($query);
             if (!$stmt) {
@@ -427,9 +439,18 @@ switch ($action) {
             $annual_unpaid_leave_days = (int)($_POST['annual_unpaid_leave_days'] ?? 5);
             $annual_sick_leave_days = (int)($_POST['annual_sick_leave_days'] ?? 10);
 
-            if (empty($first_name) || empty($last_name) || empty($address) || empty($gender) || empty($email) || empty($contact_number) || empty($emergency_contact_name) || empty($emergency_contact_phone) || empty($emergency_contact_relationship) || $department_id <= 0 || $job_position_id <= 0) {
-                throw new Exception('All required fields must be provided.');
-            }
+            // Detailed validation with specific error messages
+            if (empty($first_name)) throw new Exception('First name is required.');
+            if (empty($last_name)) throw new Exception('Last name is required.');
+            if (empty($address)) throw new Exception('Address is required.');
+            if (empty($gender)) throw new Exception('Gender is required.');
+            if (empty($email)) throw new Exception('Email is required.');
+            if (empty($contact_number)) throw new Exception('Contact number is required.');
+            if (empty($emergency_contact_name)) throw new Exception('Emergency contact name is required.');
+            if (empty($emergency_contact_phone)) throw new Exception('Emergency contact phone is required.');
+            if (empty($emergency_contact_relationship)) throw new Exception('Emergency contact relationship is required.');
+            if ($department_id <= 0) throw new Exception('Department is required.');
+            if ($job_position_id <= 0) throw new Exception('Job position is required.');
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 throw new Exception('Invalid email format.');
             }
@@ -437,8 +458,8 @@ switch ($action) {
                 throw new Exception('Phone numbers must be 11 digits.');
             }
 
-            // Check if email exists in users or employees
-            $check_stmt = $mysqli->prepare("SELECT id FROM users WHERE email = ? UNION SELECT id FROM employees WHERE email = ?");
+            // Check if email exists in users_employee or employees
+            $check_stmt = $mysqli->prepare("SELECT id FROM users_employee WHERE email = ? UNION SELECT employee_id FROM employees WHERE email = ?");
             $check_stmt->bind_param('ss', $email, $email);
             $check_stmt->execute();
             if ($check_stmt->get_result()->num_rows > 0) {
@@ -447,7 +468,7 @@ switch ($action) {
             $check_stmt->close();
 
             // Validate department and position
-            $dept_check = $mysqli->prepare("SELECT id FROM departments WHERE id = ?");
+            $dept_check = $mysqli->prepare("SELECT department_id FROM departments WHERE department_id = ?");
             $dept_check->bind_param('i', $department_id);
             $dept_check->execute();
             if ($dept_check->get_result()->num_rows === 0) {
@@ -455,7 +476,7 @@ switch ($action) {
             }
             $dept_check->close();
 
-            $pos_check = $mysqli->prepare("SELECT id, rate_per_hour, rate_per_day FROM job_positions WHERE id = ?");
+            $pos_check = $mysqli->prepare("SELECT position_id, rate_per_hour, rate_per_day FROM job_positions WHERE position_id = ?");
             $pos_check->bind_param('i', $job_position_id);
             $pos_check->execute();
             $pos_result = $pos_check->get_result();
@@ -484,9 +505,9 @@ switch ($action) {
                 }
             }
 
-            // Insert into users first
+            // Insert into users_employee first
             $password_hash = password_hash('12345678', PASSWORD_DEFAULT);
-            $user_stmt = $mysqli->prepare("INSERT INTO users (first_name, last_name, email, phone_number, address, department_id, roles, password_hash) VALUES (?, ?, ?, ?, ?, ?, '[\"employee\"]', ?)");
+            $user_stmt = $mysqli->prepare("INSERT INTO users_employee (first_name, last_name, email, phone_number, address, department_id, roles, password_hash) VALUES (?, ?, ?, ?, ?, ?, '[\"employee\"]', ?)");
             $user_stmt->bind_param('sssssis', $first_name, $last_name, $email, $contact_number, $address, $department_id, $password_hash);
             if (!$user_stmt->execute()) {
                 throw new Exception('Failed to create user account.');
@@ -512,7 +533,7 @@ switch ($action) {
             $query = "INSERT INTO employees (
             user_id, first_name, last_name, address, gender, marital_status, status, email,
             contact_number, emergency_contact_name, emergency_contact_phone,
-            emergency_contact_relationship, date_of_birth, date_joined, department_id, job_position_id,
+            emergency_contact_relationship, date_of_birth, hire_date, department_id, position_id,
             rate_per_hour, rate_per_day, annual_paid_leave_days, annual_unpaid_leave_days,
             annual_sick_leave_days, avatar_path
             ) VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -554,11 +575,12 @@ switch ($action) {
 
             // Generate QR
             $fetch_query = "
-                SELECT e.*, d.name AS department_name, jp.name AS position_name
+                SELECT e.employee_id AS id, e.first_name, e.last_name, e.position_id AS job_position_id,
+                       e.hire_date AS date_joined, d.department_name, jp.position_name
                 FROM employees e
-                LEFT JOIN departments d ON e.department_id = d.id
-                LEFT JOIN job_positions jp ON e.job_position_id = jp.id
-                WHERE e.id = ?
+                LEFT JOIN departments d ON e.department_id = d.department_id
+                LEFT JOIN job_positions jp ON e.position_id = jp.position_id
+                WHERE e.employee_id = ?
             ";
             $fetch_stmt = $mysqli->prepare($fetch_query);
             $fetch_stmt->bind_param('i', $new_id);
@@ -614,16 +636,16 @@ switch ($action) {
         }
         $mysqli->begin_transaction();
         try {
-            // Get current employee and user_id
+            // Get current employee and user_id (systemintegration schema)
             $current_stmt = $mysqli->prepare("
-                SELECT e.*, u.id AS user_id, d.name AS department_name, jp.name AS position_name,
+                SELECT e.*, u.id AS user_id, d.department_name AS department_name, jp.position_name AS position_name,
                        qc.qr_data, qc.qr_image_path
                 FROM employees e
-                LEFT JOIN users u ON e.user_id = u.id
-                LEFT JOIN departments d ON e.department_id = d.id
-                LEFT JOIN job_positions jp ON e.job_position_id = jp.id
-                LEFT JOIN qr_codes qc ON e.id = qc.employee_id
-                WHERE e.id = ?
+                LEFT JOIN users_employee u ON e.user_id = u.id
+                LEFT JOIN departments d ON e.department_id = d.department_id
+                LEFT JOIN job_positions jp ON e.position_id = jp.position_id
+                LEFT JOIN qr_codes qc ON e.employee_id = qc.employee_id
+                WHERE e.employee_id = ?
             ");
             $current_stmt->bind_param('i', $id);
             $current_stmt->execute();
@@ -658,11 +680,13 @@ switch ($action) {
             $emergency_contact_phone = cleanPhone($_POST['emergency_contact_phone'] ?? $current_employee['emergency_contact_phone']);
             $emergency_contact_relationship = trim(getUpdateValue('emergency_contact_relationship', $current_employee['emergency_contact_relationship']));
             $department_id = (int)(getUpdateValue('department_id', $current_employee['department_id']));
-            $job_position_id = (int)(getUpdateValue('job_position_id', $current_employee['job_position_id']));
+            // In systemintegration schema the column is position_id, but the form field is job_position_id
+            $job_position_id = (int)(getUpdateValue('job_position_id', $current_employee['position_id']));
             $annual_paid_leave_days = (int)(getUpdateValue('annual_paid_leave_days', $current_employee['annual_paid_leave_days']));
             $annual_unpaid_leave_days = (int)(getUpdateValue('annual_unpaid_leave_days', $current_employee['annual_unpaid_leave_days']));
             $annual_sick_leave_days = (int)(getUpdateValue('annual_sick_leave_days', $current_employee['annual_sick_leave_days']));
-            $date_joined = getUpdateValue('date_joined', $current_employee['date_joined']);
+            // hire_date is the canonical column; date_joined is the form field
+            $date_joined = getUpdateValue('date_joined', $current_employee['hire_date']);
             $date_of_birth = getUpdateValue('date_of_birth', $current_employee['date_of_birth']);
             if ($date_of_birth !== null && $date_of_birth !== '') {
                 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_of_birth)) {
@@ -674,7 +698,7 @@ switch ($action) {
             }
 
             // Fetch rate_per_hour based on selected job_position_id
-            $pos_check = $mysqli->prepare("SELECT rate_per_hour, rate_per_day FROM job_positions WHERE id = ?");
+            $pos_check = $mysqli->prepare("SELECT rate_per_hour, rate_per_day FROM job_positions WHERE position_id = ?");
             $pos_check->bind_param('i', $job_position_id);
             $pos_check->execute();
             $pos_result = $pos_check->get_result();
@@ -686,11 +710,13 @@ switch ($action) {
             $rate_per_day = (float)($pos_data['rate_per_day'] ?? 0);
             $pos_check->close();
 
-            // Check if QR needs regeneration
-            $qr_changed = ($first_name !== $current_employee['first_name'] ||
+            // Check if QR needs regeneration (name, position, or hire date changed)
+            $qr_changed = (
+                $first_name !== $current_employee['first_name'] ||
                 $last_name !== $current_employee['last_name'] ||
-                $job_position_id !== (int)$current_employee['job_position_id'] ||
-                $date_joined !== $current_employee['date_joined']);
+                $job_position_id !== (int)$current_employee['position_id'] ||
+                $date_joined !== $current_employee['hire_date']
+            );
 
             // Validate
             if (empty($first_name) || empty($last_name) || empty($address) || empty($gender) || empty($email) || $department_id <= 0 || $job_position_id <= 0 || $rate_per_hour < 0) {
@@ -708,7 +734,7 @@ switch ($action) {
 
             // Check email uniqueness
             if ($email !== $current_employee['email']) {
-                $check_stmt = $mysqli->prepare("SELECT id FROM users WHERE email = ? AND id != ? UNION SELECT id FROM employees WHERE email = ? AND id != ?");
+                $check_stmt = $mysqli->prepare("SELECT id FROM users_employee WHERE email = ? AND id != ? UNION SELECT employee_id FROM employees WHERE email = ? AND employee_id != ?");
                 $check_stmt->bind_param('sisi', $email, $user_id, $email, $id);
                 $check_stmt->execute();
                 if ($check_stmt->get_result()->num_rows > 0) {
@@ -719,7 +745,7 @@ switch ($action) {
 
             // Validate department
             if ($department_id !== (int)$current_employee['department_id']) {
-                $dept_check = $mysqli->prepare("SELECT id FROM departments WHERE id = ?");
+                $dept_check = $mysqli->prepare("SELECT department_id FROM departments WHERE department_id = ?");
                 $dept_check->bind_param('i', $department_id);
                 $dept_check->execute();
                 if ($dept_check->get_result()->num_rows === 0) {
@@ -750,8 +776,8 @@ switch ($action) {
                 }
             }
 
-            // Update users table
-            $user_update = $mysqli->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, phone_number = ?, address = ?, department_id = ?, avatar_path = ? WHERE id = ?");
+            // Update users_employee table
+            $user_update = $mysqli->prepare("UPDATE users_employee SET first_name = ?, last_name = ?, email = ?, phone_number = ?, address = ?, department_id = ?, avatar_path = ? WHERE id = ?");
             $user_update->bind_param('sssssisi', $first_name, $last_name, $email, $contact_number, $address, $department_id, $avatar_path, $user_id);
             $user_update->execute();
             $user_update->close();
@@ -760,10 +786,10 @@ switch ($action) {
             $query = "UPDATE employees SET 
                 first_name = ?, last_name = ?, address = ?, gender = ?, marital_status = ?,
                 email = ?, contact_number = ?, emergency_contact_name = ?, emergency_contact_phone = ?,
-                emergency_contact_relationship = ?, department_id = ?, job_position_id = ?,
+                emergency_contact_relationship = ?, department_id = ?, position_id = ?,
                 rate_per_hour = ?, rate_per_day = ?, annual_paid_leave_days = ?, annual_unpaid_leave_days = ?,
-                annual_sick_leave_days = ?, date_joined = ?, date_of_birth = ?, avatar_path = ?
-                WHERE id = ?";
+                annual_sick_leave_days = ?, hire_date = ?, date_of_birth = ?, avatar_path = ?
+                WHERE employee_id = ?";
             $stmt = $mysqli->prepare($query);
             $types = 'ssssssssssiiddiiisssi';
             $params = [
@@ -807,11 +833,12 @@ switch ($action) {
                 try {
                     deleteQRCode($mysqli, $id);
                     $updated_query = "
-                        SELECT e.*, d.name AS department_name, jp.name AS position_name
+                        SELECT e.employee_id AS id, e.first_name, e.last_name, e.position_id AS job_position_id,
+                               e.hire_date AS date_joined, d.department_name, jp.position_name
                         FROM employees e
-                        LEFT JOIN departments d ON e.department_id = d.id
-                        LEFT JOIN job_positions jp ON e.job_position_id = jp.id
-                        WHERE e.id = ?
+                        LEFT JOIN departments d ON e.department_id = d.department_id
+                        LEFT JOIN job_positions jp ON e.position_id = jp.position_id
+                        WHERE e.employee_id = ?
                     ";
                     $updated_stmt = $mysqli->prepare($updated_query);
                     $updated_stmt->bind_param('i', $id);
@@ -885,8 +912,8 @@ switch ($action) {
             $cleanup_query = "
                 SELECT e.user_id, e.avatar_path, qc.qr_image_path
                 FROM employees e
-                LEFT JOIN qr_codes qc ON e.id = qc.employee_id
-                WHERE e.id = ?
+                LEFT JOIN qr_codes qc ON e.employee_id = qc.employee_id
+                WHERE e.employee_id = ?
             ";
             $stmt = $mysqli->prepare($cleanup_query);
             $stmt->bind_param('i', $id);
@@ -921,13 +948,13 @@ switch ($action) {
                 }
 
                 // Delete from employees
-                $stmt = $mysqli->prepare("DELETE FROM employees WHERE id = ?");
+                $stmt = $mysqli->prepare("DELETE FROM employees WHERE employee_id = ?");
                 $stmt->bind_param('i', $id);
                 $stmt->execute();
                 $stmt->close();
 
-                // Delete from users
-                $stmt = $mysqli->prepare("DELETE FROM users WHERE id = ?");
+                // Delete from users_employee
+                $stmt = $mysqli->prepare("DELETE FROM users_employee WHERE id = ?");
                 $stmt->bind_param('i', $user_id);
                 $stmt->execute();
                 $stmt->close();
@@ -953,7 +980,7 @@ switch ($action) {
         }
         try {
             // Get user_id for the employee
-            $stmt = $mysqli->prepare("SELECT user_id FROM employees WHERE id = ?");
+            $stmt = $mysqli->prepare("SELECT user_id FROM employees WHERE employee_id = ?");
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -969,7 +996,7 @@ switch ($action) {
             $user_id = $emp['user_id'];
 
             // Check if this user has head_admin role
-            $role_stmt = $mysqli->prepare("SELECT JSON_CONTAINS(roles, '\"head_admin\"') as is_head_admin FROM users WHERE id = ?");
+            $role_stmt = $mysqli->prepare("SELECT JSON_CONTAINS(roles, '\"head_admin\"') as is_head_admin FROM users_employee WHERE id = ?");
             $role_stmt->bind_param('i', $user_id);
             $role_stmt->execute();
             $role_result = $role_stmt->get_result();
@@ -983,7 +1010,7 @@ switch ($action) {
             }
 
             // Check if there are other active head admins
-            $count_stmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users WHERE JSON_CONTAINS(roles, '\"head_admin\"') AND is_active = 1 AND id != ?");
+            $count_stmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users_employee WHERE JSON_CONTAINS(roles, '\"head_admin\"') AND is_active = 1 AND id != ?");
             $count_stmt->bind_param('i', $user_id);
             $count_stmt->execute();
             $count_result = $count_stmt->get_result();
@@ -1003,7 +1030,7 @@ switch ($action) {
 
     case 'departments':
         try {
-            $query = "SELECT id, name FROM departments ORDER BY name";
+            $query = "SELECT department_id AS id, department_name AS name FROM departments ORDER BY department_name";
             $result = $mysqli->query($query);
             if (!$result) {
                 throw new Exception('Query failed: ' . $mysqli->error);
@@ -1021,7 +1048,7 @@ switch ($action) {
 
     case 'positions':
         try {
-            $query = "SELECT id, name, rate_per_hour, rate_per_day FROM job_positions ORDER BY name";
+            $query = "SELECT position_id AS id, position_name AS name, rate_per_hour, rate_per_day FROM job_positions ORDER BY position_name";
             $result = $mysqli->query($query);
             if (!$result) {
                 throw new Exception('Query failed: ' . $mysqli->error);
@@ -1053,8 +1080,8 @@ switch ($action) {
             $employee = $emp_result->fetch_assoc();
             $emp_stmt->close();
 
-            // Check if email exists in users
-            $user_stmt = $mysqli->prepare("SELECT id FROM users WHERE email = ?");
+            // Check if email exists in users_employee
+            $user_stmt = $mysqli->prepare("SELECT id FROM users_employee WHERE email = ?");
             $user_stmt->bind_param('s', $email);
             $user_stmt->execute();
             $user_result = $user_stmt->get_result();
@@ -1079,7 +1106,7 @@ switch ($action) {
 
     case 'get_school_settings':
         try {
-            $query = "SELECT annual_paid_leave_days, annual_unpaid_leave_days, annual_sick_leave_days FROM school_settings WHERE id = 1";
+            $query = "SELECT annual_paid_leave_days, annual_unpaid_leave_days, annual_sick_leave_days FROM eaaps_school_settings WHERE id = 1";
             $result = $mysqli->query($query);
             if (!$result) {
                 throw new Exception('Query failed: ' . $mysqli->error);

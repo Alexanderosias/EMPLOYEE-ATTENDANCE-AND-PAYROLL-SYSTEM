@@ -234,16 +234,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const addDeptSelect = document.getElementById("department");
       const addPosSelect = document.getElementById("job-position");
-      addDeptSelect.innerHTML =
-        '<option value="" disabled selected>Select department</option>' +
-        departments
+      
+      if (!addDeptSelect) {
+        console.error("ERROR: Department select element #department not found!");
+        return;
+      }
+      if (!addPosSelect) {
+        console.error("ERROR: Job position select element #job-position not found!");
+        return;
+      }
+      
+      const deptOptions = departments
           .map((d) => `<option value="${d.id}">${d.name}</option>`)
           .join("");
-      addPosSelect.innerHTML =
-        '<option value="" disabled selected>Select job position</option>' +
-        jobPositions
+      const posOptions = jobPositions
           .map((p) => `<option value="${p.id}">${p.name}</option>`)
           .join("");
+      
+      console.log("✓ Department options HTML length:", deptOptions.length);
+      console.log("✓ Departments count:", departments.length);
+      console.log("✓ Position options HTML length:", posOptions.length);
+      console.log("✓ Positions count:", jobPositions.length);
+      
+      addDeptSelect.innerHTML =
+        '<option value="" disabled selected>Select department</option>' + deptOptions;
+      addPosSelect.innerHTML =
+        '<option value="" disabled selected>Select job position</option>' + posOptions;
+      
+      console.log("✓ Department dropdown HTML preview:", addDeptSelect.innerHTML.substring(0, 200));
+      console.log("✓ Department dropdown options count:", addDeptSelect.options.length);
+      
       const updateDeptSelect = document.getElementById("update-department");
       const updatePosSelect = document.getElementById("update-job-position");
       if (updateDeptSelect)
@@ -831,28 +851,85 @@ document.addEventListener("DOMContentLoaded", () => {
     const emergencyRelationship = document
       .getElementById("emergency-relationship")
       .value.trim();
-    const departmentId = document.getElementById("department").value;
-    const jobPositionId = document.getElementById("job-position").value;
+    const deptElement = document.getElementById("department");
+    const posElement = document.getElementById("job-position");
+    
+    console.log("Department element:", deptElement);
+    console.log("Department element value:", deptElement ? deptElement.value : "ELEMENT NOT FOUND");
+    console.log("Department element options count:", deptElement ? deptElement.options.length : "ELEMENT NOT FOUND");
+    
+    const departmentId = deptElement ? deptElement.value : "";
+    const jobPositionId = posElement ? posElement.value : "";
     const ratePerHour =
       parseFloat(document.getElementById("rate-per-hour").value) || 0;
     const dateOfBirth = document.getElementById("date-of-birth").value;
+    
+    console.log("Captured values - departmentId:", departmentId, "jobPositionId:", jobPositionId);
 
-    if (
-      !firstName ||
-      !lastName ||
-      !email ||
-      !address ||
-      !gender ||
-      !maritalStatus ||
-      !contactNumber ||
-      !emergencyName ||
-      !emergencyPhone ||
-      !emergencyRelationship ||
-      !departmentId ||
-      !jobPositionId ||
-      ratePerHour < 0
-    ) {
-      showStatus("Please fill all required fields correctly.", "error");
+    // Detailed validation with logging
+    if (!firstName) {
+      showStatus("First name is required.", "error");
+      console.error("Missing: firstName");
+      return;
+    }
+    if (!lastName) {
+      showStatus("Last name is required.", "error");
+      console.error("Missing: lastName");
+      return;
+    }
+    if (!email) {
+      showStatus("Email is required.", "error");
+      console.error("Missing: email");
+      return;
+    }
+    if (!address) {
+      showStatus("Address is required.", "error");
+      console.error("Missing: address");
+      return;
+    }
+    if (!gender) {
+      showStatus("Gender is required.", "error");
+      console.error("Missing: gender");
+      return;
+    }
+    if (!maritalStatus) {
+      showStatus("Marital status is required.", "error");
+      console.error("Missing: maritalStatus");
+      return;
+    }
+    if (!contactNumber) {
+      showStatus("Contact number is required.", "error");
+      console.error("Missing: contactNumber");
+      return;
+    }
+    if (!emergencyName) {
+      showStatus("Emergency contact name is required.", "error");
+      console.error("Missing: emergencyName");
+      return;
+    }
+    if (!emergencyPhone) {
+      showStatus("Emergency contact phone is required.", "error");
+      console.error("Missing: emergencyPhone");
+      return;
+    }
+    if (!emergencyRelationship) {
+      showStatus("Emergency contact relationship is required.", "error");
+      console.error("Missing: emergencyRelationship");
+      return;
+    }
+    if (!departmentId) {
+      showStatus("Department is required.", "error");
+      console.error("Missing: departmentId");
+      return;
+    }
+    if (!jobPositionId) {
+      showStatus("Job position is required.", "error");
+      console.error("Missing: jobPositionId");
+      return;
+    }
+    if (ratePerHour < 0) {
+      showStatus("Rate per hour must be valid.", "error");
+      console.error("Invalid: ratePerHour");
       return;
     }
     if (!email.includes("@")) {

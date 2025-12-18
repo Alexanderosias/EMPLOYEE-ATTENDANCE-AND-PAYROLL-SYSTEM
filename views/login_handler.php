@@ -27,7 +27,7 @@ if (!$email || !$password) {
 $db = conn();
 $mysqli = $db['mysqli'];
 
-$stmt = $mysqli->prepare("SELECT id, first_name, last_name, roles, password_hash, is_active FROM users WHERE email = ?");
+$stmt = $mysqli->prepare("SELECT id, first_name, last_name, roles, password_hash, is_active FROM users_employee WHERE email = ?");
 $stmt->bind_param("s", $email);
 $stmt->execute();
 $result = $stmt->get_result();
