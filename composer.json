@@ -3,6 +3,6 @@
         "phpmailer/phpmailer": "^6.10",
         "kreait/firebase-php": "^5.26",
         "shuchkin/simplexlsx": "^1.1",
-        "chillerlan/php-qrcode": "*"
+        "chillerlan/php-qrcode": "^5.0"
     }
 }

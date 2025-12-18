@@ -37,11 +37,11 @@ try {
             $startDate = $_GET['start_date'] ?? '';
             $endDate = $_GET['end_date'] ?? '';
 
-            $query = "SELECT lr.id, lr.leave_type, lr.start_date, lr.end_date, lr.days, lr.reason, lr.proof_path, lr.status, lr.submitted_at, 
+            $query = "SELECT lr.leave_id AS id, lr.leave_type, lr.start_date, lr.end_date, lr.days, lr.reason, lr.proof_path, lr.status, lr.submitted_at, 
                              u.first_name, u.last_name, u.email, u.avatar_path 
                       FROM leave_requests lr 
-                      JOIN employees e ON lr.employee_id = e.id 
-                      JOIN users u ON e.user_id = u.id 
+                      JOIN employees e ON lr.employee_id = e.employee_id 
+                      JOIN users_employee u ON e.user_id = u.id 
                       WHERE 1=1";
 
             $params = [];
@@ -91,11 +91,11 @@ try {
         case 'view_leave_request':
             $requestId = (int)$_GET['id'];
             error_log("Debug view_leave_request: requestId=$requestId");
-            $stmt = $mysqli->prepare("SELECT lr.*, u.first_name, u.last_name, u.email, u.avatar_path 
+            $stmt = $mysqli->prepare("SELECT lr.leave_id AS id, lr.employee_id, lr.leave_type, lr.start_date, lr.end_date, lr.days, lr.reason, lr.proof_path, lr.status, lr.submitted_at, lr.approved_at, lr.approved_by, lr.deducted_from, lr.admin_feedback, u.first_name, u.last_name, u.email, u.avatar_path 
                                       FROM leave_requests lr 
-                                      JOIN employees e ON lr.employee_id = e.id 
-                                      JOIN users u ON e.user_id = u.id 
-                                      WHERE lr.id = ?");
+                                      JOIN employees e ON lr.employee_id = e.employee_id 
+                                      JOIN users_employee u ON e.user_id = u.id 
+                                      WHERE lr.leave_id = ?");
             $stmt->bind_param('i', $requestId);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -117,7 +117,7 @@ try {
         case 'approve_leave':
             $requestId = (int)$_POST['id'];
             // Get leave_type, days, employee_id, and date range
-            $stmt = $mysqli->prepare("SELECT leave_type, days, employee_id, start_date, end_date FROM leave_requests WHERE id = ? AND status = 'Pending'");
+            $stmt = $mysqli->prepare("SELECT leave_type, days, employee_id, start_date, end_date FROM leave_requests WHERE leave_id = ? AND status = 'Pending'");
             $stmt->bind_param('i', $requestId);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -145,7 +145,7 @@ try {
                     }
 
                     // Fetch working days of week for this employee
-                    $stmt = $mysqli->prepare("SELECT DISTINCT day_of_week FROM schedules WHERE employee_id = ? AND is_working = 1");
+                    $stmt = $mysqli->prepare("SELECT DISTINCT day_of_week FROM employee_schedules WHERE employee_id = ? AND is_working = 1");
                     $stmt->bind_param('i', $employeeId);
                     $stmt->execute();
                     $schedResult = $stmt->get_result();
@@ -232,7 +232,7 @@ try {
             }
 
             // Update status and fields
-            $stmt = $mysqli->prepare("UPDATE leave_requests SET status = 'Approved', deducted_from = ?, approved_at = NOW(), approved_by = ? WHERE id = ? AND status = 'Pending'");
+            $stmt = $mysqli->prepare("UPDATE leave_requests SET status = 'Approved', deducted_from = ?, approved_at = NOW(), approved_by = ? WHERE leave_id = ? AND status = 'Pending'");
             $stmt->bind_param('sii', $leaveType, $_SESSION['user_id'], $requestId);
             $stmt->execute();
             if ($stmt->affected_rows > 0) {
@@ -246,7 +246,7 @@ try {
                     $balanceColumn = 'annual_sick_leave_days';
                 }
                 if ($balanceColumn && $effectiveDays > 0) {
-                    $stmt = $mysqli->prepare("UPDATE employees SET $balanceColumn = $balanceColumn - ? WHERE id = ?");
+                    $stmt = $mysqli->prepare("UPDATE employees SET $balanceColumn = $balanceColumn - ? WHERE employee_id = ?");
                     $stmt->bind_param('ii', $effectiveDays, $employeeId);
                     $stmt->execute();
                     $stmt->close();
@@ -261,7 +261,7 @@ try {
         case 'decline_leave':
             $requestId = (int)$_POST['id'];
             $feedback = trim($_POST['admin_feedback'] ?? '');
-            $stmt = $mysqli->prepare("UPDATE leave_requests SET status = 'Rejected', admin_feedback = ?, approved_at = NOW(), approved_by = ? WHERE id = ? AND status = 'Pending'");
+            $stmt = $mysqli->prepare("UPDATE leave_requests SET status = 'Rejected', admin_feedback = ?, approved_at = NOW(), approved_by = ? WHERE leave_id = ? AND status = 'Pending'");
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }

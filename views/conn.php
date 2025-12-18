@@ -7,11 +7,10 @@
  *   $mysqli = $db['mysqli'];  // For MySQL queries
  */
 
-// MySQL Configuration (update for Hostinger after upload)
-define('DB_SERVER', 'localhost');  // Hostinger: Use provided MySQL host (e.g., 'mysql.hostinger.com')
-define('DB_USERNAME', 'root');     // Hostinger: Use provided username
-define('DB_PASSWORD', '');         // Hostinger: Use provided password
-define('DB_NAME', 'eaaps_db');     // Hostinger: Use provided database name
+define('DB_SERVER', 'localhost');  //192.168.1.137
+define('DB_USERNAME', 'root');     
+define('DB_PASSWORD', '');         
+define('DB_NAME', 'systemintegration');    
 
 /**
  * Establishes and returns database connection (MySQL only).

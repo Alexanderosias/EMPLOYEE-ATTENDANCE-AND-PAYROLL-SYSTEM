@@ -37,15 +37,16 @@ $action = $_GET['action'] ?? '';
 switch ($action) {
   case 'list_users':
     try {
+      // Use users_employee and systemintegration schema columns
       $query = "
     SELECT u.id, u.first_name, u.last_name, u.email, u.phone_number, u.address,
-           d.name AS department_name, 
+           d.department_name AS department_name,
            u.roles AS roles_json,  -- Ensure it's returned as string
            u.is_active, u.created_at,
            CASE WHEN JSON_CONTAINS(u.roles, '\"employee\"') THEN e.avatar_path ELSE u.avatar_path END AS avatar_path
-    FROM users u
-    LEFT JOIN departments d ON u.department_id = d.id
-    LEFT JOIN employees e ON u.id = e.user_id
+    FROM users_employee u
+    LEFT JOIN departments d ON u.department_id = d.department_id
+    LEFT JOIN employees e ON e.user_id = u.id
     ORDER BY u.created_at DESC
   ";
       $result = $mysqli->query($query);
@@ -80,13 +81,13 @@ switch ($action) {
         throw new Exception('Required fields missing');
       }
 
-      // Check if email exists in employees
-      $employeeCheck = $mysqli->prepare("SELECT id FROM employees WHERE email = ?");
+      // Check if email exists in employees (systemintegration: employee_id)
+      $employeeCheck = $mysqli->prepare("SELECT employee_id FROM employees WHERE email = ?");
       $employeeCheck->bind_param("s", $email);
       $employeeCheck->execute();
       $empResult = $employeeCheck->get_result();
       $employeeExists = $empResult->num_rows > 0;
-      $employeeId = $employeeExists ? $empResult->fetch_assoc()['id'] : null;
+      $employeeId = $employeeExists ? $empResult->fetch_assoc()['employee_id'] : null;
       $employeeCheck->close();
 
       // Validate roles
@@ -135,10 +136,10 @@ switch ($action) {
         }
       }
 
-      // Insert user with roles
+      // Insert user with roles (into users_employee)
       $rolesJson = json_encode($roles);
       $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-      $stmt = $mysqli->prepare("INSERT INTO users (first_name, last_name, email, phone_number, address, department_id, roles, password_hash, is_active, avatar_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+      $stmt = $mysqli->prepare("INSERT INTO users_employee (first_name, last_name, email, phone_number, address, department_id, roles, password_hash, is_active, avatar_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
       $stmt->bind_param("sssssissss", $firstName, $lastName, $email, $phone, $address, $departmentId, $rolesJson, $passwordHash, $isActive, $avatarPath);
       $stmt->execute();
       $userId = $stmt->insert_id;
@@ -147,10 +148,10 @@ switch ($action) {
       // If employee exists, link by setting user_id in employees AND update avatar if provided
       if ($employeeExists) {
         if ($avatarPath) {
-          $linkStmt = $mysqli->prepare("UPDATE employees SET user_id = ?, avatar_path = ? WHERE id = ?");
+          $linkStmt = $mysqli->prepare("UPDATE employees SET user_id = ?, avatar_path = ? WHERE employee_id = ?");
           $linkStmt->bind_param("isi", $userId, $avatarPath, $employeeId);
         } else {
-          $linkStmt = $mysqli->prepare("UPDATE employees SET user_id = ? WHERE id = ?");
+          $linkStmt = $mysqli->prepare("UPDATE employees SET user_id = ? WHERE employee_id = ?");
           $linkStmt->bind_param("ii", $userId, $employeeId);
         }
         $linkStmt->execute();
@@ -180,9 +181,9 @@ switch ($action) {
       $stmt = $mysqli->prepare("
       SELECT u.*, JSON_UNQUOTE(JSON_EXTRACT(u.roles, '$[0]')) AS role,
              CASE WHEN JSON_CONTAINS(u.roles, '\"employee\"') THEN e.avatar_path ELSE u.avatar_path END AS avatar_path,
-             e.id AS linked_employee_id
-      FROM users u
-      LEFT JOIN employees e ON u.id = e.user_id
+             e.employee_id AS linked_employee_id
+      FROM users_employee u
+      LEFT JOIN employees e ON e.user_id = u.id
       WHERE u.id = ?
     ");
       $stmt->bind_param("i", $id);
@@ -221,7 +222,7 @@ switch ($action) {
 
       // Check if trying to deactivate the last head admin (including self)
       if ($isActive === 0) {
-        $stmt = $mysqli->prepare("SELECT JSON_CONTAINS(roles, '\"head_admin\"') as is_head_admin FROM users WHERE id = ?");
+        $stmt = $mysqli->prepare("SELECT JSON_CONTAINS(roles, '\"head_admin\"') as is_head_admin FROM users_employee WHERE id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -229,7 +230,7 @@ switch ($action) {
         $stmt->close();
 
         if ($user && $user['is_head_admin']) {
-          $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users WHERE JSON_CONTAINS(roles, '\"head_admin\"') AND is_active = 1 AND id != ?");
+          $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users_employee WHERE JSON_CONTAINS(roles, '\"head_admin\"') AND is_active = 1 AND id != ?");
           $countStmt->bind_param("i", $id);
           $countStmt->execute();
           $countResult = $countStmt->get_result();
@@ -242,7 +243,7 @@ switch ($action) {
       }
 
       // Check if trying to change role away from head_admin for the last head admin
-      $currentRoleStmt = $mysqli->prepare("SELECT JSON_CONTAINS(roles, '\"head_admin\"') as is_head_admin FROM users WHERE id = ?");
+      $currentRoleStmt = $mysqli->prepare("SELECT JSON_CONTAINS(roles, '\"head_admin\"') as is_head_admin FROM users_employee WHERE id = ?");
       $currentRoleStmt->bind_param("i", $id);
       $currentRoleStmt->execute();
       $currentRoleResult = $currentRoleStmt->get_result();
@@ -250,7 +251,7 @@ switch ($action) {
       $currentRoleStmt->close();
 
       if ($currentUser && $currentUser['is_head_admin'] && !in_array('head_admin', $roles)) {
-        $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users WHERE JSON_CONTAINS(roles, '\"head_admin\"') AND is_active = 1");
+        $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users_employee WHERE JSON_CONTAINS(roles, '\"head_admin\"') AND is_active = 1");
         $countStmt->execute();
         $countResult = $countStmt->get_result();
         $headAdminCount = $countResult->fetch_assoc()['count'];
@@ -262,7 +263,7 @@ switch ($action) {
 
       if ($departmentId !== null) {
         $departmentId = (int)$departmentId;
-        $checkStmt = $mysqli->prepare("SELECT id FROM departments WHERE id = ?");
+        $checkStmt = $mysqli->prepare("SELECT department_id FROM departments WHERE department_id = ?");
         $checkStmt->bind_param("i", $departmentId);
         $checkStmt->execute();
         $checkResult = $checkStmt->get_result();
@@ -271,7 +272,7 @@ switch ($action) {
       }
 
       $currentAvatar = null;
-      $stmt = $mysqli->prepare("SELECT avatar_path FROM users WHERE id = ?");
+      $stmt = $mysqli->prepare("SELECT avatar_path FROM users_employee WHERE id = ?");
       $stmt->bind_param("i", $id);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -314,7 +315,7 @@ switch ($action) {
       }
 
       // Check if user is linked to an employee
-      $linkCheck = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ?");
+      $linkCheck = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ?");
       $linkCheck->bind_param("i", $id);
       $linkCheck->execute();
       $linkResult = $linkCheck->get_result();
@@ -326,11 +327,11 @@ switch ($action) {
 
       if ($isLinked) {
         // Linked: Update ONLY roles, is_active. Do NOT update avatar_path.
-        $stmt = $mysqli->prepare("UPDATE users SET roles=?, is_active=? WHERE id=?");
+        $stmt = $mysqli->prepare("UPDATE users_employee SET roles=?, is_active=? WHERE id=?");
         $stmt->bind_param("sii", $rolesJson, $isActive, $id);
       } else {
         // Not Linked: Update ALL fields
-        $stmt = $mysqli->prepare("UPDATE users SET first_name=?, last_name=?, email=?, phone_number=?, address=?, department_id=?, roles=?, is_active=?, avatar_path=? WHERE id=?");
+        $stmt = $mysqli->prepare("UPDATE users_employee SET first_name=?, last_name=?, email=?, phone_number=?, address=?, department_id=?, roles=?, is_active=?, avatar_path=? WHERE id=?");
         $stmt->bind_param("sssssisisi", $firstName, $lastName, $email, $phone, $address, $departmentId, $rolesJson, $isActive, $avatarPath, $id);
       }
       $stmt->execute();
@@ -356,14 +357,14 @@ switch ($action) {
       }
       $current_user_id = $_SESSION['user_id'] ?? 0;
       // Check if trying to delete the last head_admin
-      $stmt = $mysqli->prepare("SELECT JSON_CONTAINS(roles, '\"head_admin\"') AS is_head_admin FROM users WHERE id = ?");
+      $stmt = $mysqli->prepare("SELECT JSON_CONTAINS(roles, '\"head_admin\"') AS is_head_admin FROM users_employee WHERE id = ?");
       $stmt->bind_param("i", $id);
       $stmt->execute();
       $result = $stmt->get_result();
       $user = $result->fetch_assoc();
       $stmt->close();
       if ($user['is_head_admin']) {
-        $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users WHERE JSON_CONTAINS(roles, '\"head_admin\"') AND is_active = 1");
+        $countStmt = $mysqli->prepare("SELECT COUNT(*) as count FROM users_employee WHERE JSON_CONTAINS(roles, '\"head_admin\"') AND is_active = 1");
         $countStmt->execute();
         $countResult = $countStmt->get_result();
         $headAdminCount = $countResult->fetch_assoc()['count'];
@@ -390,7 +391,7 @@ switch ($action) {
         // Do NOT delete avatar as it belongs to the employee
       } else {
         // Not linked: Delete avatar file if exists
-        $stmt = $mysqli->prepare("SELECT avatar_path FROM users WHERE id = ?");
+        $stmt = $mysqli->prepare("SELECT avatar_path FROM users_employee WHERE id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -405,7 +406,7 @@ switch ($action) {
         }
         $stmt->close();
       }
-      $stmt = $mysqli->prepare("DELETE FROM users WHERE id = ?");
+      $stmt = $mysqli->prepare("DELETE FROM users_employee WHERE id = ?");
       $stmt->bind_param("i", $id);
       $stmt->execute();
       $stmt->close();

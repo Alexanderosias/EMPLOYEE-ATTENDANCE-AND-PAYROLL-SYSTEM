@@ -44,10 +44,10 @@ switch ($action) {
   case 'list_employees':
     try {
       $query = "
-                SELECT e.id, e.first_name, e.last_name, jp.name AS position_name, d.name AS department_name
+                SELECT e.employee_id AS id, e.first_name, e.last_name, jp.position_name AS position_name, d.department_name AS department_name
                 FROM employees e
-                LEFT JOIN job_positions jp ON e.job_position_id = jp.id
-                LEFT JOIN departments d ON e.department_id = d.id
+                LEFT JOIN job_positions jp ON e.position_id = jp.position_id
+                LEFT JOIN departments d ON e.department_id = d.department_id
                 ORDER BY e.last_name, e.first_name
             ";
       $result = $mysqli->query($query);
@@ -76,7 +76,7 @@ switch ($action) {
       break;
     }
     try {
-      $query = "SELECT id, employee_id, day_of_week, shift_name, start_time, end_time, is_working, break_minutes FROM schedules WHERE employee_id = ? ORDER BY day_of_week, start_time";
+      $query = "SELECT schedule_id AS id, employee_id, day_of_week, shift_name, start_time, end_time, is_working, break_minutes FROM employee_schedules WHERE employee_id = ? ORDER BY day_of_week, start_time";
       $stmt = $mysqli->prepare($query);
       $stmt->bind_param('i', $employeeId);
       $stmt->execute();
@@ -129,7 +129,7 @@ switch ($action) {
       }
 
       // Check for duplicates (same employee, day, shift name)
-      $duplicateQuery = "SELECT id FROM schedules WHERE employee_id = ? AND day_of_week = ? AND shift_name = ?";
+      $duplicateQuery = "SELECT schedule_id FROM employee_schedules WHERE employee_id = ? AND day_of_week = ? AND shift_name = ?";
       $stmt = $mysqli->prepare($duplicateQuery);
       $stmt->bind_param('iss', $employeeId, $dayOfWeek, $shiftName);
       $stmt->execute();
@@ -139,7 +139,7 @@ switch ($action) {
       $stmt->close();
 
       // Check for overlaps
-      $overlapQuery = "SELECT id FROM schedules WHERE employee_id = ? AND day_of_week = ? AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))";
+      $overlapQuery = "SELECT schedule_id FROM employee_schedules WHERE employee_id = ? AND day_of_week = ? AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))";
       $stmt = $mysqli->prepare($overlapQuery);
       $stmt->bind_param('isssss', $employeeId, $dayOfWeek, $endTime, $startTime, $startTime, $endTime);
       $stmt->execute();
@@ -149,7 +149,7 @@ switch ($action) {
       $stmt->close();
 
       // Insert the schedule
-      $query = "INSERT INTO schedules (employee_id, day_of_week, shift_name, start_time, end_time, is_working, break_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      $query = "INSERT INTO employee_schedules (employee_id, day_of_week, shift_name, start_time, end_time, is_working, break_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)";
       $stmt = $mysqli->prepare($query);
       $stmt->bind_param('issssii', $employeeId, $dayOfWeek, $shiftName, $startTime, $endTime, $isWorking, $breakMinutes);
       if (!$stmt->execute()) {
@@ -168,7 +168,7 @@ switch ($action) {
       $targetDate = $today->modify("+$daysDiff days")->format('Y-m-d');
 
       // Check if attendance log exists for this employee on this date
-      $attendanceQuery = "SELECT id FROM attendance_logs WHERE employee_id = ? AND date = ?";
+      $attendanceQuery = "SELECT log_id FROM attendance_logs WHERE employee_id = ? AND attendance_date = ?";
       $stmt = $mysqli->prepare($attendanceQuery);
       $stmt->bind_param('is', $employeeId, $targetDate);
       $stmt->execute();
@@ -176,12 +176,12 @@ switch ($action) {
       if ($attendanceResult->num_rows > 0) {
         // Update expected times in attendance_logs
         $attendanceRow = $attendanceResult->fetch_assoc();
-        $updateQuery = "UPDATE attendance_logs SET expected_start_time = ?, expected_end_time = ? WHERE id = ?";
+        $updateQuery = "UPDATE attendance_logs SET expected_start_time = ?, expected_end_time = ? WHERE log_id = ?";
         $stmtUpdate = $mysqli->prepare($updateQuery);
-        $stmtUpdate->bind_param('ssi', $startTime, $endTime, $attendanceRow['id']);
+        $stmtUpdate->bind_param('ssi', $startTime, $endTime, $attendanceRow['log_id']);
         $stmtUpdate->execute();
         $stmtUpdate->close();
-        error_log("Updated expected times for attendance log ID {$attendanceRow['id']} with new schedule.");
+        error_log("Updated expected times for attendance log ID {$attendanceRow['log_id']} with new schedule.");
       }
       $stmt->close();
 
@@ -232,7 +232,7 @@ switch ($action) {
       }
 
       // Check for duplicates (same employee, day, shift name, excluding current)
-      $duplicateQuery = "SELECT id FROM schedules WHERE employee_id = ? AND day_of_week = ? AND shift_name = ? AND id != ?";
+      $duplicateQuery = "SELECT schedule_id FROM employee_schedules WHERE employee_id = ? AND day_of_week = ? AND shift_name = ? AND schedule_id != ?";
       $stmt = $mysqli->prepare($duplicateQuery);
       $stmt->bind_param('issi', $employeeId, $dayOfWeek, $shiftName, $id);
       $stmt->execute();
@@ -242,7 +242,7 @@ switch ($action) {
       $stmt->close();
 
       // Check for overlaps (excluding current schedule)
-      $overlapQuery = "SELECT id FROM schedules WHERE employee_id = ? AND day_of_week = ? AND id != ? AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))";
+      $overlapQuery = "SELECT schedule_id FROM employee_schedules WHERE employee_id = ? AND day_of_week = ? AND schedule_id != ? AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))";
       $stmt = $mysqli->prepare($overlapQuery);
       $stmt->bind_param('iisssss', $employeeId, $dayOfWeek, $id, $endTime, $startTime, $startTime, $endTime);
       $stmt->execute();
@@ -251,7 +251,7 @@ switch ($action) {
       }
       $stmt->close();
 
-      $query = "UPDATE schedules SET employee_id = ?, day_of_week = ?, shift_name = ?, start_time = ?, end_time = ?, is_working = ?, break_minutes = ? WHERE id = ?";
+      $query = "UPDATE employee_schedules SET employee_id = ?, day_of_week = ?, shift_name = ?, start_time = ?, end_time = ?, is_working = ?, break_minutes = ? WHERE schedule_id = ?";
       $stmt = $mysqli->prepare($query);
       $stmt->bind_param('issssiii', $employeeId, $dayOfWeek, $shiftName, $startTime, $endTime, $isWorking, $breakMinutes, $id);
       $stmt->execute();
@@ -298,7 +298,7 @@ switch ($action) {
       break;
     }
     try {
-      $stmt = $mysqli->prepare("DELETE FROM schedules WHERE id = ?");
+      $stmt = $mysqli->prepare("DELETE FROM employee_schedules WHERE schedule_id = ?");
       $stmt->bind_param('i', $id);
       $stmt->execute();
       $affected = $stmt->affected_rows;

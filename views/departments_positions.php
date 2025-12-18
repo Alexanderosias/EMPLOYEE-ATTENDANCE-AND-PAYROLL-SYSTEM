@@ -50,11 +50,11 @@ switch ($action) {
     case 'list_departments':
         try {
             $query = "
-                SELECT d.id, d.name, COALESCE(COUNT(e.id), 0) AS employee_count
+                SELECT d.department_id AS id, d.department_name AS name, COALESCE(COUNT(e.employee_id), 0) AS employee_count
                 FROM departments d
-                LEFT JOIN employees e ON d.id = e.department_id
-                GROUP BY d.id, d.name
-                ORDER BY d.name
+                LEFT JOIN employees e ON d.department_id = e.department_id
+                GROUP BY d.department_id, d.department_name
+                ORDER BY d.department_name
             ";
             $result = $mysqli->query($query);
             if (!$result) {
@@ -100,7 +100,7 @@ switch ($action) {
             if ($ratePerDay < 0) throw new Exception('Rate per day must be a non-negative number.');
 
             // Dup name check (exclude current id)
-            $checkStmt = $mysqli->prepare("SELECT id FROM job_positions WHERE LOWER(name) = LOWER(?) AND id <> ?");
+            $checkStmt = $mysqli->prepare("SELECT position_id FROM job_positions WHERE LOWER(position_name) = LOWER(?) AND position_id <> ?");
             $checkStmt->bind_param('si', $name, $id);
             $checkStmt->execute();
             if ($checkStmt->get_result()->num_rows > 0) {
@@ -110,7 +110,7 @@ switch ($action) {
 
             // Get working hours per day for this position, fallback to settings
             $wh = 8.0;
-            $whStmt = $mysqli->prepare("SELECT working_hours_per_day FROM job_positions WHERE id = ?");
+            $whStmt = $mysqli->prepare("SELECT working_hours_per_day FROM job_positions WHERE position_id = ?");
             $whStmt->bind_param('i', $id);
             $whStmt->execute();
             $whRes = $whStmt->get_result()->fetch_assoc();
@@ -124,7 +124,7 @@ switch ($action) {
             }
             $ratePerHour = $wh > 0 ? $ratePerDay / $wh : 0;
 
-            $stmt = $mysqli->prepare("UPDATE job_positions SET name = ?, rate_per_day = ?, rate_per_hour = ?, payroll_frequency = ? WHERE id = ?");
+            $stmt = $mysqli->prepare("UPDATE job_positions SET position_name = ?, rate_per_day = ?, rate_per_hour = ?, payroll_frequency = ?, updated_at = NOW() WHERE position_id = ?");
             $stmt->bind_param('sddsi', $name, $ratePerDay, $ratePerHour, $payrollFrequency, $id);
             if (!$stmt->execute()) {
                 throw new Exception('Update failed: ' . $stmt->error);
@@ -161,7 +161,7 @@ switch ($action) {
             if ($id <= 0 || !in_array($freq, $allowed, true)) {
                 throw new Exception('Invalid parameters.');
             }
-            $stmt = $mysqli->prepare("UPDATE job_positions SET payroll_frequency = ? WHERE id = ?");
+            $stmt = $mysqli->prepare("UPDATE job_positions SET payroll_frequency = ?, updated_at = NOW() WHERE position_id = ?");
             $stmt->bind_param('si', $freq, $id);
             if (!$stmt->execute()) {
                 throw new Exception('Update failed: ' . $stmt->error);
@@ -190,7 +190,7 @@ switch ($action) {
             }
 
             // Build SELECT based on available columns
-            $selectFields = "jp.id, jp.name";
+            $selectFields = "jp.position_id AS id, jp.position_name AS name";
             if (in_array('rate_per_day', $columns)) {
                 $selectFields .= ", jp.rate_per_day";
             } else {
@@ -213,11 +213,11 @@ switch ($action) {
             }
 
             $query = "
-                SELECT $selectFields, COALESCE(COUNT(e.id), 0) AS employee_count
+                SELECT $selectFields, COALESCE(COUNT(e.employee_id), 0) AS employee_count
                 FROM job_positions jp
-                LEFT JOIN employees e ON jp.id = e.job_position_id
-                GROUP BY jp.id
-                ORDER BY jp.name
+                LEFT JOIN employees e ON jp.position_id = e.position_id
+                GROUP BY jp.position_id
+                ORDER BY jp.position_name
             ";
 
             error_log("List Positions Query: " . $query);
@@ -260,7 +260,7 @@ switch ($action) {
                 throw new Exception('Department name is required.');
             }
             // Check for duplicates (case-insensitive)
-            $checkStmt = $mysqli->prepare("SELECT id FROM departments WHERE LOWER(name) = LOWER(?)");
+            $checkStmt = $mysqli->prepare("SELECT department_id FROM departments WHERE LOWER(department_name) = LOWER(?)");
             $checkStmt->bind_param('s', $name);
             $checkStmt->execute();
             if ($checkStmt->get_result()->num_rows > 0) {
@@ -268,7 +268,7 @@ switch ($action) {
             }
             $checkStmt->close();
             // Insert
-            $stmt = $mysqli->prepare("INSERT INTO departments (name) VALUES (?)");
+            $stmt = $mysqli->prepare("INSERT INTO departments (department_name, created_at) VALUES (?, NOW())");
             $stmt->bind_param('s', $name);
             if (!$stmt->execute()) {
                 throw new Exception('Insert failed: ' . $stmt->error);
@@ -315,7 +315,7 @@ switch ($action) {
             }
 
             // Check for duplicates (case-insensitive)
-            $checkStmt = $mysqli->prepare("SELECT id FROM job_positions WHERE LOWER(name) = LOWER(?)");
+            $checkStmt = $mysqli->prepare("SELECT position_id FROM job_positions WHERE LOWER(position_name) = LOWER(?)");
             $checkStmt->bind_param('s', $name);
             $checkStmt->execute();
             if ($checkStmt->get_result()->num_rows > 0) {
@@ -332,7 +332,7 @@ switch ($action) {
             $ratePerHour = $workingHourPerDay > 0 ? $ratePerDay / $workingHourPerDay : 0;
 
             // Insert with payroll_frequency
-            $stmt = $mysqli->prepare("INSERT INTO job_positions (name, rate_per_day, rate_per_hour, working_hours_per_day, payroll_frequency) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $mysqli->prepare("INSERT INTO job_positions (position_name, rate_per_day, rate_per_hour, working_hours_per_day, payroll_frequency, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
             $stmt->bind_param('sddds', $name, $ratePerDay, $ratePerHour, $workingHourPerDay, $payrollFrequency);
             if (!$stmt->execute()) {
                 throw new Exception('Insert failed: ' . $stmt->error);
@@ -373,7 +373,7 @@ switch ($action) {
         }
         try {
             // Check employee count
-            $countStmt = $mysqli->prepare("SELECT COUNT(e.id) AS emp_count FROM employees e WHERE e.department_id = ?");
+            $countStmt = $mysqli->prepare("SELECT COUNT(e.employee_id) AS emp_count FROM employees e WHERE e.department_id = ?");
             $countStmt->bind_param('i', $id);
             $countStmt->execute();
             $countResult = $countStmt->get_result();
@@ -385,7 +385,7 @@ switch ($action) {
                 throw new Exception("Cannot delete department: {$empCount} employee(s) are assigned. Reassign them first.");
             }
 
-            $stmt = $mysqli->prepare("DELETE FROM departments WHERE id = ?");
+            $stmt = $mysqli->prepare("DELETE FROM departments WHERE department_id = ?");
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $affected = $stmt->affected_rows;
@@ -428,7 +428,7 @@ switch ($action) {
         }
         try {
             // Check employee count
-            $countStmt = $mysqli->prepare("SELECT COUNT(e.id) AS emp_count FROM employees e WHERE e.job_position_id = ?");
+            $countStmt = $mysqli->prepare("SELECT COUNT(e.employee_id) AS emp_count FROM employees e WHERE e.position_id = ?");
             $countStmt->bind_param('i', $id);
             $countStmt->execute();
             $countResult = $countStmt->get_result();
@@ -440,7 +440,7 @@ switch ($action) {
                 throw new Exception("Cannot delete job position: {$empCount} employee(s) are assigned. Reassign them first.");
             }
 
-            $stmt = $mysqli->prepare("DELETE FROM job_positions WHERE id = ?");
+            $stmt = $mysqli->prepare("DELETE FROM job_positions WHERE position_id = ?");
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $affected = $stmt->affected_rows;
