@@ -1,3 +1,97 @@
+function showStatus(message, type) {
+  const statusDiv = document.getElementById("status-message");
+  if (!statusDiv) {
+    console.error("Status message div not found!");
+    return;
+  }
+  statusDiv.textContent = message;
+  statusDiv.className = `status-message ${type}`;
+  statusDiv.classList.add("show");
+
+  // Auto-hide after 3 seconds
+  setTimeout(() => {
+    statusDiv.classList.remove("show");
+  }, 3000);
+}
+
+// Flexible confirmation modal function
+function showConfirmation(
+  message,
+  confirmText = "Confirm",
+  confirmColor = "blue"
+) {
+  return new Promise((resolve) => {
+    const confirmationModal = document.getElementById("confirmation-modal");
+    const confirmationMessage = document.getElementById("confirmation-message");
+    const confirmationConfirmBtn = document.getElementById(
+      "confirmation-confirm-btn"
+    );
+    const confirmationCancelBtn = document.getElementById(
+      "confirmation-cancel-btn"
+    );
+    const confirmationCloseX = document.getElementById("confirmation-close-x");
+
+    if (
+      !confirmationModal ||
+      !confirmationMessage ||
+      !confirmationConfirmBtn ||
+      !confirmationCancelBtn ||
+      !confirmationCloseX
+    ) {
+      console.error("Confirmation modal elements not found");
+      resolve(false);
+      return;
+    }
+
+    // Set message
+    confirmationMessage.textContent = message;
+
+    // Set button text and color
+    confirmationConfirmBtn.textContent = confirmText;
+    confirmationConfirmBtn.className = `px-4 py-2 bg-${confirmColor}-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-${confirmColor}-600 focus:outline-none focus:ring-2 focus:ring-${confirmColor}-300`;
+
+    // Show modal
+    confirmationModal.classList.remove("hidden");
+    confirmationModal.setAttribute("aria-hidden", "false");
+
+    const cleanup = () => {
+      confirmationModal.classList.add("hidden");
+      confirmationModal.setAttribute("aria-hidden", "true");
+      confirmationConfirmBtn.removeEventListener("click", handleConfirm);
+      confirmationCancelBtn.removeEventListener("click", handleCancel);
+      confirmationCloseX.removeEventListener("click", handleCancel);
+      document.removeEventListener("keydown", handleEscape);
+    };
+
+    // Handle confirm
+    const handleConfirm = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    // Handle cancel
+    const handleCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    const handleEscape = (e) => {
+      if (
+        e.key === "Escape" &&
+        !confirmationModal.classList.contains("hidden")
+      ) {
+        handleCancel();
+      }
+    };
+
+    // Attach event listeners
+    confirmationConfirmBtn.addEventListener("click", handleConfirm);
+    confirmationCancelBtn.addEventListener("click", handleCancel);
+    confirmationCloseX.addEventListener("click", handleCancel);
+    document.addEventListener("keydown", handleEscape);
+  });
+}
+
 const BASE_PATH = ''; // Change to '' for localhost:8000, or '/newpath' for Hostinger
 const API_BASE = BASE_PATH + '/views/qr_snapshots.php';
 
@@ -23,10 +117,10 @@ async function fetchEmployeesData() {
     renderEmployees();
   } catch (error) {
     console.error('Error fetching employees data:', error);
+    showStatus('Failed to load data. Please try again.', 'error');
     employeesContainer.innerHTML = '<p class="text-red-500">Failed to load data. Please try again.</p>';
   }
 }
-
 
 function createEmployeeCard(employee) {
   const card = document.createElement("div");
@@ -182,21 +276,27 @@ function openModal(employee) {
         deleteBtn.textContent = "Delete";
         deleteBtn.addEventListener("click", async (e) => {
           e.stopPropagation();
-          if (confirm(`Are you sure you want to delete this snapshot?`)) {
-            try {
-              const response = await fetch(`${API_BASE}?action=delete_snapshot&id=${snap.id}`, { method: 'DELETE' });
-              const result = await response.json();
-              if (result.success) {
-                alert('Snapshot deleted successfully.');
-                // Reload the page to refresh all data and UI
-                location.reload();
-              } else {
-                alert('Failed to delete snapshot: ' + result.message);
-              }
-            } catch (error) {
-              console.error('Error deleting snapshot:', error);
-              alert('An error occurred while deleting the snapshot.');
+          const confirmed = await showConfirmation(
+            'Are you sure you want to delete this snapshot?',
+            'Delete Snapshot',
+            'red'
+          );
+          if (!confirmed) {
+            return;
+          }
+          try {
+            const response = await fetch(`${API_BASE}?action=delete_snapshot&id=${snap.id}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (result.success) {
+              showStatus('Snapshot deleted successfully.', 'success');
+              // Reload the page to refresh all data and UI
+              location.reload();
+            } else {
+              showStatus('Failed to delete snapshot: ' + (result.message || ''), 'error');
             }
+          } catch (error) {
+            console.error('Error deleting snapshot:', error);
+            showStatus('An error occurred while deleting the snapshot.', 'error');
           }
         });
         btns.appendChild(deleteBtn);

@@ -46,23 +46,35 @@ $action = $_GET['action'] ?? '';
 switch ($action) {
   case 'get_profile':
     try {
+      // Use systemintegration schema: users_employee + departments + employees
       $stmt = $mysqli->prepare("
-      SELECT u.id, u.first_name, u.last_name, u.email, u.phone_number, u.address,
-            u.roles, u.created_at, d.name AS department_name, d.id AS department_id,
-            CASE WHEN JSON_CONTAINS(u.roles, '\"employee\"') THEN e.avatar_path ELSE u.avatar_path END AS avatar_path
-      FROM users u
-      LEFT JOIN departments d ON u.department_id = d.id
-      LEFT JOIN employees e ON u.id = e.user_id
-      WHERE u.id = ?
-    ");
-      $stmt->bind_param("i", $userId);
+        SELECT 
+          u.id,
+          u.first_name,
+          u.last_name,
+          u.email,
+          u.phone_number,
+          u.address,
+          u.roles,
+          u.created_at,
+          d.department_name AS department_name,
+          d.department_id AS department_id,
+          CASE WHEN JSON_CONTAINS(u.roles, '\"employee\"') THEN e.avatar_path ELSE u.avatar_path END AS avatar_path
+        FROM users_employee u
+        LEFT JOIN departments d ON u.department_id = d.department_id
+        LEFT JOIN employees e ON e.user_id = u.id
+        WHERE u.id = ?
+      ");
+      $stmt->bind_param('i', $userId);
       $stmt->execute();
       $result = $stmt->get_result();
       $user = $result->fetch_assoc();
       $stmt->close();
+
       if (!$user) {
         throw new Exception('User not found');
       }
+
       ob_end_clean();
       echo json_encode(['success' => true, 'data' => $user]);
     } catch (Exception $e) {
@@ -81,20 +93,25 @@ switch ($action) {
       $address = $_POST['address'] ?? '';
       $departmentId = $_POST['departmentId'] ?? null;
 
-      if ($departmentId !== null) {
+      if ($departmentId !== null && $departmentId !== '') {
         $departmentId = (int)$departmentId;
-        $checkStmt = $mysqli->prepare("SELECT id FROM departments WHERE id = ?");
-        $checkStmt->bind_param("i", $departmentId);
+        $checkStmt = $mysqli->prepare('SELECT department_id FROM departments WHERE department_id = ?');
+        $checkStmt->bind_param('i', $departmentId);
         $checkStmt->execute();
         $checkResult = $checkStmt->get_result();
-        if ($checkResult->num_rows === 0) $departmentId = null;
+        if ($checkResult->num_rows === 0) {
+          // If invalid, store NULL so we don't break FK
+          $departmentId = null;
+        }
         $checkStmt->close();
+      } else {
+        $departmentId = null;
       }
 
-      // Handle avatar upload
+      // Handle avatar upload (users_employee.avatar_path)
       $currentAvatar = null;
-      $stmt = $mysqli->prepare("SELECT avatar_path FROM users WHERE id = ?");
-      $stmt->bind_param("i", $userId);
+      $stmt = $mysqli->prepare('SELECT avatar_path FROM users_employee WHERE id = ?');
+      $stmt->bind_param('i', $userId);
       $stmt->execute();
       $result = $stmt->get_result();
       if ($result->num_rows > 0) {
@@ -129,8 +146,9 @@ switch ($action) {
         }
       }
 
-      $stmt = $mysqli->prepare("UPDATE users SET first_name=?, last_name=?, email=?, phone_number=?, address=?, department_id=?, avatar_path=? WHERE id=?");
-      $stmt->bind_param("sssssisi", $firstName, $lastName, $email, $phone, $address, $departmentId, $avatarPath, $userId);
+      // Update users_employee record (admin profile)
+      $stmt = $mysqli->prepare('UPDATE users_employee SET first_name = ?, last_name = ?, email = ?, phone_number = ?, address = ?, department_id = ?, avatar_path = ? WHERE id = ?');
+      $stmt->bind_param('sssssisi', $firstName, $lastName, $email, $phone, $address, $departmentId, $avatarPath, $userId);
       $stmt->execute();
       $stmt->close();
 
@@ -152,9 +170,9 @@ switch ($action) {
         throw new Exception('All fields required');
       }
 
-      // Verify current password
-      $stmt = $mysqli->prepare("SELECT password_hash FROM users WHERE id = ?");
-      $stmt->bind_param("i", $userId);
+      // Verify current password against users_employee
+      $stmt = $mysqli->prepare('SELECT password_hash FROM users_employee WHERE id = ?');
+      $stmt->bind_param('i', $userId);
       $stmt->execute();
       $result = $stmt->get_result();
       $user = $result->fetch_assoc();
@@ -164,10 +182,10 @@ switch ($action) {
         throw new Exception('Current password is incorrect');
       }
 
-      // Update password
+      // Update password in users_employee
       $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-      $stmt = $mysqli->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
-      $stmt->bind_param("si", $newHash, $userId);
+      $stmt = $mysqli->prepare('UPDATE users_employee SET password_hash = ? WHERE id = ?');
+      $stmt->bind_param('si', $newHash, $userId);
       $stmt->execute();
       $stmt->close();
 

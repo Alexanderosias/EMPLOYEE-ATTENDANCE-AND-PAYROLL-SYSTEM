@@ -859,7 +859,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const paymentDate = r.payment_date || "-";
       const actionHtml = isPaid
         ? '<span style="font-size:0.8rem; color:#6b7280;">—</span>'
-        : `<button type="button" class="mark-paid-btn" data-thirteenth-id="${r.id}">Mark as Paid</button>`;
+        : `<button type="button" class="mark-paid-btn" data-thirteenth-id="${r.id}" data-employee-id="${
+            r.employee_id || ""
+          }" data-year="${r.year || ""}">Mark as Paid</button>`;
 
       tr.innerHTML = `
         <td>${r.employee}</td>
@@ -1573,9 +1575,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!(target instanceof HTMLElement)) return;
       const btn = target.closest("button[data-thirteenth-id]");
       if (!btn) return;
-      const id =
-        parseInt(btn.getAttribute("data-thirteenth-id") || "0", 10) || 0;
-      if (!id) return;
+      const idAttr = btn.getAttribute("data-thirteenth-id");
+      const empAttr = btn.getAttribute("data-employee-id");
+      const yearAttr = btn.getAttribute("data-year");
+      const id = parseInt(idAttr || "0", 10) || 0;
+      const employee_id = parseInt(empAttr || "0", 10) || 0;
+      const year = parseInt(yearAttr || "0", 10) || 0;
+
+      if (!id && (!employee_id || !year)) return;
 
       const confirmed = await showConfirmation(
         "Mark this 13th month record as Paid?",
@@ -1587,10 +1594,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       try {
+        const body = id ? { id } : { employee_id, year };
         const res = await fetch(`${API}?action=mark_thirteenth_paid`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id }),
+          body: JSON.stringify(body),
         });
 
         const out = await res.json();

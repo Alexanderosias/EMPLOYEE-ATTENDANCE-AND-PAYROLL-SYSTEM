@@ -18,7 +18,7 @@ try {
         $totalEmployees = (int)($row['c'] ?? 0);
 
         // Present and Late today
-        $stmt = $mysqli->prepare("SELECT status, COUNT(*) AS c FROM attendance_logs WHERE date = ? GROUP BY status");
+        $stmt = $mysqli->prepare("SELECT status, COUNT(*) AS c FROM attendance_logs WHERE attendance_date = ? GROUP BY status");
         $stmt->bind_param('s', $today);
         $stmt->execute();
         $rs = $stmt->get_result();
@@ -65,11 +65,11 @@ try {
             $start = (clone $end)->modify('-6 days');
             $startStr = $start->format('Y-m-d');
             $endStr = $end->format('Y-m-d');
-            $sql = "SELECT date, SUM(status='Present') AS present_cnt, SUM(status='Late') AS late_cnt
+            $sql = "SELECT attendance_date AS date, SUM(status='Present') AS present_cnt, SUM(status='Late') AS late_cnt
                     FROM attendance_logs
-                    WHERE date BETWEEN ? AND ?
-                    GROUP BY date
-                    ORDER BY date";
+                    WHERE attendance_date BETWEEN ? AND ?
+                    GROUP BY attendance_date
+                    ORDER BY attendance_date";
             $stmt = $mysqli->prepare($sql);
             $stmt->bind_param('ss', $startStr, $endStr);
             $stmt->execute();
@@ -93,10 +93,10 @@ try {
             $start = (clone $end)->modify('-7 weeks');
             $startStr = $start->format('Y-m-d');
             $endStr = $end->format('Y-m-d');
-            $sql = "SELECT YEARWEEK(date, 1) AS yw, CONCAT('W', LPAD(WEEK(date, 1),2,'0')) AS wlabel,
+            $sql = "SELECT YEARWEEK(attendance_date, 1) AS yw, CONCAT('W', LPAD(WEEK(attendance_date, 1),2,'0')) AS wlabel,
                            SUM(status='Present') AS present_cnt, SUM(status='Late') AS late_cnt
                     FROM attendance_logs
-                    WHERE date BETWEEN ? AND ?
+                    WHERE attendance_date BETWEEN ? AND ?
                     GROUP BY yw, wlabel
                     ORDER BY yw";
             $stmt = $mysqli->prepare($sql);
@@ -123,10 +123,10 @@ try {
         } else { // monthly
             // Selected year by month
             $year = (int)$yearParam;
-            $sql = "SELECT DATE_FORMAT(date, '%Y-%m') AS ym,
+            $sql = "SELECT DATE_FORMAT(attendance_date, '%Y-%m') AS ym,
                            SUM(status='Present') AS present_cnt, SUM(status='Late') AS late_cnt
                     FROM attendance_logs
-                    WHERE YEAR(date) = ?
+                    WHERE YEAR(attendance_date) = ?
                     GROUP BY ym
                     ORDER BY ym";
             $stmt = $mysqli->prepare($sql);
@@ -165,8 +165,8 @@ try {
         $lastStr = $last->format('Y-m-d');
 
         $events = [];
-        // Holidays
-        $stmt = $mysqli->prepare("SELECT id, name, type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?");
+        // Holidays (holidays table uses holiday_id/holiday_name/holiday_type)
+        $stmt = $mysqli->prepare("SELECT holiday_id AS id, holiday_name AS name, holiday_type AS type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?");
         $stmt->bind_param('ss', $firstStr, $lastStr);
         $stmt->execute();
         $res = $stmt->get_result();
@@ -180,8 +180,8 @@ try {
             ];
         }
         $stmt->close();
-        // Special events
-        $stmt = $mysqli->prepare("SELECT id, name, start_date, end_date, paid FROM special_events WHERE end_date >= ? AND start_date <= ?");
+        // Special events (special_events uses event_id/event_name)
+        $stmt = $mysqli->prepare("SELECT event_id AS id, event_name AS name, start_date, end_date, paid FROM special_events WHERE end_date >= ? AND start_date <= ?");
         $stmt->bind_param('ss', $firstStr, $lastStr);
         $stmt->execute();
         $res = $stmt->get_result();

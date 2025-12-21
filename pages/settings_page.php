@@ -412,10 +412,36 @@ require_once '../views/auth.php';  // path relative to the page
               </div>
             </div>
           </div>
-        </div>
-      </div>
+
+        </div> <!-- .settings-container -->
+      </div> <!-- .scrollbar-container -->
 
     </main>
+  </div> <!-- .dashboard-container -->
+
+  <!-- Confirmation Modal (shared with settings.js showConfirmation) -->
+  <div style="background-color: rgba(0, 0, 0, 0.5);" id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-40 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center" role="dialog" aria-labelledby="confirmation-title" aria-modal="true" aria-hidden="true">
+    <div style="padding: 20px;" class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg leading-6 font-medium text-gray-900" id="confirmation-title">Confirm Action</h3>
+          <button id="confirmation-close-x" class="text-gray-400 hover:text-gray-500 focus:outline-none" aria-label="Close modal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mt-2">
+          <p class="text-sm text-gray-600" id="confirmation-message">Are you sure you want to proceed?</p>
+        </div>
+        <div style="display: flex; gap: 10px;" class="mt-6 flex justify-end gap-3">
+          <button id="confirmation-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none">
+            Cancel
+          </button>
+          <button id="confirmation-confirm-btn" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="../js/dashboard.js"></script>

@@ -38,16 +38,33 @@ switch ($action) {
     case 'list_employees_qr_snapshots':
         try {
             $query = "
-                SELECT e.id, e.first_name, e.last_name, qc.qr_image_path, al.snapshot_path,
-                    (SELECT GROUP_CONCAT(JSON_OBJECT('id', s.id, 'image_path', s.image_path, 'captured_at', s.captured_at) SEPARATOR '|||')
+                SELECT 
+                    e.employee_id AS id,
+                    e.first_name,
+                    e.last_name,
+                    qc.qr_image_path,
+                    al.snapshot_path,
+                    (
+                        SELECT GROUP_CONCAT(
+                            JSON_OBJECT(
+                                'id', s.snapshot_id,
+                                'image_path', s.image_path,
+                                'captured_at', COALESCE(s.captured_at, s.created_at)
+                            ) SEPARATOR '|||'
+                        )
                         FROM snapshots s
-                        JOIN attendance_logs al2 ON s.attendance_log_id = al2.id
-                        WHERE al2.employee_id = e.id) AS snapshots_json
+                        JOIN attendance_logs al2 ON s.attendance_log_id = al2.log_id
+                        WHERE al2.employee_id = e.employee_id
+                    ) AS snapshots_json
                 FROM employees e
-                LEFT JOIN qr_codes qc ON e.id = qc.employee_id
-                LEFT JOIN attendance_logs al ON e.id = al.employee_id AND al.id = (SELECT MAX(id) FROM attendance_logs WHERE employee_id = e.id)
+                LEFT JOIN qr_codes qc ON e.employee_id = qc.employee_id
+                LEFT JOIN attendance_logs al 
+                    ON e.employee_id = al.employee_id 
+                   AND al.log_id = (
+                        SELECT MAX(log_id) FROM attendance_logs WHERE employee_id = e.employee_id
+                    )
                 WHERE e.status = 'Active'
-                GROUP BY e.id
+                GROUP BY e.employee_id
                 ORDER BY e.last_name, e.first_name
             ";
             $result = $mysqli->query($query);
@@ -89,7 +106,7 @@ switch ($action) {
             }
 
             // Fetch the image path before deleting
-            $stmt = $mysqli->prepare("SELECT image_path FROM snapshots WHERE id = ?");
+            $stmt = $mysqli->prepare("SELECT image_path FROM snapshots WHERE snapshot_id = ?");
             $stmt->bind_param("i", $id);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -121,7 +138,7 @@ switch ($action) {
             }
 
             // Delete from DB
-            $stmt = $mysqli->prepare("DELETE FROM snapshots WHERE id = ?");
+            $stmt = $mysqli->prepare("DELETE FROM snapshots WHERE snapshot_id = ?");
             $stmt->bind_param("i", $id);
             $stmt->execute();
             $stmt->close();
