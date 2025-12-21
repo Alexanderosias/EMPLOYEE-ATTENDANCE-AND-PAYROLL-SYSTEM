@@ -1,4 +1,5 @@
 <?php
+session_start(); // ✅ REQUIRED
 // views/employee_profile_handler.php - Backend for employee profile page
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
@@ -28,7 +29,7 @@ function ep_generate_qr($mysqli, $employeeId)
     }
 
     // Fetch fresh employee with position
-    $stmt = $mysqli->prepare("SELECT e.id, e.first_name, e.last_name, e.date_joined, jp.name AS position_name FROM employees e LEFT JOIN job_positions jp ON e.job_position_id = jp.id WHERE e.id = ?");
+    $stmt = $mysqli->prepare("SELECT e.employee_id AS id, e.first_name, e.last_name, e.date_joined, jp.name AS position_name FROM employees e LEFT JOIN job_positions jp ON e.job_position_id = jp.id WHERE e.employee_id = ?");
     $stmt->bind_param('i', $employeeId);
     $stmt->execute();
     $emp = $stmt->get_result()->fetch_assoc();
@@ -112,55 +113,85 @@ if (!$hasEmployeeRole) {
     exit;
 }
 
+
 $userId = $_SESSION['user_id'];
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 try {
-    switch ($action) {
-        case 'get_profile':
-            // Fetch employee data
-            $stmt = $mysqli->prepare("
-                SELECT e.*, u.first_name, u.last_name, u.email, u.avatar_path AS user_avatar_path, u.created_at,
-                       d.name as department_name, jp.name as position_name
-                FROM employees e
-                JOIN users u ON e.user_id = u.id
-                LEFT JOIN departments d ON e.department_id = d.id
-                LEFT JOIN job_positions jp ON e.job_position_id = jp.id
-                WHERE e.user_id = ?
-            ");
-            $stmt->bind_param('i', $userId);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $employee = $result->fetch_assoc();
-            $stmt->close();
+     switch ($action) {
+     case 'get_profile':  
 
-            if (!$employee) {
-                throw new Exception('Employee record not found');
-            }
+     if (!isset($_SESSION['user_id'])) {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+        exit;
+     }
 
-            // Normalize fields for the employee profile UI (e.g., date_of_birth)
-            if (array_key_exists('date_of_birth', $employee)) {
-                if (empty($employee['date_of_birth']) || $employee['date_of_birth'] === '0000-00-00') {
-                    $employee['date_of_birth'] = '';
-                } else {
-                    $employee['date_of_birth'] = trim($employee['date_of_birth']);
-                }
-            }
+     $userId = (int)$_SESSION['user_id'];
 
-            // Prefer employees.avatar_path for display; fallback to users.avatar_path; else default image
-            $empAvatar = $employee['avatar_path'] ?? '';
-            $userAvatar = $employee['user_avatar_path'] ?? '';
-            if (!empty($empAvatar)) {
-                $employee['avatar_path'] = (strpos($empAvatar, 'uploads/') === 0) ? ('../' . $empAvatar) : $empAvatar;
-            } elseif (!empty($userAvatar)) {
-                $employee['avatar_path'] = (strpos($userAvatar, 'uploads/') === 0) ? ('../' . $userAvatar) : $userAvatar;
-            } else {
-                $employee['avatar_path'] = '../pages/img/user.jpg';
-            }
+     $stmt = $mysqli->prepare("
+        SELECT
+            ue.id AS user_id,
+            ue.first_name AS user_first_name,
+            ue.last_name AS user_last_name,
+            ue.email AS user_email,
+            ue.phone_number,
+            ue.address AS user_address,
+            ue.avatar_path AS user_avatar,
 
-            ob_end_clean();
-            echo json_encode(['success' => true, 'data' => $employee]);
-            break;
+            e.employee_id,
+            e.first_name AS emp_first_name,
+            e.last_name AS emp_last_name,
+            e.email AS emp_email,
+            e.contact_number,
+            e.address AS emp_address,
+            e.gender,
+            e.marital_status,
+            e.date_of_birth,
+            e.emergency_contact_name,
+            e.emergency_contact_phone,
+            e.avatar_path AS emp_avatar
+
+        FROM users_employee ue
+        LEFT JOIN employees e ON e.user_id = ue.id
+        WHERE ue.id = ?
+        LIMIT 1
+     ");
+
+     $stmt->bind_param('i', $userId);
+     $stmt->execute();
+     $res = $stmt->get_result();
+     $row = $res->fetch_assoc();
+     $stmt->close();
+
+     if (!$row) {
+        echo json_encode(['success' => false, 'message' => 'Employee record not found']);
+        exit;
+     }
+
+     // ✅ Normalize data for frontend
+     $data = [
+        'first_name' => $row['emp_first_name'] ?: $row['user_first_name'],
+        'last_name'  => $row['emp_last_name'] ?: $row['user_last_name'],
+        'email'      => $row['emp_email'] ?: $row['user_email'],
+        'contact_number' => $row['contact_number'] ?: $row['phone_number'],
+        'address'    => $row['emp_address'] ?: $row['user_address'],
+        'gender'     => $row['gender'],
+        'marital_status' => $row['marital_status'],
+        'date_of_birth'  => $row['date_of_birth'],
+        'emergency_contact_name' => $row['emergency_contact_name'],
+        'emergency_contact_phone' => $row['emergency_contact_phone'],
+        'avatar_path' => !empty($row['emp_avatar'])
+            ? '../' . $row['emp_avatar']
+            : (!empty($row['user_avatar']) ? '../' . $row['user_avatar'] : '../pages/icons/profile-picture.png')
+     ];
+
+     echo json_encode(['success' => true, 'data' => $data]);
+     break;
+
+
+
+
+
 
         case 'update_profile':
             // Update editable fields. If QR-relevant name fields change, regenerate QR.
@@ -194,7 +225,7 @@ try {
             }
 
             // Load current values for QR change detection and employee id
-            $stmt = $mysqli->prepare("SELECT e.id, e.first_name, e.last_name FROM employees e WHERE e.user_id = ?");
+           $stmt = $mysqli->prepare("SELECT e.employee_id AS id, e.first_name, e.last_name FROM employees e WHERE e.user_id = ?");
             $stmt->bind_param('i', $userId);
             $stmt->execute();
             $res = $stmt->get_result();
@@ -211,7 +242,7 @@ try {
 
             // Update users table (names, phone, address)
             if ($firstName !== null || $lastName !== null || $address !== '' || $phoneNumber !== '') {
-                $stmt = $mysqli->prepare("UPDATE users SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name), phone_number = ?, address = ? WHERE id = ?");
+                $stmt = $mysqli->prepare("UPDATE users_employee SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name), phone_number = ?, address = ? WHERE id = ?");
                 $stmt->bind_param('ssssi', $firstName, $lastName, $phoneNumber, $address, $userId);
                 if (!$stmt->execute()) throw new Exception('Failed to update user info');
                 $stmt->close();
@@ -281,7 +312,7 @@ try {
             // Read old avatar paths (employees and users)
             $oldEmpPath = '';
             $oldUserPath = '';
-            $stmt = $mysqli->prepare("SELECT e.avatar_path AS emp_avatar, u.avatar_path AS user_avatar, e.id AS emp_id FROM employees e JOIN users u ON e.user_id = u.id WHERE e.user_id = ?");
+            $stmt = $mysqli->prepare("SELECT e.avatar_path AS emp_avatar, u.avatar_path AS user_avatar, e.employee_id AS emp_id FROM employees e JOIN users u ON e.user_id = u.id WHERE e.user_id = ?");
             $stmt->bind_param('i', $userId);
             $stmt->execute();
             $res = $stmt->get_result();
@@ -359,22 +390,20 @@ try {
             }
 
             // Verify current password
-            $stmt = $mysqli->prepare("SELECT password_hash FROM users WHERE id = ?");
+             $stmt = $mysqli->prepare("SELECT password_hash FROM users_employee WHERE id = ?");
             $stmt->bind_param('i', $userId);
             $stmt->execute();
             $result = $stmt->get_result();
             $user = $result->fetch_assoc();
             $stmt->close();
-
             if (!$user || !password_verify($currentPassword, $user['password_hash'])) {
-                throw new Exception('Current password is incorrect');
+            throw new Exception('Current password is incorrect');
             }
 
             // Update password
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $stmt = $mysqli->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+            $stmt = $mysqli->prepare("UPDATE users_employee SET password_hash = ? WHERE id = ?");
             $stmt->bind_param('si', $hashedPassword, $userId);
-
             if (!$stmt->execute()) {
                 throw new Exception('Failed to update password');
             }
