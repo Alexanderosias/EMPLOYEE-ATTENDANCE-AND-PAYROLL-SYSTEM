@@ -145,10 +145,6 @@
             </tr>
           </thead>
           <tbody id="leave-requests-table" class="bg-white divide-y divide-gray-200">
-            <!-- Dynamic rows -->
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              ${req.proof_path ? (isImage(req.proof_path) ? '🖼️' : '📎') : 'N/A'}
-            </td>
           </tbody>
         </table>
       </div>

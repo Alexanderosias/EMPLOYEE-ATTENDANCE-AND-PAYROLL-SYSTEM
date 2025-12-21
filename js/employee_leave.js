@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const BASE_PATH = ""; // Change to "views/" if getting 404 (depending on your directory structure)
-  const API_BASE = BASE_PATH + "/views/employee_handler.php";
+  const API_BASE = "../views/employee_handler.php";
 
   // Declare ALL DOM elements at the top to avoid initialization errors
   const modal = document.getElementById("leave-modal");

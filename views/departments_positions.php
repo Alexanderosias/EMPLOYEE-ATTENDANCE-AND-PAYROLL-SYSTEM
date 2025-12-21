@@ -118,7 +118,7 @@ switch ($action) {
             if ($whRes && isset($whRes['working_hours_per_day']) && (float)$whRes['working_hours_per_day'] > 0) {
                 $wh = (float)$whRes['working_hours_per_day'];
             } else {
-                $whRow2 = $mysqli->query("SELECT company_hours_per_day FROM time_date_settings LIMIT 1");
+                $whRow2 = $mysqli->query("SELECT company_hours_per_day FROM eaaps_time_date_settings LIMIT 1");
                 $row2 = $whRow2 ? $whRow2->fetch_assoc() : null;
                 if ($row2 && (float)$row2['company_hours_per_day'] > 0) $wh = (float)$row2['company_hours_per_day'];
             }
@@ -324,7 +324,7 @@ switch ($action) {
             $checkStmt->close();
 
             // Get default working_hour_per_day from settings (fallback 8)
-            $whRes = $mysqli->query("SELECT company_hours_per_day FROM time_date_settings LIMIT 1");
+            $whRes = $mysqli->query("SELECT company_hours_per_day FROM eaaps_time_date_settings LIMIT 1");
             $whRow = $whRes ? $whRes->fetch_assoc() : null;
             $workingHourPerDay = isset($whRow['company_hours_per_day']) ? (float)$whRow['company_hours_per_day'] : 8;
 

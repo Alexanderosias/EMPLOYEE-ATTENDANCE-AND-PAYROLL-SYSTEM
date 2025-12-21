@@ -20,7 +20,21 @@ if (file_exists($vendorAutoload)) {
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 
-// QR helpers (duplicate of logic in employees.php simplified for profile updates)
+// Phone helpers (similar to employees.php but scoped for employee profile)
+function ep_clean_phone($phone)
+{
+    $phone = $phone ?? '';
+    return preg_replace('/\D/', '', $phone);
+}
+
+function ep_validate_phone($phone)
+{
+    $digits = ep_clean_phone($phone);
+    // Must be exactly 11 digits and start with 09
+    return (bool)preg_match('/^09\d{9}$/', $digits);
+}
+
+// QR helpers (aligned with employees.php logic for systemintegration schema)
 function ep_generate_qr($mysqli, $employeeId)
 {
     if (!class_exists(QRCode::class)) {
@@ -28,10 +42,26 @@ function ep_generate_qr($mysqli, $employeeId)
         return [null, null];
     }
 
-    // Fetch fresh employee with position
-    $stmt = $mysqli->prepare("SELECT e.employee_id AS id, e.first_name, e.last_name, e.date_joined, jp.name AS position_name FROM employees e LEFT JOIN job_positions jp ON e.job_position_id = jp.id WHERE e.employee_id = ?");
+    // Fetch fresh employee with position (systemintegration schema)
+    $stmt = $mysqli->prepare("SELECT 
+            e.employee_id AS id,
+            e.first_name,
+            e.last_name,
+            e.hire_date AS date_joined,
+            jp.position_name AS position_name
+        FROM employees e
+        LEFT JOIN job_positions jp ON e.position_id = jp.position_id
+        WHERE e.employee_id = ?");
+    if (!$stmt) {
+        error_log('ep_generate_qr prepare failed: ' . $mysqli->error);
+        return [null, null];
+    }
     $stmt->bind_param('i', $employeeId);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        error_log('ep_generate_qr execute failed: ' . $stmt->error);
+        $stmt->close();
+        return [null, null];
+    }
     $emp = $stmt->get_result()->fetch_assoc();
     $stmt->close();
     if (!$emp) return [null, null];
@@ -149,10 +179,16 @@ try {
             e.date_of_birth,
             e.emergency_contact_name,
             e.emergency_contact_phone,
-            e.avatar_path AS emp_avatar
+            e.avatar_path AS emp_avatar,
+            e.hire_date,
+            e.status AS employment_status,
+            d.department_name,
+            jp.position_name
 
         FROM users_employee ue
         LEFT JOIN employees e ON e.user_id = ue.id
+        LEFT JOIN departments d ON e.department_id = d.department_id
+        LEFT JOIN job_positions jp ON e.position_id = jp.position_id
         WHERE ue.id = ?
         LIMIT 1
      ");
@@ -168,26 +204,38 @@ try {
         exit;
      }
 
-     // ✅ Normalize data for frontend
+     // Normalize data for frontend
+     $primaryContact = $row['contact_number'] ?: $row['phone_number'];
      $data = [
+        // Identifiers (employee & user)
+        'id' => isset($row['employee_id']) ? (int)$row['employee_id'] : 0,
+        'employee_id' => isset($row['employee_id']) ? (int)$row['employee_id'] : 0,
+        'user_id' => isset($row['user_id']) ? (int)$row['user_id'] : 0,
+
         'first_name' => $row['emp_first_name'] ?: $row['user_first_name'],
         'last_name'  => $row['emp_last_name'] ?: $row['user_last_name'],
         'email'      => $row['emp_email'] ?: $row['user_email'],
-        'contact_number' => $row['contact_number'] ?: $row['phone_number'],
+        // Send cleaned digits; frontend can format for display
+        'contact_number' => ep_clean_phone($primaryContact),
+        'phone_number' => ep_clean_phone($row['phone_number'] ?? ''),
         'address'    => $row['emp_address'] ?: $row['user_address'],
         'gender'     => $row['gender'],
         'marital_status' => $row['marital_status'],
         'date_of_birth'  => $row['date_of_birth'],
         'emergency_contact_name' => $row['emergency_contact_name'],
-        'emergency_contact_phone' => $row['emergency_contact_phone'],
+        'emergency_contact_phone' => ep_clean_phone($row['emergency_contact_phone'] ?? ''),
         'avatar_path' => !empty($row['emp_avatar'])
             ? '../' . $row['emp_avatar']
-            : (!empty($row['user_avatar']) ? '../' . $row['user_avatar'] : '../pages/icons/profile-picture.png')
+            : (!empty($row['user_avatar']) ? '../' . $row['user_avatar'] : '../pages/icons/profile-picture.png'),
+        // Employment metadata (for profile display)
+        'date_hired' => $row['hire_date'] ?? null,
+        'department_name' => $row['department_name'] ?? null,
+        'position_name' => $row['position_name'] ?? null,
+        'employment_status' => $row['employment_status'] ?? null
      ];
 
      echo json_encode(['success' => true, 'data' => $data]);
      break;
-
 
 
 
@@ -219,9 +267,18 @@ try {
                 $dateOfBirth = $dateOfBirthRaw;
             }
 
-            // Validate
-            if (empty($phoneNumber)) {
+            // Clean and validate phone numbers
+            $cleanPhone = ep_clean_phone($phoneNumber);
+            $cleanEmergencyPhone = ep_clean_phone($emergencyContactPhone);
+
+            if (empty($cleanPhone)) {
                 throw new Exception('Phone number is required');
+            }
+            if (!ep_validate_phone($cleanPhone)) {
+                throw new Exception('Phone number must be 11 digits and start with 09');
+            }
+            if (!empty($cleanEmergencyPhone) && !ep_validate_phone($cleanEmergencyPhone)) {
+                throw new Exception('Emergency contact phone must be 11 digits and start with 09');
             }
 
             // Load current values for QR change detection and employee id
@@ -241,16 +298,16 @@ try {
             if ($lastName !== null && $lastName !== $currentLast) $qrChanged = true;
 
             // Update users table (names, phone, address)
-            if ($firstName !== null || $lastName !== null || $address !== '' || $phoneNumber !== '') {
+            if ($firstName !== null || $lastName !== null || $address !== '' || $cleanPhone !== '') {
                 $stmt = $mysqli->prepare("UPDATE users_employee SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name), phone_number = ?, address = ? WHERE id = ?");
-                $stmt->bind_param('ssssi', $firstName, $lastName, $phoneNumber, $address, $userId);
+                $stmt->bind_param('ssssi', $firstName, $lastName, $cleanPhone, $address, $userId);
                 if (!$stmt->execute()) throw new Exception('Failed to update user info');
                 $stmt->close();
             }
 
             // Update employees table (mirror names, contact_number, address, emergency contacts, date_of_birth)
             $stmt = $mysqli->prepare("UPDATE employees SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name), address = ?, contact_number = ?, emergency_contact_name = ?, emergency_contact_phone = ?, date_of_birth = ? WHERE user_id = ?");
-            $stmt->bind_param('sssssssi', $firstName, $lastName, $address, $phoneNumber, $emergencyContactName, $emergencyContactPhone, $dateOfBirth, $userId);
+            $stmt->bind_param('sssssssi', $firstName, $lastName, $address, $cleanPhone, $emergencyContactName, $cleanEmergencyPhone, $dateOfBirth, $userId);
             if (!$stmt->execute()) throw new Exception('Failed to update profile');
             $stmt->close();
 
@@ -309,10 +366,10 @@ try {
                 throw new Exception('Failed to save uploaded file');
             }
 
-            // Read old avatar paths (employees and users)
+            // Read old avatar paths (employees and users_employee)
             $oldEmpPath = '';
             $oldUserPath = '';
-            $stmt = $mysqli->prepare("SELECT e.avatar_path AS emp_avatar, u.avatar_path AS user_avatar, e.employee_id AS emp_id FROM employees e JOIN users u ON e.user_id = u.id WHERE e.user_id = ?");
+            $stmt = $mysqli->prepare("SELECT e.avatar_path AS emp_avatar, u.avatar_path AS user_avatar, e.employee_id AS emp_id FROM employees e JOIN users_employee u ON e.user_id = u.id WHERE e.user_id = ?");
             $stmt->bind_param('i', $userId);
             $stmt->execute();
             $res = $stmt->get_result();
@@ -326,8 +383,8 @@ try {
             // Update both tables in a transaction
             $mysqli->begin_transaction();
             try {
-                // Update users
-                $stmt = $mysqli->prepare("UPDATE users SET avatar_path = ? WHERE id = ?");
+                // Update users_employee (employee user account)
+                $stmt = $mysqli->prepare("UPDATE users_employee SET avatar_path = ? WHERE id = ?");
                 $stmt->bind_param('si', $dbPath, $userId);
                 if (!$stmt->execute()) throw new Exception('Failed to update user avatar');
                 $stmt->close();

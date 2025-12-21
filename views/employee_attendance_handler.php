@@ -14,7 +14,7 @@ try {
         echo json_encode(['success' => false, 'message' => 'Not logged in']);
         exit;
     }
-    $empStmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+    $empStmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ? LIMIT 1");
     $empStmt->bind_param('i', $userId);
     $empStmt->execute();
     $empRes = $empStmt->get_result()->fetch_assoc();
@@ -24,7 +24,7 @@ try {
         echo json_encode(['success' => false, 'message' => 'Employee record not found']);
         exit;
     }
-    $employeeId = (int)$empRes['id'];
+    $employeeId = (int)$empRes['employee_id'];
 
     $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
@@ -33,7 +33,7 @@ try {
         $lastDay  = (new DateTime('last day of this month'))->format('Y-m-d');
 
         $holidays = [];
-        if ($hRes = $mysqli->query("SELECT id, name, type, start_date, end_date FROM holidays")) {
+        if ($hRes = $mysqli->query("SELECT holiday_id AS id, holiday_name AS name, holiday_type AS type, start_date, end_date FROM holidays")) {
             while ($hRow = $hRes->fetch_assoc()) {
                 $holidays[] = $hRow;
             }
@@ -41,8 +41,8 @@ try {
         }
 
         $sql = "SELECT 
-                    al.id,
-                    al.date,
+                    al.log_id AS id,
+                    al.attendance_date AS date,
                     al.status,
                     al.time_in AS time_in,
                     al.time_out AS time_out,
@@ -52,9 +52,9 @@ try {
                 LEFT JOIN leave_requests lr
                     ON lr.employee_id = al.employee_id
                    AND lr.status = 'Approved'
-                   AND al.date BETWEEN lr.start_date AND lr.end_date
-                WHERE al.employee_id = ? AND al.date BETWEEN ? AND ?
-                ORDER BY al.date DESC, al.time_in DESC";
+                   AND al.attendance_date BETWEEN lr.start_date AND lr.end_date
+                WHERE al.employee_id = ? AND al.attendance_date BETWEEN ? AND ?
+                ORDER BY al.attendance_date DESC, al.time_in DESC";
         $stmt = $mysqli->prepare($sql);
         $stmt->bind_param('iss', $employeeId, $firstDay, $lastDay);
         $stmt->execute();
@@ -142,7 +142,7 @@ try {
         }
 
         $holidays = [];
-        if ($hRes = $mysqli->query("SELECT id, name, type, start_date, end_date FROM holidays")) {
+        if ($hRes = $mysqli->query("SELECT holiday_id AS id, holiday_name AS name, holiday_type AS type, start_date, end_date FROM holidays")) {
             while ($hRow = $hRes->fetch_assoc()) {
                 $holidays[] = $hRow;
             }
@@ -150,8 +150,8 @@ try {
         }
 
         $sql = "SELECT 
-                    al.id,
-                    al.date,
+                    al.log_id AS id,
+                    al.attendance_date AS date,
                     al.time_in AS time_in,
                     al.time_out AS time_out,
                     DATE_FORMAT(al.time_in, '%Y-%m-%d %h:%i %p') AS time_in_fmt,
@@ -166,9 +166,9 @@ try {
                 LEFT JOIN leave_requests lr
                     ON lr.employee_id = al.employee_id
                    AND lr.status = 'Approved'
-                   AND al.date BETWEEN lr.start_date AND lr.end_date
-                WHERE al.employee_id = ? AND al.date BETWEEN ? AND ?
-                ORDER BY al.date DESC, al.time_in DESC";
+                   AND al.attendance_date BETWEEN lr.start_date AND lr.end_date
+                WHERE al.employee_id = ? AND al.attendance_date BETWEEN ? AND ?
+                ORDER BY al.attendance_date DESC, al.time_in DESC";
         $stmt = $mysqli->prepare($sql);
         $stmt->bind_param('iss', $employeeId, $start, $end);
         $stmt->execute();

@@ -1,6 +1,5 @@
 START TRANSACTION;
 
-ALTER TABLE `employees`              ADD PRIMARY KEY (`employee_id`);
 ALTER TABLE `departments`            ADD PRIMARY KEY (`department_id`);
 ALTER TABLE `job_positions`          ADD PRIMARY KEY (`position_id`);
 ALTER TABLE `attendance_logs`        ADD PRIMARY KEY (`log_id`);

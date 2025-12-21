@@ -4382,3 +4382,186 @@ Stack trace:
 [19-Dec-2025 11:17:33 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
 [19-Dec-2025 11:17:33 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
 [19-Dec-2025 11:17:33 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 17:19:34 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 17:19:34 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:13:31 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 18:13:31 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:13:57 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 18:13:57 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:15:00 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:15:06 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:31:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:31:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:31:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:31:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:31:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:31:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:31:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:31:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:31:55 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 18:31:55 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:32:27 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 18:32:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:32:27 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 18:32:28 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:33:13 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 18:33:13 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:33:13 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 18:33:13 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:33:18 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:33:18 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:48:46 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:48:46 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:48:50 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 18:48:50 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:48:51 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:48:51 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:48:54 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:49:00 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:49:00 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:49:00 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:49:24 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 18:49:24 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:52:45 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:52:45 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:52:45 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:52:45 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:52:45 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:52:45 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:52:45 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:52:45 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:52:55 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 18:52:55 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:53:00 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:53:00 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:53:06 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:53:20 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:53:20 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:53:20 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:59:19 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:59:19 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:59:26 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:59:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:59:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 18:59:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:24 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:24 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:30 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:34 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:34 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:34 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:39 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:39 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:39 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:53 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 19:10:55 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:08:41 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:08:41 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:08:45 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:08:50 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:08:50 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:08:50 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:04 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:04 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:04 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:04 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:04 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:04 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:05 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:05 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:05 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:11 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:11 Europe/Berlin] Debug view_leave_request: userId=2, requestId=1
+[21-Dec-2025 20:09:38 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:40 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:09:40 Europe/Berlin] Debug view_leave_request: requestId=1
+[21-Dec-2025 20:11:17 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:11:17 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:11:17 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:11:17 Europe/Berlin] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\eaaps\views\employee_handler.php on line 485
+[21-Dec-2025 20:11:17 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:11:17 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:11:17 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:11:17 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:11:17 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:11:21 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:11:21 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:30:41 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:30:41 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:30:57 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:30:57 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:30:57 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:30:57 Europe/Berlin] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\eaaps\views\employee_handler.php on line 485
+[21-Dec-2025 20:30:57 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:30:57 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:30:57 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:30:57 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:30:57 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:30:59 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:30:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:37:56 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:37:56 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:42:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:42:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:42:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:42:27 Europe/Berlin] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\eaaps\views\employee_handler.php on line 485
+[21-Dec-2025 20:42:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:42:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:42:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:42:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:42:27 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:49:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:49:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:49:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:49:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:49:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:49:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:49:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:49:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:32 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:32 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:32 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:32 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:32 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:32 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:32 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:32 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:46 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:51:46 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:52 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:52 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:56 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:56 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:51:56 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:52:07 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:52:07 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:52:22 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:52:22 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:52:22 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:52:22 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:52:41 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:52:41 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:52:41 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:52:41 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:52:48 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:52:48 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 20:52:51 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\eaaps\views\auth.php on line 2
+[21-Dec-2025 20:52:51 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:12:43 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:12:43 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:12:43 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:12:43 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:12:43 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:12:43 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:12:43 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:12:43 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:16:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:16:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:16:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:16:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:16:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:16:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:16:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
+[21-Dec-2025 21:16:59 Europe/Berlin] EAAPS MySQL connected successfully to systemintegration
