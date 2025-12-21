@@ -37,7 +37,7 @@ try {
         }
 
         $sql = "SELECT
-                    ot.id,
+                    ot.overtime_id AS id,
                     ot.employee_id,
                     CONCAT(e.first_name, ' ', e.last_name) AS employee_name,
                     ot.date,
@@ -48,9 +48,9 @@ try {
                     ot.status,
                     ot.remarks
                 FROM overtime_requests ot
-                JOIN employees e ON ot.employee_id = e.id
+                JOIN employees e ON ot.employee_id = e.employee_id
                 $where
-                ORDER BY ot.date DESC, ot.actual_out_time DESC, ot.id DESC";
+                ORDER BY ot.date DESC, ot.actual_out_time DESC, ot.overtime_id DESC";
 
         $res = $mysqli->query($sql);
         if (!$res) {
@@ -109,7 +109,7 @@ try {
                 throw new Exception('Invalid status. Only Approved or Rejected are allowed.');
             }
 
-            $stmt = $mysqli->prepare("SELECT raw_ot_minutes FROM overtime_requests WHERE id = ? LIMIT 1");
+            $stmt = $mysqli->prepare("SELECT raw_ot_minutes FROM overtime_requests WHERE overtime_id = ? LIMIT 1");
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
@@ -141,7 +141,7 @@ try {
                 throw new Exception('Missing user session.');
             }
 
-            $stmt = $mysqli->prepare("UPDATE overtime_requests SET approved_ot_minutes = ?, status = ?, approved_by = ?, approved_at = NOW(), remarks = ? WHERE id = ?");
+            $stmt = $mysqli->prepare("UPDATE overtime_requests SET approved_ot_minutes = ?, status = ?, approved_by = ?, approved_at = NOW(), remarks = ?, updated_at = NOW() WHERE overtime_id = ?");
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }

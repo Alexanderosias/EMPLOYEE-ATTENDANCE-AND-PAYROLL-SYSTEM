@@ -14,12 +14,12 @@ try {
 
         // Determine if today is a holiday where employees are generally not expected to work
         $todayHolidayType = null;
-        if ($stmtH = $mysqli->prepare("SELECT type FROM holidays WHERE start_date <= ? AND end_date >= ? LIMIT 1")) {
+        if ($stmtH = $mysqli->prepare("SELECT holiday_type FROM holidays WHERE start_date <= ? AND end_date >= ? LIMIT 1")) {
             $stmtH->bind_param('ss', $today, $today);
             if ($stmtH->execute()) {
                 $hRes = $stmtH->get_result();
                 if ($hRow = $hRes->fetch_assoc()) {
-                    $todayHolidayType = $hRow['type'] ?? null;
+                    $todayHolidayType = $hRow['holiday_type'] ?? null;
                 }
             }
             $stmtH->close();
@@ -29,8 +29,8 @@ try {
         // Get all employees with schedules for today
         $scheduleQuery = "
         SELECT DISTINCT s.employee_id, e.first_name, e.last_name
-        FROM schedules s
-        JOIN employees e ON s.employee_id = e.id
+        FROM employee_schedules s
+        JOIN employees e ON s.employee_id = e.employee_id
         WHERE s.day_of_week = ?
     ";
         $stmt = $mysqli->prepare($scheduleQuery);
@@ -43,7 +43,7 @@ try {
             $employeeId = $emp['employee_id'];
 
             // Check if attendance log already exists for today
-            $checkStmt = $mysqli->prepare("SELECT id FROM attendance_logs WHERE employee_id = ? AND date = ?");
+            $checkStmt = $mysqli->prepare("SELECT log_id, snapshot_path FROM attendance_logs WHERE employee_id = ? AND attendance_date = ? LIMIT 1");
             $checkStmt->bind_param('is', $employeeId, $today);
             $checkStmt->execute();
             $exists = $checkStmt->get_result()->num_rows > 0;
@@ -57,7 +57,7 @@ try {
             // Compute expected times: earliest start and latest end
             $expectedQuery = "
             SELECT MIN(start_time) AS expected_start, MAX(end_time) AS expected_end
-            FROM schedules
+            FROM employee_schedules
             WHERE employee_id = ? AND day_of_week = ?
         ";
             $expStmt = $mysqli->prepare($expectedQuery);
@@ -71,7 +71,7 @@ try {
 
             // Insert new attendance log as Absent for working days
             $insertStmt = $mysqli->prepare("
-            INSERT INTO attendance_logs (employee_id, date, status, time_in, time_out, expected_start_time, expected_end_time)
+            INSERT INTO attendance_logs (employee_id, attendance_date, status, time_in, time_out, expected_start_time, expected_end_time)
             VALUES (?, ?, 'Absent', NULL, NULL, ?, ?)
         ");
             $insertStmt->bind_param('isss', $employeeId, $today, $expectedStart, $expectedEnd);
@@ -82,11 +82,11 @@ try {
         // Now fetch the attendance logs including snapshot info
         $query = "
         SELECT 
-            al.id,
+            al.log_id AS id,
             al.employee_id,
             CONCAT(e.first_name, ' ', e.last_name) AS name,
             e.avatar_path,
-            al.date,
+            al.attendance_date AS date,
             DATE_FORMAT(al.time_in, '%h:%i %p') as time_in,
             DATE_FORMAT(al.time_out, '%h:%i %p') as time_out,
             al.status,
@@ -96,27 +96,27 @@ try {
             (
                 SELECT GROUP_CONCAT(
                     JSON_OBJECT(
-                        'id', s.id,
+                        'id', s.snapshot_id,
                         'image_path', s.image_path,
                         'captured_at', s.captured_at
                     )
                     SEPARATOR '|||'
                 )
                 FROM snapshots s
-                WHERE s.attendance_log_id = al.id
+                WHERE s.attendance_log_id = al.log_id
             ) AS snapshots_json
         FROM attendance_logs al
-        JOIN employees e ON al.employee_id = e.id
+        JOIN employees e ON al.employee_id = e.employee_id
         LEFT JOIN leave_requests lr
             ON lr.employee_id = al.employee_id
            AND lr.status = 'Approved'
-           AND al.date BETWEEN lr.start_date AND lr.end_date
-        ORDER BY al.date DESC, al.time_in DESC
+           AND al.attendance_date BETWEEN lr.start_date AND lr.end_date
+        ORDER BY al.attendance_date DESC, al.time_in DESC
     ";
 
         // Preload holidays for holiday-aware status mapping
         $holidays = [];
-        if ($hRes = $mysqli->query("SELECT id, name, type, start_date, end_date FROM holidays")) {
+        if ($hRes = $mysqli->query("SELECT holiday_id AS id, holiday_name AS name, holiday_type AS type, start_date, end_date FROM holidays")) {
             while ($hRow = $hRes->fetch_assoc()) {
                 $holidays[] = $hRow;
             }
@@ -280,7 +280,7 @@ try {
             $stmt->close();
 
             // Get snapshot_path from attendance_logs (if exists)
-            $stmt = $mysqli->prepare("SELECT snapshot_path FROM attendance_logs WHERE id = ?");
+            $stmt = $mysqli->prepare("SELECT snapshot_path FROM attendance_logs WHERE log_id = ?");
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -304,7 +304,7 @@ try {
             }
 
             // Step 3: Delete the attendance log (cascades to snapshots table)
-            $stmt = $mysqli->prepare("DELETE FROM attendance_logs WHERE id = ?");
+            $stmt = $mysqli->prepare("DELETE FROM attendance_logs WHERE log_id = ?");
             $stmt->bind_param('i', $id);
 
             if ($stmt->execute()) {
@@ -380,7 +380,7 @@ try {
                 }
 
                 // Upsert attendance log by (employee_id, date)
-                $stmt = $mysqli->prepare("SELECT id, snapshot_path FROM attendance_logs WHERE employee_id = ? AND date = ? LIMIT 1");
+                $stmt = $mysqli->prepare("SELECT log_id, snapshot_path FROM attendance_logs WHERE employee_id = ? AND attendance_date = ? LIMIT 1");
                 $stmt->bind_param('is', $employeeId, $date);
                 $stmt->execute();
                 $res = $stmt->get_result();
@@ -388,13 +388,13 @@ try {
                 $stmt->close();
 
                 if ($existing) {
-                    $logId = (int)$existing['id'];
-                    $stmt = $mysqli->prepare("UPDATE attendance_logs SET time_in = ?, time_out = ?, status = ?, check_type = ?, expected_start_time = ?, expected_end_time = ? WHERE id = ?");
+                    $logId = (int)$existing['log_id'];
+                    $stmt = $mysqli->prepare("UPDATE attendance_logs SET time_in = ?, time_out = ?, status = ?, check_type = ?, expected_start_time = ?, expected_end_time = ? WHERE log_id = ?");
                     $stmt->bind_param('ssssssi', $timeIn, $timeOut, $status, $checkType, $expectedStart, $expectedEnd, $logId);
                     $stmt->execute();
                     $stmt->close();
                 } else {
-                    $stmt = $mysqli->prepare("INSERT INTO attendance_logs (employee_id, date, time_in, time_out, status, check_type, expected_start_time, expected_end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $mysqli->prepare("INSERT INTO attendance_logs (employee_id, attendance_date, time_in, time_out, status, check_type, expected_start_time, expected_end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmt->bind_param('isssssss', $employeeId, $date, $timeIn, $timeOut, $status, $checkType, $expectedStart, $expectedEnd);
                     $stmt->execute();
                     $logId = $mysqli->insert_id;
@@ -432,7 +432,7 @@ try {
 
                 // Set primary snapshot_path if empty
                 if ($firstSavedPath) {
-                    $stmt = $mysqli->prepare("UPDATE attendance_logs SET snapshot_path = COALESCE(NULLIF(snapshot_path, ''), ?) WHERE id = ?");
+                    $stmt = $mysqli->prepare("UPDATE attendance_logs SET snapshot_path = COALESCE(NULLIF(snapshot_path, ''), ?) WHERE log_id = ?");
                     $stmt->bind_param('si', $firstSavedPath, $logId);
                     $stmt->execute();
                     $stmt->close();
@@ -455,7 +455,7 @@ try {
             }
 
             // Fetch existing log
-            $stmt = $mysqli->prepare("SELECT employee_id, date FROM attendance_logs WHERE id = ?");
+            $stmt = $mysqli->prepare("SELECT employee_id, attendance_date AS date FROM attendance_logs WHERE log_id = ?");
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -472,7 +472,7 @@ try {
 
             // Recalculate expected times from schedules
             // For expected_start_time: Earliest start_time (ORDER BY start_time ASC, take first)
-            $stmt = $mysqli->prepare("SELECT start_time FROM schedules WHERE employee_id = ? AND day_of_week = ? ORDER BY start_time ASC LIMIT 1");
+            $stmt = $mysqli->prepare("SELECT start_time FROM employee_schedules WHERE employee_id = ? AND day_of_week = ? ORDER BY start_time ASC LIMIT 1");
             $stmt->bind_param('is', $employeeId, $dayOfWeek);
             $stmt->execute();
             $startResult = $stmt->get_result();
@@ -480,15 +480,16 @@ try {
             $stmt->close();
 
             // For expected_end_time: Highest (latest) end_time (ORDER BY end_time DESC, take first)
-            $stmt = $mysqli->prepare("SELECT end_time FROM schedules WHERE employee_id = ? AND day_of_week = ? ORDER BY end_time DESC LIMIT 1");
+            $stmt = $mysqli->prepare("SELECT end_time FROM employee_schedules WHERE employee_id = ? AND day_of_week = ? ORDER BY end_time DESC LIMIT 1");
             $stmt->bind_param('is', $employeeId, $dayOfWeek);
             $stmt->execute();
             $endResult = $stmt->get_result();
             $expectedEnd = $endResult->fetch_assoc()['end_time'] ?? null;
             $stmt->close();
 
-            $timeInDB = $timeIn ? date('Y-m-d H:i:s', strtotime("$date $timeIn")) : null;
-            $timeOutDB = $timeOut ? date('Y-m-d H:i:s', strtotime("$date $timeOut")) : null;
+            // Store as TIME in DB but use full datetime for comparisons
+            $timeInDB = $timeIn ? date('H:i:s', strtotime($timeIn)) : null;
+            $timeOutDB = $timeOut ? date('H:i:s', strtotime($timeOut)) : null;
 
             // Load grace periods from settings (same logic as scanner_api.php)
             $graceInMinutes = 0;
@@ -522,20 +523,22 @@ try {
             if ($timeInDB && $expectedStart) {
                 $expectedStartStr = "$date $expectedStart";
                 $expectedStartTs = strtotime($expectedStartStr);
-                if (strtotime($timeInDB) > ($expectedStartTs + $graceInSeconds)) {
+                $actualInTs = strtotime("$date $timeInDB");
+                if ($actualInTs > ($expectedStartTs + $graceInSeconds)) {
                     $newStatus = 'Late';
                 }
             }
             if ($timeOutDB && $expectedEnd && $newStatus !== 'Late') {  // Only check undertime if not late
                 $expectedEndStr = "$date $expectedEnd";
                 $expectedEndTs = strtotime($expectedEndStr);
-                if (strtotime($timeOutDB) < ($expectedEndTs - $graceOutSeconds)) {
+                $actualOutTs = strtotime("$date $timeOutDB");
+                if ($actualOutTs < ($expectedEndTs - $graceOutSeconds)) {
                     $newStatus = 'Undertime';
                 }
             }
 
             // Update attendance_logs with new times, expected times, and status
-            $stmt = $mysqli->prepare("UPDATE attendance_logs SET time_in = ?, time_out = ?, expected_start_time = ?, expected_end_time = ?, status = ? WHERE id = ?");
+            $stmt = $mysqli->prepare("UPDATE attendance_logs SET time_in = ?, time_out = ?, expected_start_time = ?, expected_end_time = ?, status = ? WHERE log_id = ?");
             $stmt->bind_param('sssssi', $timeInDB, $timeOutDB, $expectedStart, $expectedEnd, $newStatus, $id);
 
             if (!$stmt->execute()) {
@@ -548,28 +551,32 @@ try {
             if ($timeOutDB && $expectedEnd) {
                 $expectedEndStr = "$date $expectedEnd";
                 $expectedEndTs = strtotime($expectedEndStr);
-                $outTs = strtotime($timeOutDB);
+
+                // Build full datetime for actual out based on the same attendance date
+                $actualOutDateTime = "$date $timeOutDB";
+                $outTs = strtotime($actualOutDateTime);
+
                 $rawOtMinutes = 0;
                 if ($outTs > $expectedEndTs) {
                     $rawOtMinutes = (int) floor(($outTs - $expectedEndTs) / 60);
                 }
 
-                // Ensure overtime_requests table exists
+                // Ensure overtime_requests table exists (schema aligned with systemintegration)
                 @$mysqli->query("CREATE TABLE IF NOT EXISTS overtime_requests (
-                    id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                    attendance_log_id INT(11) NOT NULL,
-                    employee_id INT(11) NOT NULL,
-                    date DATE NOT NULL,
-                    scheduled_end_time TIME NOT NULL,
-                    actual_out_time DATETIME NOT NULL,
-                    raw_ot_minutes INT(11) NOT NULL DEFAULT 0,
-                    approved_ot_minutes INT(11) NOT NULL DEFAULT 0,
+                    overtime_id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    attendance_log_id INT(11) DEFAULT NULL,
+                    employee_id INT(11) DEFAULT NULL,
+                    date DATE DEFAULT NULL,
+                    scheduled_end_time TIME DEFAULT NULL,
+                    actual_out_time DATETIME DEFAULT NULL,
+                    raw_ot_minutes INT(11) DEFAULT 0,
+                    approved_ot_minutes INT(11) DEFAULT 0,
                     status ENUM('Pending','Approved','Rejected','AutoApproved') DEFAULT 'Pending',
                     approved_by INT(11) DEFAULT NULL,
                     approved_at DATETIME DEFAULT NULL,
                     remarks TEXT DEFAULT NULL,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP NULL DEFAULT NULL,
+                    updated_at TIMESTAMP NULL DEFAULT NULL,
                     KEY idx_ot_attendance (attendance_log_id),
                     KEY idx_ot_employee_date (employee_id, date)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
@@ -593,7 +600,7 @@ try {
                         $approvedMinutes = 0;
 
                         // Upsert overtime request for this attendance log
-                        $stmt = $mysqli->prepare("SELECT id FROM overtime_requests WHERE attendance_log_id = ? LIMIT 1");
+                        $stmt = $mysqli->prepare("SELECT overtime_id AS id FROM overtime_requests WHERE attendance_log_id = ? LIMIT 1");
                         if ($stmt) {
                             $stmt->bind_param('i', $id);
                             $stmt->execute();
@@ -603,16 +610,16 @@ try {
 
                             if ($existingOt) {
                                 $otId = (int)$existingOt['id'];
-                                $stmt = $mysqli->prepare("UPDATE overtime_requests SET date = ?, scheduled_end_time = ?, actual_out_time = ?, raw_ot_minutes = ?, approved_ot_minutes = ?, status = ?, updated_at = NOW() WHERE id = ?");
+                                $stmt = $mysqli->prepare("UPDATE overtime_requests SET date = ?, scheduled_end_time = ?, actual_out_time = ?, raw_ot_minutes = ?, approved_ot_minutes = ?, status = ?, updated_at = NOW() WHERE overtime_id = ?");
                                 if ($stmt) {
-                                    $stmt->bind_param('sssissi', $date, $expectedEnd, $timeOutDB, $effectiveOt, $approvedMinutes, $statusOt, $otId);
+                                    $stmt->bind_param('sssissi', $date, $expectedEnd, $actualOutDateTime, $effectiveOt, $approvedMinutes, $statusOt, $otId);
                                     $stmt->execute();
                                     $stmt->close();
                                 }
                             } else {
-                                $stmt = $mysqli->prepare("INSERT INTO overtime_requests (attendance_log_id, employee_id, date, scheduled_end_time, actual_out_time, raw_ot_minutes, approved_ot_minutes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                                $stmt = $mysqli->prepare("INSERT INTO overtime_requests (attendance_log_id, employee_id, date, scheduled_end_time, actual_out_time, raw_ot_minutes, approved_ot_minutes, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
                                 if ($stmt) {
-                                    $stmt->bind_param('iisssiis', $id, $employeeId, $date, $expectedEnd, $timeOutDB, $effectiveOt, $approvedMinutes, $statusOt);
+                                    $stmt->bind_param('iisssiis', $id, $employeeId, $date, $expectedEnd, $actualOutDateTime, $effectiveOt, $approvedMinutes, $statusOt);
                                     $stmt->execute();
                                     $stmt->close();
                                 }

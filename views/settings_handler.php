@@ -26,9 +26,9 @@ try {
 
     // Ensure new columns exist for time_date_settings (id=1 row exists from seed)
     // MariaDB 10.4 supports IF NOT EXISTS
-    @$mysqli->query("ALTER TABLE time_date_settings ADD COLUMN IF NOT EXISTS grace_in_minutes INT DEFAULT 0");
-    @$mysqli->query("ALTER TABLE time_date_settings ADD COLUMN IF NOT EXISTS grace_out_minutes INT DEFAULT 0");
-    @$mysqli->query("ALTER TABLE time_date_settings ADD COLUMN IF NOT EXISTS company_hours_per_day DECIMAL(5,2) DEFAULT 8.00");
+    @$mysqli->query("ALTER TABLE eaaps_time_date_settings ADD COLUMN IF NOT EXISTS grace_in_minutes INT DEFAULT 0");
+    @$mysqli->query("ALTER TABLE eaaps_time_date_settings ADD COLUMN IF NOT EXISTS grace_out_minutes INT DEFAULT 0");
+    @$mysqli->query("ALTER TABLE eaaps_time_date_settings ADD COLUMN IF NOT EXISTS company_hours_per_day DECIMAL(5,2) DEFAULT 8.00");
     // Ensure payroll_frequency column exists with correct enum set
     $hasPayrollFreq = false;
     if ($d = $mysqli->query("DESCRIBE job_positions")) {
@@ -42,7 +42,7 @@ try {
     }
 
     // Ensure attendance_settings table exists with at least one row
-    @$mysqli->query("CREATE TABLE IF NOT EXISTS attendance_settings (
+    @$mysqli->query("CREATE TABLE IF NOT EXISTS eaaps_attendance_settings (
         id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
         late_threshold_minutes INT(11) DEFAULT 15,
         undertime_threshold_minutes INT(11) DEFAULT 30,
@@ -54,17 +54,17 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
     // In case the table already exists without the new column, add it
-    @$mysqli->query("ALTER TABLE attendance_settings ADD COLUMN IF NOT EXISTS auto_ot_minutes INT(11) DEFAULT 30");
+    @$mysqli->query("ALTER TABLE eaaps_attendance_settings ADD COLUMN IF NOT EXISTS auto_ot_minutes INT(11) DEFAULT 30");
 
-    $attCheck = $mysqli->query("SELECT id FROM attendance_settings LIMIT 1");
+    $attCheck = $mysqli->query("SELECT id FROM eaaps_attendance_settings LIMIT 1");
     if ($attCheck && $attCheck->num_rows === 0) {
-        @$mysqli->query("INSERT INTO attendance_settings (late_threshold_minutes, undertime_threshold_minutes, regular_overtime_multiplier, holiday_overtime_multiplier, auto_ot_minutes)
+        @$mysqli->query("INSERT INTO eaaps_attendance_settings (late_threshold_minutes, undertime_threshold_minutes, regular_overtime_multiplier, holiday_overtime_multiplier, auto_ot_minutes)
                          VALUES (15, 30, 1.25, 2.00, 30)");
     }
     if ($attCheck) { $attCheck->free(); }
 
     // Ensure payroll_settings table exists with at least one row (holiday multipliers)
-    @$mysqli->query("CREATE TABLE IF NOT EXISTS payroll_settings (
+    @$mysqli->query("CREATE TABLE IF NOT EXISTS eaaps_payroll_settings (
         id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
         regular_holiday_rate DECIMAL(5,2) DEFAULT 2.00,
         regular_holiday_ot_rate DECIMAL(5,2) DEFAULT 2.60,
@@ -76,29 +76,42 @@ try {
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
-    $payrollCheck = $mysqli->query("SELECT id FROM payroll_settings LIMIT 1");
+    $payrollCheck = $mysqli->query("SELECT id FROM eaaps_payroll_settings LIMIT 1");
     if ($payrollCheck && $payrollCheck->num_rows === 0) {
-        @$mysqli->query("INSERT INTO payroll_settings (regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate)
+        @$mysqli->query("INSERT INTO eaaps_payroll_settings (regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate)
                          VALUES (2.00, 2.60, 1.30, 1.69, 1.30, 1.69)");
     }
     if ($payrollCheck) { $payrollCheck->free(); }
 
+    // Ensure backup_restore_settings has the columns used by this handler
+    @$mysqli->query("ALTER TABLE backup_restore_settings ADD COLUMN IF NOT EXISTS backup_frequency VARCHAR(20) DEFAULT 'weekly'");
+    @$mysqli->query("ALTER TABLE backup_restore_settings ADD COLUMN IF NOT EXISTS session_timeout_minutes INT(11) DEFAULT 30");
+
+    $backupCheck = $mysqli->query("SELECT id FROM backup_restore_settings LIMIT 1");
+    if ($backupCheck && $backupCheck->num_rows === 0) {
+        @$mysqli->query("INSERT INTO backup_restore_settings (id, backup_time, restore_enabled, backup_frequency, session_timeout_minutes)
+                         VALUES (1, NULL, 1, 'weekly', 30)");
+    }
+    if ($backupCheck) { $backupCheck->free(); }
+
     switch ($action) {
         case 'load':
             // Load all settings
-            $systemResult = $mysqli->query("SELECT system_name, logo_path, annual_paid_leave_days, annual_unpaid_leave_days, annual_sick_leave_days FROM school_settings LIMIT 1");
-            $systemData = $systemResult->fetch_assoc() ?: [];
+            $systemResult = $mysqli->query("SELECT system_name, logo_path, annual_paid_leave_days, annual_unpaid_leave_days, annual_sick_leave_days FROM eaaps_school_settings WHERE id = 1 LIMIT 1");
+            $systemData = $systemResult ? ($systemResult->fetch_assoc() ?: []) : [];
+            if ($systemResult) { $systemResult->free(); }
 
-            $timeDateResult = $mysqli->query("SELECT auto_logout_time_hours, date_format, grace_in_minutes, grace_out_minutes, company_hours_per_day FROM time_date_settings LIMIT 1");
-            $attendanceResult = $mysqli->query("SELECT late_threshold_minutes, undertime_threshold_minutes, regular_overtime_multiplier, holiday_overtime_multiplier, auto_ot_minutes FROM attendance_settings LIMIT 1");
-            $payrollSettingsResult = $mysqli->query("SELECT regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate FROM payroll_settings LIMIT 1");
-            $backupResult = $mysqli->query("SELECT backup_frequency, session_timeout_minutes FROM backup_restore_settings LIMIT 1");
-            $rolesRes = $mysqli->query("SELECT id, name, payroll_frequency FROM job_positions ORDER BY name");
+            $timeDateResult = $mysqli->query("SELECT auto_logout_time_hours, date_format, grace_in_minutes, grace_out_minutes, company_hours_per_day FROM eaaps_time_date_settings WHERE id = 1 LIMIT 1");
+            $attendanceResult = $mysqli->query("SELECT late_threshold_minutes, undertime_threshold_minutes, regular_overtime_multiplier, holiday_overtime_multiplier, auto_ot_minutes FROM eaaps_attendance_settings WHERE id = 1 LIMIT 1");
+            $payrollSettingsResult = $mysqli->query("SELECT regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate FROM eaaps_payroll_settings WHERE id = 1 LIMIT 1");
+            $backupResult = $mysqli->query("SELECT backup_frequency, session_timeout_minutes FROM backup_restore_settings WHERE id = 1 LIMIT 1");
+            // job_positions uses position_id/position_name, so alias them to id/name for frontend
+            $rolesRes = $mysqli->query("SELECT position_id AS id, position_name AS name, payroll_frequency FROM job_positions ORDER BY position_name");
             $roles = $rolesRes ? $rolesRes->fetch_all(MYSQLI_ASSOC) : [];
 
             $settings = [
                 'system' => $systemData,
-                'time_date' => $timeDateResult->fetch_assoc() ?: [],
+                'time_date' => $timeDateResult ? ($timeDateResult->fetch_assoc() ?: []) : [],
                 'leave' => [
                     'annual_paid_leave_days' => $systemData['annual_paid_leave_days'] ?? 15,
                     'annual_unpaid_leave_days' => $systemData['annual_unpaid_leave_days'] ?? 5,
@@ -106,7 +119,7 @@ try {
                 ],
                 'attendance' => [],
                 'payroll' => [ 'roles' => $roles ],
-                'backup' => $backupResult->fetch_assoc() ?: []
+                'backup' => $backupResult ? ($backupResult->fetch_assoc() ?: []) : []
             ];
 
             $attendanceData = $attendanceResult ? $attendanceResult->fetch_assoc() : [];
@@ -149,6 +162,12 @@ try {
             }
             foreach ($map as $id => $freq) {
                 $freq = strtolower(trim((string)$freq));
+                // Map UI values to DB enum
+                if ($freq === 'biweekly') {
+                    $freq = 'bi-weekly';
+                } elseif ($freq === 'semimonthly') {
+                    $freq = 'bi-weekly';
+                }
                 $id = intval($id);
                 if ($id <= 0 || !in_array($freq, $allowed, true)) continue;
                 $stmt->bind_param('si', $freq, $id);
@@ -177,7 +196,7 @@ try {
             }
 
             // Fetch current logo path to handle replacement or preservation
-            $currentQuery = $mysqli->query("SELECT logo_path FROM school_settings WHERE id = 1");
+            $currentQuery = $mysqli->query("SELECT logo_path FROM eaaps_school_settings WHERE id = 1");
             $currentSettings = $currentQuery->fetch_assoc();
             $currentLogoPath = $currentSettings['logo_path'] ?? null;
 
@@ -202,7 +221,7 @@ try {
                 }
             }
 
-            $stmt = $mysqli->prepare("UPDATE school_settings SET system_name = ?, logo_path = ? WHERE id = 1");
+            $stmt = $mysqli->prepare("UPDATE eaaps_school_settings SET system_name = ?, logo_path = ? WHERE id = 1");
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
@@ -251,7 +270,7 @@ try {
                 throw new Exception('Total Working Hours per Day must be between 1 and 24 hours.');
             }
 
-            $stmt = $mysqli->prepare("UPDATE time_date_settings SET auto_logout_time_hours = ?, date_format = ?, grace_in_minutes = ?, grace_out_minutes = ?, company_hours_per_day = ? WHERE id = 1");
+            $stmt = $mysqli->prepare("UPDATE eaaps_time_date_settings SET auto_logout_time_hours = ?, date_format = ?, grace_in_minutes = ?, grace_out_minutes = ?, company_hours_per_day = ? WHERE id = 1");
             $stmt->bind_param('dsiid', $decimal, $dateFormat, $graceIn, $graceOut, $companyHours);
             $stmt->execute();
             $stmt->close();
@@ -269,7 +288,7 @@ try {
             $unpaidLeave = intval($_POST['annual_unpaid_leave'] ?? 5);
             $sickLeave = intval($_POST['annual_sick_leave'] ?? 10);
 
-            $stmt = $mysqli->prepare("UPDATE school_settings SET annual_paid_leave_days = ?, annual_unpaid_leave_days = ?, annual_sick_leave_days = ? WHERE id = 1");
+            $stmt = $mysqli->prepare("UPDATE eaaps_school_settings SET annual_paid_leave_days = ?, annual_unpaid_leave_days = ?, annual_sick_leave_days = ? WHERE id = 1");
             $stmt->bind_param('iii', $paidLeave, $unpaidLeave, $sickLeave);
             $stmt->execute();
             $stmt->close();
@@ -289,7 +308,7 @@ try {
             $holidayOvertime = max(0.0, floatval($_POST['holiday_overtime'] ?? 2));
             $autoOtMinutes = max(0, intval($_POST['auto_ot_minutes'] ?? 30));
 
-            $stmt = $mysqli->prepare("UPDATE attendance_settings SET late_threshold_minutes = ?, undertime_threshold_minutes = ?, regular_overtime_multiplier = ?, holiday_overtime_multiplier = ?, auto_ot_minutes = ? WHERE id = 1");
+            $stmt = $mysqli->prepare("UPDATE eaaps_attendance_settings SET late_threshold_minutes = ?, undertime_threshold_minutes = ?, regular_overtime_multiplier = ?, holiday_overtime_multiplier = ?, auto_ot_minutes = ? WHERE id = 1");
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
@@ -300,7 +319,7 @@ try {
 
             if ($stmt->affected_rows === 0) {
                 $stmt->close();
-                $stmt = $mysqli->prepare("INSERT INTO attendance_settings (id, late_threshold_minutes, undertime_threshold_minutes, regular_overtime_multiplier, holiday_overtime_multiplier, auto_ot_minutes) VALUES (1, ?, ?, ?, ?, ?)");
+                $stmt = $mysqli->prepare("INSERT INTO eaaps_attendance_settings (id, late_threshold_minutes, undertime_threshold_minutes, regular_overtime_multiplier, holiday_overtime_multiplier, auto_ot_minutes) VALUES (1, ?, ?, ?, ?, ?)");
                 if (!$stmt) {
                     throw new Exception('Prepare failed (insert): ' . $mysqli->error);
                 }
@@ -327,7 +346,7 @@ try {
             $specialWorkingRate = max(0.0, floatval($_POST['special_working_rate'] ?? 1.3));
             $specialWorkingOtRate = max(0.0, floatval($_POST['special_working_ot_rate'] ?? 1.69));
 
-            $stmt = $mysqli->prepare("UPDATE payroll_settings SET regular_holiday_rate = ?, regular_holiday_ot_rate = ?, special_nonworking_rate = ?, special_nonworking_ot_rate = ?, special_working_rate = ?, special_working_ot_rate = ? WHERE id = 1");
+            $stmt = $mysqli->prepare("UPDATE eaaps_payroll_settings SET regular_holiday_rate = ?, regular_holiday_ot_rate = ?, special_nonworking_rate = ?, special_nonworking_ot_rate = ?, special_working_rate = ?, special_working_ot_rate = ? WHERE id = 1");
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
@@ -338,7 +357,7 @@ try {
 
             if ($stmt->affected_rows === 0) {
                 $stmt->close();
-                $stmt = $mysqli->prepare("INSERT INTO payroll_settings (id, regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate) VALUES (1, ?, ?, ?, ?, ?, ?)");
+                $stmt = $mysqli->prepare("INSERT INTO eaaps_payroll_settings (id, regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate) VALUES (1, ?, ?, ?, ?, ?, ?)");
                 if (!$stmt) {
                     throw new Exception('Prepare failed (insert): ' . $mysqli->error);
                 }
@@ -367,6 +386,67 @@ try {
             $stmt->close();
 
             echo json_encode(['success' => true, 'message' => 'Backup settings saved.']);
+            break;
+
+        case 'export_backup':
+            // Export current settings as JSON file download
+            if (!hasHeadAdminRole()) {
+                throw new Exception('Unauthorized: Must have head_admin role.');
+            }
+
+            $payload = [];
+            $tables = [
+                'eaaps_school_settings',
+                'eaaps_time_date_settings',
+                'eaaps_attendance_settings',
+                'eaaps_payroll_settings',
+                'eaaps_tax_deduction_settings',
+                'backup_restore_settings',
+            ];
+
+            foreach ($tables as $t) {
+                $res = $mysqli->query("SELECT * FROM $t");
+                if ($res) {
+                    $payload[$t] = $res->fetch_all(MYSQLI_ASSOC);
+                    $res->free();
+                } else {
+                    $payload[$t] = [];
+                }
+            }
+
+            // Switch headers for file download
+            header('Content-Type: application/json');
+            header('Content-Disposition: attachment; filename="eaaps_settings_backup_'.date('Ymd_His').'.json"');
+            echo json_encode(['success' => true, 'data' => $payload]);
+            break;
+
+        case 'create_backup':
+            if (!hasHeadAdminRole()) {
+                throw new Exception('Unauthorized: Must have head_admin role.');
+            }
+
+            // Simple marker update; actual backups are handled by export/download
+            $now = date('H:i:s');
+            $stmt = $mysqli->prepare("UPDATE backup_restore_settings SET backup_time = ? WHERE id = 1");
+            if ($stmt) {
+                $stmt->bind_param('s', $now);
+                $stmt->execute();
+                $stmt->close();
+            }
+
+            echo json_encode(['success' => true, 'message' => 'Backup record updated. Use Export Backup to download settings.']);
+            break;
+
+        case 'restore_backup':
+            if (!hasHeadAdminRole()) {
+                throw new Exception('Unauthorized: Must have head_admin role.');
+            }
+
+            // For safety, restoration is not automated here.
+            echo json_encode([
+                'success' => false,
+                'message' => 'Automatic restore is not enabled on this server. Please contact the system administrator to restore from a backup file.',
+            ]);
             break;
 
         default:

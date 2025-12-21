@@ -1,6 +1,7 @@
 const BASE_PATH = ""; // Change to '' for localhost:8000, or '/newpath' for Hostinger
 
-const API_BASE = BASE_PATH + "/views/schedules.php"; // Backend endpoint
+// Backend endpoint (path is relative to pages/*.php, e.g., pages/schedule_page.php)
+const API_BASE = "../views/schedules.php";
 
 function showStatus(message, type = "success") {
   const statusDiv = document.getElementById("status-message");
@@ -209,6 +210,8 @@ async function fetchSchedules(employeeId) {
   } catch (error) {
     console.error("Error fetching schedules:", error);
     showStatus("Failed to load schedules.", "error");
+    // Propagate error so callers can decide whether to retry
+    throw error;
   }
 }
 
@@ -253,7 +256,11 @@ function renderWeeklySchedule() {
 
   // Fetch schedules if not already loaded
   if (!weeklySchedule[selectedEmployeeId]) {
-    fetchSchedules(selectedEmployeeId).then(() => renderWeeklySchedule());
+    fetchSchedules(selectedEmployeeId)
+      .then(() => renderWeeklySchedule())
+      .catch(() => {
+        // Error already reported in fetchSchedules; avoid infinite retry loop
+      });
     return;
   }
 

@@ -222,7 +222,8 @@ try {
     $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
     if ($action === 'roles') {
-        $sql = "SELECT id, name, payroll_frequency FROM job_positions ORDER BY name";
+        // job_positions in systemintegration uses position_id/position_name
+        $sql = "SELECT position_id AS id, position_name AS name, payroll_frequency FROM job_positions ORDER BY position_name";
         $res = $mysqli->query($sql);
         $rows = [];
         while ($r = $res->fetch_assoc()) {
@@ -238,7 +239,7 @@ try {
 
     if ($action === 'next_payroll_per_role') {
         $now = new DateTime();
-        $rolesSql = "SELECT id, name, payroll_frequency FROM job_positions ORDER BY name";
+        $rolesSql = "SELECT position_id AS id, position_name AS name, payroll_frequency FROM job_positions ORDER BY position_name";
         $res = $mysqli->query($rolesSql);
         $rows = [];
         while ($r = $res->fetch_assoc()) {
@@ -310,7 +311,7 @@ try {
 
         // Load company_hours_per_day for day-equivalent calc (fallback for roles)
         $chpd = 8.0;
-        if ($r = $mysqli->query("SELECT company_hours_per_day FROM time_date_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT company_hours_per_day FROM eaaps_time_date_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             $val = (float)($row['company_hours_per_day'] ?? 8.0);
             if ($val > 0) $chpd = $val;
@@ -319,7 +320,7 @@ try {
         // Load regular overtime multiplier from attendance_settings (for non-holiday OT)
         $regularOtMultiplier = 1.25;
         $holidayOtMultiplier = 2.00; // reserved / fallback
-        if ($r = $mysqli->query("SELECT regular_overtime_multiplier, holiday_overtime_multiplier FROM attendance_settings LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT regular_overtime_multiplier, holiday_overtime_multiplier FROM eaaps_attendance_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             if ($row) {
                 if (isset($row['regular_overtime_multiplier'])) {
@@ -339,7 +340,7 @@ try {
         $phSpecWork = 1.3;      // Worked on special working
         $phSpecWorkOT = 1.69;   // OT on special working (reserved)
 
-        if ($r = $mysqli->query("SELECT regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate FROM payroll_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate FROM eaaps_payroll_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             if ($row) {
                 $phRegular     = max(0.0, (float)($row['regular_holiday_rate'] ?? $phRegular));
@@ -366,7 +367,7 @@ try {
         $incomeTaxRate = 10.0;
         $taxRule = 'flat';
 
-        if ($r = $mysqli->query("SELECT philhealth_rate, philhealth_min, philhealth_max, philhealth_split_5050, pagibig_threshold, pagibig_employee_low_rate, pagibig_employee_high_rate, sss_msc_min, sss_msc_max, sss_ee_contribution, income_tax_rate, tax_calculation_rule, auto_apply_deductions FROM tax_deduction_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT philhealth_rate, philhealth_min, philhealth_max, philhealth_split_5050, pagibig_threshold, pagibig_employee_low_rate, pagibig_employee_high_rate, sss_msc_min, sss_msc_max, sss_ee_contribution, income_tax_rate, tax_calculation_rule, auto_apply_deductions FROM eaaps_tax_deduction_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             if ($row) {
                 $taxAuto = (int)($row['auto_apply_deductions'] ?? 1) === 1;
@@ -400,7 +401,7 @@ try {
         $incomeTaxRate = 10.0;
         $taxRule = 'flat';
 
-        if ($r = $mysqli->query("SELECT philhealth_rate, philhealth_min, philhealth_max, philhealth_split_5050, pagibig_threshold, pagibig_employee_low_rate, pagibig_employee_high_rate, sss_msc_min, sss_msc_max, sss_ee_contribution, income_tax_rate, tax_calculation_rule, auto_apply_deductions FROM tax_deduction_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT philhealth_rate, philhealth_min, philhealth_max, philhealth_split_5050, pagibig_threshold, pagibig_employee_low_rate, pagibig_employee_high_rate, sss_msc_min, sss_msc_max, sss_ee_contribution, income_tax_rate, tax_calculation_rule, auto_apply_deductions FROM eaaps_tax_deduction_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             if ($row) {
                 $taxAuto = (int)($row['auto_apply_deductions'] ?? 1) === 1;
@@ -434,7 +435,7 @@ try {
         $incomeTaxRate = 10.0;
         $taxRule = 'flat';
 
-        if ($r = $mysqli->query("SELECT philhealth_rate, philhealth_min, philhealth_max, philhealth_split_5050, pagibig_threshold, pagibig_employee_low_rate, pagibig_employee_high_rate, sss_msc_min, sss_msc_max, sss_ee_contribution, income_tax_rate, tax_calculation_rule, auto_apply_deductions FROM tax_deduction_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT philhealth_rate, philhealth_min, philhealth_max, philhealth_split_5050, pagibig_threshold, pagibig_employee_low_rate, pagibig_employee_high_rate, sss_msc_min, sss_msc_max, sss_ee_contribution, income_tax_rate, tax_calculation_rule, auto_apply_deductions FROM eaaps_tax_deduction_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             if ($row) {
                 $taxAuto = (int)($row['auto_apply_deductions'] ?? 1) === 1;
@@ -455,7 +456,7 @@ try {
 
         // Preload holidays in the period into a date => type map
         $holidaysByDate = [];
-        if ($hStmt = $mysqli->prepare("SELECT type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?")) {
+        if ($hStmt = $mysqli->prepare("SELECT holiday_type AS type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?")) {
             $hStmt->bind_param('ss', $start, $end);
             if ($hStmt->execute()) {
                 $hRes = $hStmt->get_result();
@@ -502,19 +503,19 @@ try {
         }
 
         // Load employees with their role, rates, filtered by optional role and frequency
-        $sql = "SELECT e.id AS emp_id, e.first_name, e.last_name,
+        $sql = "SELECT e.employee_id AS emp_id, e.first_name, e.last_name,
                        e.rate_per_day AS e_rpd, e.rate_per_hour AS e_rph,
-                       jp.id AS role_id, jp.name AS role_name,
+                       jp.position_id AS role_id, jp.position_name AS role_name,
                        COALESCE(jp.rate_per_day, 0) AS jp_rpd,
                        COALESCE(jp.rate_per_hour, 0) AS jp_rph,
                        COALESCE(jp.working_hours_per_day, 0) AS whpd,
                        COALESCE(jp.payroll_frequency, 'bi-weekly') AS payroll_frequency
                 FROM employees e
-                JOIN job_positions jp ON e.job_position_id = jp.id";
+                JOIN job_positions jp ON e.position_id = jp.position_id";
 
         $where = [];
         if ($roleId > 0) {
-            $where[] = 'jp.id = ' . (int)$roleId;
+            $where[] = 'jp.position_id = ' . (int)$roleId;
         }
         if ($frequency !== '') {
             $freqEsc = $mysqli->real_escape_string($frequency);
@@ -550,7 +551,7 @@ try {
             }
 
             // Fetch attendance logs in the window and index by date
-            $stmt = $mysqli->prepare("SELECT date, time_in, time_out, status FROM attendance_logs WHERE employee_id = ? AND date BETWEEN ? AND ?");
+            $stmt = $mysqli->prepare("SELECT attendance_date AS date, time_in, time_out, status FROM attendance_logs WHERE employee_id = ? AND attendance_date BETWEEN ? AND ?");
             $stmt->bind_param('iss', $empId, $start, $end);
             $stmt->execute();
             $logsRes = $stmt->get_result();
@@ -889,9 +890,9 @@ try {
         if ($roleId > 0) {
             if ($stmt = $mysqli->prepare("SELECT COUNT(*) AS cnt
                                           FROM payroll p
-                                          JOIN employees e ON e.id = p.employee_id
-                                          JOIN job_positions jp ON e.job_position_id = jp.id
-                                          WHERE p.payroll_period_start = ? AND p.payroll_period_end = ? AND jp.id = ?")) {
+                                          JOIN employees e ON e.employee_id = p.employee_id
+                                          JOIN job_positions jp ON e.position_id = jp.position_id
+                                          WHERE p.payroll_period_start = ? AND p.payroll_period_end = ? AND jp.position_id = ?")) {
                 $stmt->bind_param('ssi', $start, $end, $roleId);
                 if ($stmt->execute()) {
                     $resCnt = $stmt->get_result()->fetch_assoc();
@@ -926,7 +927,7 @@ try {
 
         // Load company_hours_per_day for day-equivalent calc (fallback for roles)
         $chpd = 8.0;
-        if ($r = $mysqli->query("SELECT company_hours_per_day FROM time_date_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT company_hours_per_day FROM eaaps_time_date_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             $val = (float)($row['company_hours_per_day'] ?? 8.0);
             if ($val > 0) $chpd = $val;
@@ -935,7 +936,7 @@ try {
         // Load regular overtime multiplier from attendance_settings (for non-holiday OT)
         $regularOtMultiplier = 1.25;
         $holidayOtMultiplier = 2.00; // reserved / fallback
-        if ($r = $mysqli->query("SELECT regular_overtime_multiplier, holiday_overtime_multiplier FROM attendance_settings LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT regular_overtime_multiplier, holiday_overtime_multiplier FROM eaaps_attendance_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             if ($row) {
                 if (isset($row['regular_overtime_multiplier'])) {
@@ -955,7 +956,7 @@ try {
         $phSpecWork = 1.3;      // Worked on special working
         $phSpecWorkOT = 1.69;   // OT on special working (reserved)
 
-        if ($r = $mysqli->query("SELECT regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate FROM payroll_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT regular_holiday_rate, regular_holiday_ot_rate, special_nonworking_rate, special_nonworking_ot_rate, special_working_rate, special_working_ot_rate FROM eaaps_payroll_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             if ($row) {
                 $phRegular     = max(0.0, (float)($row['regular_holiday_rate'] ?? $phRegular));
@@ -982,7 +983,7 @@ try {
         $incomeTaxRate = 10.0;
         $taxRule = 'flat';
 
-        if ($r = $mysqli->query("SELECT philhealth_rate, philhealth_min, philhealth_max, philhealth_split_5050, pagibig_threshold, pagibig_employee_low_rate, pagibig_employee_high_rate, sss_msc_min, sss_msc_max, sss_ee_contribution, income_tax_rate, tax_calculation_rule, auto_apply_deductions FROM tax_deduction_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT philhealth_rate, philhealth_min, philhealth_max, philhealth_split_5050, pagibig_threshold, pagibig_employee_low_rate, pagibig_employee_high_rate, sss_msc_min, sss_msc_max, sss_ee_contribution, income_tax_rate, tax_calculation_rule, auto_apply_deductions FROM eaaps_tax_deduction_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             if ($row) {
                 $taxAuto = (int)($row['auto_apply_deductions'] ?? 1) === 1;
@@ -1003,7 +1004,7 @@ try {
 
         // Preload holidays in the period into a date => type map
         $holidaysByDate = [];
-        if ($hStmt = $mysqli->prepare("SELECT type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?")) {
+        if ($hStmt = $mysqli->prepare("SELECT holiday_type AS type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?")) {
             $hStmt->bind_param('ss', $start, $end);
             if ($hStmt->execute()) {
                 $hRes = $hStmt->get_result();
@@ -1050,19 +1051,19 @@ try {
         }
 
         // Load employees with their role, rates, filtered by optional role and frequency
-        $sql = "SELECT e.id AS emp_id, e.first_name, e.last_name,
+        $sql = "SELECT e.employee_id AS emp_id, e.first_name, e.last_name,
                        e.rate_per_day AS e_rpd, e.rate_per_hour AS e_rph,
-                       jp.id AS role_id, jp.name AS role_name,
+                       jp.position_id AS role_id, jp.position_name AS role_name,
                        COALESCE(jp.rate_per_day, 0) AS jp_rpd,
                        COALESCE(jp.rate_per_hour, 0) AS jp_rph,
                        COALESCE(jp.working_hours_per_day, 0) AS whpd,
                        COALESCE(jp.payroll_frequency, 'bi-weekly') AS payroll_frequency
                 FROM employees e
-                JOIN job_positions jp ON e.job_position_id = jp.id";
+                JOIN job_positions jp ON e.position_id = jp.position_id";
 
         $whereEmp = [];
         if ($roleId > 0) {
-            $whereEmp[] = 'jp.id = ' . (int)$roleId;
+            $whereEmp[] = 'jp.position_id = ' . (int)$roleId;
         }
         if ($frequency !== '') {
             $freqEsc = $mysqli->real_escape_string($frequency);
@@ -1095,7 +1096,7 @@ try {
             }
 
             // Fetch attendance logs in the window and index by date
-            $stmt = $mysqli->prepare("SELECT date, time_in, time_out, status FROM attendance_logs WHERE employee_id = ? AND date BETWEEN ? AND ?");
+            $stmt = $mysqli->prepare("SELECT attendance_date AS date, time_in, time_out, status FROM attendance_logs WHERE employee_id = ? AND attendance_date BETWEEN ? AND ?");
             $stmt->bind_param('iss', $empId, $start, $end);
             $stmt->execute();
             $logsRes = $stmt->get_result();
@@ -1347,7 +1348,7 @@ try {
             ensure_payroll_ot_holiday_columns($mysqli);
 
             // Upsert into payroll table for this employee and period
-            $check = $mysqli->prepare("SELECT id FROM payroll WHERE employee_id = ? AND payroll_period_start = ? AND payroll_period_end = ? LIMIT 1");
+            $check = $mysqli->prepare("SELECT payroll_id AS id FROM payroll WHERE employee_id = ? AND payroll_period_start = ? AND payroll_period_end = ? LIMIT 1");
             $check->bind_param('iss', $empId, $start, $end);
             $check->execute();
             $existing = $check->get_result()->fetch_assoc();
@@ -1355,7 +1356,7 @@ try {
 
             if ($existing) {
                 $pid = (int)$existing['id'];
-                $upd = $mysqli->prepare("UPDATE payroll SET basic_pay = ?, gross_pay = ?, overtime_pay = ?, holiday_pay = ?, philhealth_deduction = ?, sss_deduction = ?, pagibig_deduction = ?, other_deductions = ?, paid_status = 'Unpaid', payment_date = NULL WHERE id = ?");
+                $upd = $mysqli->prepare("UPDATE payroll SET basic_pay = ?, gross_pay = ?, overtime_pay = ?, holiday_pay = ?, philhealth_deduction = ?, sss_deduction = ?, pagibig_deduction = ?, other_deductions = ?, paid_status = 'Unpaid', payment_date = NULL WHERE payroll_id = ?");
                 $upd->bind_param('ddddddddi', $basicPay, $gross, $totalOtPay, $totalHolidayPay, $philhealth, $sss, $pagibig, $other, $pid);
                 $upd->execute();
                 $upd->close();
@@ -1415,7 +1416,7 @@ try {
         $rows = [];
 
         if ($roleId > 0) {
-            $sql = "SELECT p.id,
+            $sql = "SELECT p.payroll_id AS id,
                            p.payroll_period_start,
                            p.payroll_period_end,
                            COALESCE(p.basic_pay, 0) AS basic_pay,
@@ -1431,13 +1432,13 @@ try {
                            p.payment_date,
                            e.first_name,
                            e.last_name,
-                           d.name AS department_name,
-                           jp.name AS role_name
+                           d.department_name AS department_name,
+                           jp.position_name AS role_name
                     FROM payroll p
-                    JOIN employees e ON e.id = p.employee_id
-                    JOIN job_positions jp ON e.job_position_id = jp.id
-                    JOIN departments d ON e.department_id = d.id
-                    WHERE p.payroll_period_start = ? AND p.payroll_period_end = ? AND jp.id = ?";
+                    JOIN employees e ON e.employee_id = p.employee_id
+                    JOIN job_positions jp ON e.position_id = jp.position_id
+                    JOIN departments d ON e.department_id = d.department_id
+                    WHERE p.payroll_period_start = ? AND p.payroll_period_end = ? AND jp.position_id = ?";
             if ($frequency !== '') {
                 $sql .= " AND LOWER(COALESCE(jp.payroll_frequency, 'bi-weekly')) = ?";
             }
@@ -1453,7 +1454,7 @@ try {
                 $stmt = null;
             }
         } else {
-            $sql = "SELECT p.id,
+            $sql = "SELECT p.payroll_id AS id,
                            p.payroll_period_start,
                            p.payroll_period_end,
                            COALESCE(p.basic_pay, 0) AS basic_pay,
@@ -1469,12 +1470,12 @@ try {
                            p.payment_date,
                            e.first_name,
                            e.last_name,
-                           d.name AS department_name,
-                           jp.name AS role_name
+                           d.department_name AS department_name,
+                           jp.position_name AS role_name
                     FROM payroll p
-                    JOIN employees e ON e.id = p.employee_id
-                    JOIN job_positions jp ON e.job_position_id = jp.id
-                    JOIN departments d ON e.department_id = d.id
+                    JOIN employees e ON e.employee_id = p.employee_id
+                    JOIN job_positions jp ON e.position_id = jp.position_id
+                    JOIN departments d ON e.department_id = d.department_id
                     WHERE p.payroll_period_start = ? AND p.payroll_period_end = ?";
             if ($frequency !== '') {
                 $sql .= " AND LOWER(COALESCE(jp.payroll_frequency, 'bi-weekly')) = ?";
@@ -1557,7 +1558,7 @@ try {
         }
 
         $affected = 0;
-        if ($stmt = $mysqli->prepare("UPDATE payroll SET paid_status = 'Paid', payment_date = IFNULL(payment_date, CURDATE()) WHERE id = ?")) {
+        if ($stmt = $mysqli->prepare("UPDATE payroll SET paid_status = 'Paid', payment_date = IFNULL(payment_date, CURDATE()) WHERE payroll_id = ?")) {
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $affected = $stmt->affected_rows;
@@ -1603,10 +1604,10 @@ try {
 
         if ($roleId > 0) {
             $sql = "UPDATE payroll p
-                       JOIN employees e ON e.id = p.employee_id
-                       JOIN job_positions jp ON e.job_position_id = jp.id
+                       JOIN employees e ON e.employee_id = p.employee_id
+                       JOIN job_positions jp ON e.position_id = jp.position_id
                        SET p.paid_status = 'Paid', p.payment_date = IFNULL(p.payment_date, CURDATE())
-                       WHERE p.payroll_period_start = ? AND p.payroll_period_end = ? AND jp.id = ? AND p.paid_status = 'Unpaid'";
+                       WHERE p.payroll_period_start = ? AND p.payroll_period_end = ? AND jp.position_id = ? AND p.paid_status = 'Unpaid'";
             if ($frequency !== '') {
                 $sql .= " AND LOWER(COALESCE(jp.payroll_frequency, 'bi-weekly')) = ?";
             }
@@ -1624,8 +1625,8 @@ try {
             }
         } else {
             $sql = "UPDATE payroll p
-                       JOIN employees e ON e.id = p.employee_id
-                       JOIN job_positions jp ON e.job_position_id = jp.id
+                       JOIN employees e ON e.employee_id = p.employee_id
+                       JOIN job_positions jp ON e.position_id = jp.position_id
                        SET p.paid_status = 'Paid', p.payment_date = IFNULL(p.payment_date, CURDATE())
                        WHERE p.payroll_period_start = ? AND p.payroll_period_end = ? AND p.paid_status = 'Unpaid'";
             if ($frequency !== '') {
@@ -1702,7 +1703,7 @@ try {
 
         // Load company_hours_per_day for day-equivalent calc (fallback for roles)
         $chpd = 8.0;
-        if ($r = $mysqli->query("SELECT company_hours_per_day FROM time_date_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT company_hours_per_day FROM eaaps_time_date_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             $val = (float)($row['company_hours_per_day'] ?? 8.0);
             if ($val > 0) $chpd = $val;
@@ -1712,7 +1713,7 @@ try {
         $phRegular = 2.0;
         $phSpecNon = 1.3;
         $phSpecWork = 1.3;
-        if ($r = $mysqli->query("SELECT regular_holiday_rate, special_nonworking_rate, special_working_rate FROM payroll_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT regular_holiday_rate, special_nonworking_rate, special_working_rate FROM eaaps_payroll_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             if ($row) {
                 $phRegular   = max(0.0, (float)($row['regular_holiday_rate'] ?? $phRegular));
@@ -1723,7 +1724,7 @@ try {
 
         // Preload holidays in the period into a date => type map
         $holidaysByDate = [];
-        if ($hStmt = $mysqli->prepare("SELECT type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?")) {
+        if ($hStmt = $mysqli->prepare("SELECT holiday_type AS type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?")) {
             $hStmt->bind_param('ss', $start, $end);
             if ($hStmt->execute()) {
                 $hRes = $hStmt->get_result();
@@ -1739,16 +1740,16 @@ try {
         }
 
         // Load employees with their role, rates
-        $sql = "SELECT e.id AS emp_id, e.first_name, e.last_name,
+        $sql = "SELECT e.employee_id AS emp_id, e.first_name, e.last_name,
                        e.rate_per_day AS e_rpd, e.rate_per_hour AS e_rph,
-                       jp.id AS role_id, jp.name AS role_name,
+                       jp.position_id AS role_id, jp.position_name AS role_name,
                        COALESCE(jp.rate_per_day, 0) AS jp_rpd,
                        COALESCE(jp.rate_per_hour, 0) AS jp_rph,
                        COALESCE(jp.working_hours_per_day, 0) AS whpd
                 FROM employees e
-                JOIN job_positions jp ON e.job_position_id = jp.id";
+                JOIN job_positions jp ON e.position_id = jp.position_id";
         if ($roleId > 0) {
-            $sql .= " WHERE jp.id = " . (int)$roleId;
+            $sql .= " WHERE jp.position_id = " . (int)$roleId;
         }
         $res = $mysqli->query($sql);
 
@@ -1788,7 +1789,7 @@ try {
             }
 
             // Fetch attendance logs in the window and index by date
-            $stmt = $mysqli->prepare("SELECT date, time_in, time_out, status FROM attendance_logs WHERE employee_id = ? AND date BETWEEN ? AND ?");
+            $stmt = $mysqli->prepare("SELECT attendance_date AS date, time_in, time_out, status FROM attendance_logs WHERE employee_id = ? AND attendance_date BETWEEN ? AND ?");
             $stmt->bind_param('iss', $empId, $start, $end);
             $stmt->execute();
             $logsRes = $stmt->get_result();
@@ -1952,7 +1953,7 @@ try {
 
         // Load company_hours_per_day for day-equivalent calc (fallback for roles)
         $chpd = 8.0;
-        if ($r = $mysqli->query("SELECT company_hours_per_day FROM time_date_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT company_hours_per_day FROM eaaps_time_date_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             $val = (float)($row['company_hours_per_day'] ?? 8.0);
             if ($val > 0) $chpd = $val;
@@ -1962,7 +1963,7 @@ try {
         $phRegular = 2.0;
         $phSpecNon = 1.3;
         $phSpecWork = 1.3;
-        if ($r = $mysqli->query("SELECT regular_holiday_rate, special_nonworking_rate, special_working_rate FROM payroll_settings WHERE id = 1 LIMIT 1")) {
+        if ($r = $mysqli->query("SELECT regular_holiday_rate, special_nonworking_rate, special_working_rate FROM eaaps_payroll_settings WHERE id = 1 LIMIT 1")) {
             $row = $r->fetch_assoc();
             if ($row) {
                 $phRegular   = max(0.0, (float)($row['regular_holiday_rate'] ?? $phRegular));
@@ -1973,7 +1974,7 @@ try {
 
         // Preload holidays in the period into a date => type map
         $holidaysByDate = [];
-        if ($hStmt = $mysqli->prepare("SELECT type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?")) {
+        if ($hStmt = $mysqli->prepare("SELECT holiday_type AS type, start_date, end_date FROM holidays WHERE end_date >= ? AND start_date <= ?")) {
             $hStmt->bind_param('ss', $start, $end);
             if ($hStmt->execute()) {
                 $hRes = $hStmt->get_result();
@@ -1989,16 +1990,16 @@ try {
         }
 
         // Load employees with their role, rates
-        $sql = "SELECT e.id AS emp_id, e.first_name, e.last_name,
+        $sql = "SELECT e.employee_id AS emp_id, e.first_name, e.last_name,
                        e.rate_per_day AS e_rpd, e.rate_per_hour AS e_rph,
-                       jp.id AS role_id, jp.name AS role_name,
+                       jp.position_id AS role_id, jp.position_name AS role_name,
                        COALESCE(jp.rate_per_day, 0) AS jp_rpd,
                        COALESCE(jp.rate_per_hour, 0) AS jp_rph,
                        COALESCE(jp.working_hours_per_day, 0) AS whpd
                 FROM employees e
-                JOIN job_positions jp ON e.job_position_id = jp.id";
+                JOIN job_positions jp ON e.position_id = jp.position_id";
         if ($roleId > 0) {
-            $sql .= " WHERE jp.id = " . (int)$roleId;
+            $sql .= " WHERE jp.position_id = " . (int)$roleId;
         }
         $res = $mysqli->query($sql);
 
@@ -2022,7 +2023,7 @@ try {
             }
 
             // Fetch attendance logs in the window and index by date
-            $stmt = $mysqli->prepare("SELECT date, time_in, time_out, status FROM attendance_logs WHERE employee_id = ? AND date BETWEEN ? AND ?");
+            $stmt = $mysqli->prepare("SELECT attendance_date AS date, time_in, time_out, status FROM attendance_logs WHERE employee_id = ? AND attendance_date BETWEEN ? AND ?");
             $stmt->bind_param('iss', $empId, $start, $end);
             $stmt->execute();
             $logsRes = $stmt->get_result();
@@ -2156,25 +2157,25 @@ try {
         $rows = [];
 
         if ($roleId > 0) {
-            if ($stmt = $mysqli->prepare("SELECT tm.id, tm.year, tm.period_start, tm.period_end, tm.thirteenth_amount,
+            if ($stmt = $mysqli->prepare("SELECT tm.id, tm.employee_id, tm.year, tm.period_start, tm.period_end, tm.thirteenth_amount,
                                                  tm.paid_status, tm.payment_date,
-                                                 e.first_name, e.last_name, jp.name AS role_name
+                                                 e.first_name, e.last_name, jp.position_name AS role_name
                                           FROM thirteenth_month_payroll tm
-                                          JOIN employees e ON e.id = tm.employee_id
-                                          JOIN job_positions jp ON e.job_position_id = jp.id
-                                          WHERE tm.year = ? AND jp.id = ?
+                                          JOIN employees e ON e.employee_id = tm.employee_id
+                                          JOIN job_positions jp ON e.position_id = jp.position_id
+                                          WHERE tm.year = ? AND jp.position_id = ?
                                           ORDER BY e.last_name, e.first_name")) {
                 $stmt->bind_param('ii', $year, $roleId);
             } else {
                 $stmt = null;
             }
         } else {
-            if ($stmt = $mysqli->prepare("SELECT tm.id, tm.year, tm.period_start, tm.period_end, tm.thirteenth_amount,
+            if ($stmt = $mysqli->prepare("SELECT tm.id, tm.employee_id, tm.year, tm.period_start, tm.period_end, tm.thirteenth_amount,
                                                  tm.paid_status, tm.payment_date,
-                                                 e.first_name, e.last_name, jp.name AS role_name
+                                                 e.first_name, e.last_name, jp.position_name AS role_name
                                           FROM thirteenth_month_payroll tm
-                                          JOIN employees e ON e.id = tm.employee_id
-                                          JOIN job_positions jp ON e.job_position_id = jp.id
+                                          JOIN employees e ON e.employee_id = tm.employee_id
+                                          JOIN job_positions jp ON e.position_id = jp.position_id
                                           WHERE tm.year = ?
                                           ORDER BY e.last_name, e.first_name")) {
                 $stmt->bind_param('i', $year);
@@ -2190,6 +2191,7 @@ try {
                     $name = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
                     $rows[] = [
                         'id' => (int)($r['id'] ?? 0),
+                        'employee_id' => (int)($r['employee_id'] ?? 0),
                         'employee' => $name,
                         'role' => $r['role_name'] ?? '',
                         'year' => (int)($r['year'] ?? $year),
@@ -2222,21 +2224,33 @@ try {
 
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         $id = isset($input['id']) ? (int)$input['id'] : (isset($_POST['id']) ? (int)$_POST['id'] : 0);
+        $employeeId = isset($input['employee_id']) ? (int)$input['employee_id'] : (isset($_POST['employee_id']) ? (int)$_POST['employee_id'] : 0);
+        $year = isset($input['year']) ? (int)$input['year'] : (isset($_POST['year']) ? (int)$_POST['year'] : 0);
 
-        if ($id <= 0) {
+        if ($id <= 0 && ($employeeId <= 0 || $year < 1970 || $year > 2100)) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid 13th month id']);
+            echo json_encode(['success' => false, 'message' => 'Invalid 13th month identifier']);
             exit;
         }
 
         ensure_thirteenth_month_table($mysqli);
 
         $affected = 0;
-        if ($stmt = $mysqli->prepare("UPDATE thirteenth_month_payroll SET paid_status = 'Paid', payment_date = IFNULL(payment_date, CURDATE()) WHERE id = ?")) {
-            $stmt->bind_param('i', $id);
-            $stmt->execute();
-            $affected = $stmt->affected_rows;
-            $stmt->close();
+
+        if ($id > 0) {
+            if ($stmt = $mysqli->prepare("UPDATE thirteenth_month_payroll SET paid_status = 'Paid', payment_date = IFNULL(payment_date, CURDATE()) WHERE id = ?")) {
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $affected = $stmt->affected_rows;
+                $stmt->close();
+            }
+        } else {
+            if ($stmt = $mysqli->prepare("UPDATE thirteenth_month_payroll SET paid_status = 'Paid', payment_date = IFNULL(payment_date, CURDATE()) WHERE employee_id = ? AND year = ? AND paid_status = 'Unpaid'")) {
+                $stmt->bind_param('ii', $employeeId, $year);
+                $stmt->execute();
+                $affected = $stmt->affected_rows;
+                $stmt->close();
+            }
         }
 
         if ($affected <= 0) {
@@ -2279,10 +2293,10 @@ try {
 
         if ($roleId > 0) {
             if ($stmt = $mysqli->prepare("UPDATE thirteenth_month_payroll tm
-                                           JOIN employees e ON e.id = tm.employee_id
-                                           JOIN job_positions jp ON e.job_position_id = jp.id
+                                           JOIN employees e ON e.employee_id = tm.employee_id
+                                           JOIN job_positions jp ON e.position_id = jp.position_id
                                            SET tm.paid_status = 'Paid', tm.payment_date = IFNULL(tm.payment_date, CURDATE())
-                                           WHERE tm.year = ? AND jp.id = ? AND tm.paid_status = 'Unpaid'")) {
+                                           WHERE tm.year = ? AND jp.position_id = ? AND tm.paid_status = 'Unpaid'")) {
                 $stmt->bind_param('ii', $year, $roleId);
                 $stmt->execute();
                 $affected = $stmt->affected_rows;

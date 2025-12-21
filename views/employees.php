@@ -535,8 +535,8 @@ switch ($action) {
             contact_number, emergency_contact_name, emergency_contact_phone,
             emergency_contact_relationship, date_of_birth, hire_date, department_id, position_id,
             rate_per_hour, rate_per_day, annual_paid_leave_days, annual_unpaid_leave_days,
-            annual_sick_leave_days, avatar_path
-            ) VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?)";
+            annual_sick_leave_days, avatar_path, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
             $stmt = $mysqli->prepare($query);
             $types = 'isssssssssssiiddiiis';
@@ -782,13 +782,14 @@ switch ($action) {
             $user_update->execute();
             $user_update->close();
 
-            // Update employees table
+            // Update employees table (also bump updated_at)
             $query = "UPDATE employees SET 
                 first_name = ?, last_name = ?, address = ?, gender = ?, marital_status = ?,
                 email = ?, contact_number = ?, emergency_contact_name = ?, emergency_contact_phone = ?,
                 emergency_contact_relationship = ?, department_id = ?, position_id = ?,
                 rate_per_hour = ?, rate_per_day = ?, annual_paid_leave_days = ?, annual_unpaid_leave_days = ?,
-                annual_sick_leave_days = ?, hire_date = ?, date_of_birth = ?, avatar_path = ?
+                annual_sick_leave_days = ?, hire_date = ?, date_of_birth = ?, avatar_path = ?,
+                updated_at = NOW()
                 WHERE employee_id = ?";
             $stmt = $mysqli->prepare($query);
             $types = 'ssssssssssiiddiiisssi';
