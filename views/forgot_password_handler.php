@@ -45,29 +45,41 @@ switch ($action) {
         throw new Exception('Invalid email address.');
       }
 
-      // Check if email exists
-      $stmt = $mysqli->prepare("SELECT id FROM users WHERE email = ?");
+      // Check if email exists in users_employee (canonical auth table)
+      $stmt = $mysqli->prepare("SELECT id FROM users_employee WHERE email = ?");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
       $stmt->bind_param("s", $email);
       $stmt->execute();
       $result = $stmt->get_result();
-      if ($result->num_rows === 0) {
+      $user = $result->fetch_assoc();
+      $stmt->close();
+      if (!$user) {
         throw new Exception('Email not found.');
       }
-      $stmt->close();
+      $userId = (int)$user['id'];
 
-      // Generate 6-digit code
+      // Generate 6-digit code (valid for ~10 minutes)
       $code = rand(100000, 999999);
-      $expiresAt = date('Y-m-d H:i:s', time() + 600); // 10 minutes
+      $requestedAt = date('Y-m-d H:i:s');
+      $expiresAt = date('Y-m-d H:i:s', time() + 600); // 10 minutes from now
 
-      // Delete existing
+      // Delete existing reset requests for this email
       $stmt = $mysqli->prepare("DELETE FROM password_resets WHERE email = ?");
-      $stmt->bind_param("s", $email);
-      $stmt->execute();
-      $stmt->close();
+      if ($stmt) {
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $stmt->close();
+      }
 
-      // Insert
-      $stmt = $mysqli->prepare("INSERT INTO password_resets (email, code, expires_at) VALUES (?, ?, ?)");
-      $stmt->bind_param("sss", $email, $code, $expiresAt);
+      // Insert new reset request aligned with systemintegration schema
+      // password_resets: reset_id, user_id, token, requested_at, email, code, expired_at, created_at
+      $stmt = $mysqli->prepare("INSERT INTO password_resets (user_id, email, code, requested_at, expired_at) VALUES (?, ?, ?, ?, ?)");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
+      $stmt->bind_param("issss", $userId, $email, $code, $requestedAt, $expiresAt);
       $stmt->execute();
       $stmt->close();
 
@@ -108,7 +120,11 @@ switch ($action) {
       $email = $_POST['email'] ?? '';
       $code = $_POST['code'] ?? '';
 
-      $stmt = $mysqli->prepare("SELECT code, expires_at FROM password_resets WHERE email = ?");
+      // Fetch most recent reset request for this email
+      $stmt = $mysqli->prepare("SELECT code, requested_at FROM password_resets WHERE email = ? ORDER BY reset_id DESC LIMIT 1");
+      if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $mysqli->error);
+      }
       $stmt->bind_param("s", $email);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -119,7 +135,9 @@ switch ($action) {
         throw new Exception('No reset code found for this email.');
       }
 
-      if (strtotime($row['expires_at']) < time()) {
+      // Validate expiry based on requested_at + 10 minutes
+      $requestedAtTs = isset($row['requested_at']) ? strtotime($row['requested_at']) : 0;
+      if ($requestedAtTs === 0 || ($requestedAtTs + 600) < time()) {
         throw new Exception('Code has expired.');
       }
 
@@ -154,8 +172,8 @@ switch ($action) {
       // Hash the new password
       $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
-      // Update the user's password
-      $stmt = $mysqli->prepare("UPDATE users SET password_hash = ? WHERE email = ?");
+      // Update the user's password in users_employee (canonical auth table)
+      $stmt = $mysqli->prepare("UPDATE users_employee SET password_hash = ? WHERE email = ?");
       $stmt->bind_param("ss", $hashedPassword, $email);
       $stmt->execute();
       $affected = $stmt->affected_rows;

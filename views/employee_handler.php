@@ -34,7 +34,8 @@ function computeEffectiveLeaveDays($mysqli, $employeeId, $startDateStr, $endDate
     $calendarDays = $startDate->diff($endDate)->days + 1;
     $effectiveDays = $calendarDays;
 
-    $stmt = $mysqli->prepare("SELECT DISTINCT day_of_week FROM schedules WHERE employee_id = ? AND is_working = 1");
+    // Use employee_schedules as the canonical schedule table
+    $stmt = $mysqli->prepare("SELECT DISTINCT day_of_week FROM employee_schedules WHERE employee_id = ? AND is_working = 1");
     if ($stmt) {
       $stmt->bind_param('i', $employeeId);
       $stmt->execute();
@@ -106,16 +107,19 @@ function computeEffectiveLeaveDays($mysqli, $employeeId, $startDateStr, $endDate
           }
         }
       } else {
+        // No schedules found; do not deduct anything
         $effectiveDays = 0;
       }
 
       return $effectiveDays;
     }
   } catch (Exception $e) {
-    return $calendarDays;
+    // On any error, be safe and do not deduct leave days
+    return 0;
   }
 
-  return $calendarDays;
+  // Fallback: if for some reason we did not enter the main branch, do not deduct
+  return 0;
 }
 
 try {
@@ -126,7 +130,8 @@ try {
       }
       $userId = $_SESSION['user_id'];
 
-      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+      // employees.employee_id is the PK in systemintegration schema
+      $stmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ? LIMIT 1");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -138,11 +143,12 @@ try {
       if (!$emp) {
         throw new Exception('Employee not found');
       }
-      $employeeId = (int)$emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
       $today = date('Y-m-d');
 
-      $stmt = $mysqli->prepare("SELECT id, date, time_in, time_out, status, expected_start_time, expected_end_time FROM attendance_logs WHERE employee_id = ? AND date = ? LIMIT 1");
+      // attendance_logs uses log_id and attendance_date in systemintegration
+      $stmt = $mysqli->prepare("SELECT log_id, attendance_date AS date, time_in, time_out, status, expected_start_time, expected_end_time FROM attendance_logs WHERE employee_id = ? AND attendance_date = ? LIMIT 1");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -154,7 +160,8 @@ try {
 
       $holidayType = null;
       $holidayName = null;
-      $stmt = $mysqli->prepare("SELECT name, type FROM holidays WHERE start_date <= ? AND end_date >= ? LIMIT 1");
+      // holidays uses holiday_name/holiday_type; alias to keep existing PHP field names
+      $stmt = $mysqli->prepare("SELECT holiday_name AS name, holiday_type AS type FROM holidays WHERE start_date <= ? AND end_date >= ? LIMIT 1");
       if ($stmt) {
         $stmt->bind_param('ss', $today, $today);
         $stmt->execute();
@@ -295,7 +302,8 @@ try {
       }
       $userId = $_SESSION['user_id'];
 
-      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+      // employees.employee_id is PK; alias as id if needed
+      $stmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ? LIMIT 1");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -307,13 +315,14 @@ try {
       if (!$emp) {
         throw new Exception('Employee not found');
       }
-      $employeeId = (int)$emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
       $firstDay = (new DateTime('first day of this month'))->format('Y-m-d');
       $lastDay = (new DateTime('last day of this month'))->format('Y-m-d');
 
       $holidays = [];
-      if ($hRes = $mysqli->query("SELECT id, name, type, start_date, end_date FROM holidays")) {
+      // holidays use holiday_id/holiday_name/holiday_type; alias to match existing code expectations
+      if ($hRes = $mysqli->query("SELECT holiday_id AS id, holiday_name AS name, holiday_type AS type, start_date, end_date FROM holidays")) {
         while ($hRow = $hRes->fetch_assoc()) {
           $holidays[] = $hRow;
         }
@@ -321,8 +330,8 @@ try {
       }
 
       $sql = "SELECT 
-                al.id,
-                al.date,
+                al.log_id AS id,
+                al.attendance_date AS date,
                 al.time_in AS time_in,
                 al.time_out AS time_out,
                 al.status,
@@ -332,9 +341,9 @@ try {
               LEFT JOIN leave_requests lr
                 ON lr.employee_id = al.employee_id
                AND lr.status = 'Approved'
-               AND al.date BETWEEN lr.start_date AND lr.end_date
-              WHERE al.employee_id = ? AND al.date BETWEEN ? AND ?
-              ORDER BY al.date ASC";
+               AND al.attendance_date BETWEEN lr.start_date AND lr.end_date
+              WHERE al.employee_id = ? AND al.attendance_date BETWEEN ? AND ?
+              ORDER BY al.attendance_date ASC";
       $stmt = $mysqli->prepare($sql);
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
@@ -460,7 +469,8 @@ try {
       }
       $userId = $_SESSION['user_id'];
 
-      $stmt = $mysqli->prepare("SELECT e.id, e.department_id, e.job_position_id, d.name AS dept_name, jp.name AS pos_name FROM employees e JOIN departments d ON e.department_id = d.id JOIN job_positions jp ON e.job_position_id = jp.id WHERE e.user_id = ? LIMIT 1");
+      // departments.department_name and job_positions.position_name in schema; alias to generic names
+      $stmt = $mysqli->prepare("SELECT e.employee_id, e.department_id, e.position_id, d.department_name AS dept_name, jp.position_name AS pos_name FROM employees e JOIN departments d ON e.department_id = d.department_id JOIN job_positions jp ON e.position_id = jp.position_id WHERE e.user_id = ? LIMIT 1");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -472,9 +482,10 @@ try {
       if (!$emp) {
         throw new Exception('Employee not found');
       }
-      $employeeId = (int)$emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
-      $stmt = $mysqli->prepare("SELECT day_of_week, start_time, end_time, is_working FROM schedules WHERE employee_id = ? ORDER BY FIELD(day_of_week,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')");
+      // Use employee_schedules (canonical in systemintegration schema)
+      $stmt = $mysqli->prepare("SELECT day_of_week, start_time, end_time, is_working FROM employee_schedules WHERE employee_id = ? ORDER BY FIELD(day_of_week,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -538,7 +549,7 @@ try {
       }
       $userId = $_SESSION['user_id'];
 
-      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+      $stmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ? LIMIT 1");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -550,9 +561,9 @@ try {
       if (!$emp) {
         throw new Exception('Employee not found');
       }
-      $employeeId = (int)$emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
-      $stmt = $mysqli->prepare("SELECT id, payroll_period_start, payroll_period_end, gross_pay, philhealth_deduction, sss_deduction, pagibig_deduction, other_deductions, total_deductions, net_pay, paid_status, payment_date FROM payroll WHERE employee_id = ? ORDER BY payment_date DESC, id DESC LIMIT 1");
+      $stmt = $mysqli->prepare("SELECT payroll_id AS id, payroll_period_start, payroll_period_end, gross_pay, philhealth_deduction, sss_deduction, pagibig_deduction, other_deductions, total_deductions, net_pay, paid_status, payment_date FROM payroll WHERE employee_id = ? ORDER BY payment_date DESC, payroll_id DESC LIMIT 1");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -574,7 +585,7 @@ try {
         $deductions = isset($row['total_deductions']) ? (float)$row['total_deductions'] : ((float)$row['philhealth_deduction'] + (float)$row['sss_deduction'] + (float)$row['pagibig_deduction'] + (float)$row['other_deductions']);
         $netPay = isset($row['net_pay']) ? (float)$row['net_pay'] : ($grossPay - $deductions);
 
-        $stmt = $mysqli->prepare("SELECT time_in, time_out, date FROM attendance_logs WHERE employee_id = ? AND date BETWEEN ? AND ? AND time_in IS NOT NULL AND time_out IS NOT NULL");
+        $stmt = $mysqli->prepare("SELECT time_in, time_out, attendance_date AS date FROM attendance_logs WHERE employee_id = ? AND attendance_date BETWEEN ? AND ? AND time_in IS NOT NULL AND time_out IS NOT NULL");
         if ($stmt) {
           $stmt->bind_param('iss', $employeeId, $periodStart, $periodEnd);
           $stmt->execute();
@@ -608,7 +619,7 @@ try {
       }
       $userId = $_SESSION['user_id'];
 
-      $stmt = $mysqli->prepare("SELECT e.id, e.first_name, e.last_name, e.contact_number, e.avatar_path, d.name AS dept_name, jp.name AS pos_name FROM employees e JOIN departments d ON e.department_id = d.id JOIN job_positions jp ON e.job_position_id = jp.id WHERE e.user_id = ? LIMIT 1");
+      $stmt = $mysqli->prepare("SELECT e.employee_id AS id, e.first_name, e.last_name, e.contact_number, e.avatar_path, d.department_name AS dept_name, jp.position_name AS pos_name FROM employees e JOIN departments d ON e.department_id = d.department_id JOIN job_positions jp ON e.position_id = jp.position_id WHERE e.user_id = ? LIMIT 1");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -642,7 +653,7 @@ try {
       }
       $userId = $_SESSION['user_id'];
 
-      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+      $stmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ? LIMIT 1");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -654,9 +665,9 @@ try {
       if (!$emp) {
         throw new Exception('Employee not found');
       }
-      $employeeId = (int)$emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
-      $stmt = $mysqli->prepare("SELECT qr_image_path FROM qr_codes WHERE employee_id = ? ORDER BY generated_at DESC, id DESC LIMIT 1");
+      $stmt = $mysqli->prepare("SELECT qr_image_path FROM qr_codes WHERE employee_id = ? ORDER BY generated_at DESC, qr_id DESC LIMIT 1");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -685,7 +696,7 @@ try {
       }
       $userId = $_SESSION['user_id'];
 
-      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+      $stmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ? LIMIT 1");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -697,14 +708,14 @@ try {
       if (!$emp) {
         throw new Exception('Employee not found');
       }
-      $employeeId = (int)$emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
       $notifications = [];
 
       $today = date('Y-m-d');
       $twoWeeks = (new DateTime($today))->modify('+14 days')->format('Y-m-d');
 
-      if ($stmt = $mysqli->prepare("SELECT name, type, start_date FROM holidays WHERE start_date BETWEEN ? AND ? ORDER BY start_date ASC")) {
+      if ($stmt = $mysqli->prepare("SELECT holiday_name AS name, holiday_type AS type, start_date FROM holidays WHERE start_date BETWEEN ? AND ? ORDER BY start_date ASC")) {
         $stmt->bind_param('ss', $today, $twoWeeks);
         $stmt->execute();
         $res = $stmt->get_result();
@@ -729,7 +740,7 @@ try {
         $stmt->close();
       }
 
-      if ($stmt = $mysqli->prepare("SELECT payment_date, net_pay FROM payroll WHERE employee_id = ? AND paid_status = 'Paid' ORDER BY payment_date DESC, id DESC LIMIT 1")) {
+      if ($stmt = $mysqli->prepare("SELECT payment_date, net_pay FROM payroll WHERE employee_id = ? AND paid_status = 'Paid' ORDER BY payment_date DESC, payroll_id DESC LIMIT 1")) {
         $stmt->bind_param('i', $employeeId);
         $stmt->execute();
         $res = $stmt->get_result();
@@ -785,7 +796,7 @@ try {
       $userId = $_SESSION['user_id'];
 
       // First, get the employee ID from user_id
-      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ?");
+      $stmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ?");
       $stmt->bind_param('i', $userId);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -795,10 +806,10 @@ try {
       if (!$emp) {
         throw new Exception('Employee not found');
       }
-      $employeeId = $emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
-      // Fetch leave requests using employee_id, and alias leave_type as type
-      $stmt = $mysqli->prepare("SELECT id, leave_type AS type, start_date, end_date, days, reason, status, proof_path, admin_feedback FROM leave_requests WHERE employee_id = ? ORDER BY submitted_at DESC");
+      // Fetch leave requests using employee_id, and alias leave_type as type. leave_id is PK.
+      $stmt = $mysqli->prepare("SELECT leave_id AS id, leave_type AS type, start_date, end_date, days, reason, status, proof_path, admin_feedback FROM leave_requests WHERE employee_id = ? ORDER BY submitted_at DESC");
       if (!$stmt) {
         throw new Exception('Prepare failed: ' . $mysqli->error);
       }
@@ -818,7 +829,7 @@ try {
       $userId = $_SESSION['user_id'];
 
       // Get employee ID
-      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ?");
+      $stmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ?");
       $stmt->bind_param('i', $userId);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -828,7 +839,7 @@ try {
       if (!$emp) {
         throw new Exception('Employee not found');
       }
-      $employeeId = $emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
       $type = $_POST['leave-type'] ?? '';
       $startDate = $_POST['leave-start'] ?? '';
@@ -887,17 +898,17 @@ try {
       }
 
       // Get employee ID
-      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ?");
+      $stmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ?");
       $stmt->bind_param('i', $userId);
       $stmt->execute();
       $result = $stmt->get_result();
       $emp = $result->fetch_assoc();
       $stmt->close();
       if (!$emp) throw new Exception('Employee not found');
-      $employeeId = $emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
       // Check for overlaps with Approved or Pending requests
-      $stmt = $mysqli->prepare("SELECT id FROM leave_requests WHERE employee_id = ? AND status IN ('Approved', 'Pending') AND ((start_date <= ? AND end_date >= ?) OR (start_date <= ? AND end_date >= ?))");
+      $stmt = $mysqli->prepare("SELECT leave_id FROM leave_requests WHERE employee_id = ? AND status IN ('Approved', 'Pending') AND ((start_date <= ? AND end_date >= ?) OR (start_date <= ? AND end_date >= ?))");
       $stmt->bind_param('issss', $employeeId, $endDate, $startDate, $startDate, $endDate);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -919,7 +930,7 @@ try {
         throw new Exception('Start and end dates required');
       }
 
-      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ?");
+      $stmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ?");
       $stmt->bind_param('i', $userId);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -928,7 +939,7 @@ try {
       if (!$emp) {
         throw new Exception('Employee not found');
       }
-      $employeeId = $emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
       $start = new DateTime($startDate);
       $end = new DateTime($endDate);
@@ -962,9 +973,9 @@ try {
       $stmt = $mysqli->prepare("
         SELECT lr.*, u.first_name, u.last_name, u.email, u.avatar_path 
         FROM leave_requests lr 
-        JOIN employees e ON lr.employee_id = e.id 
-        JOIN users u ON e.user_id = u.id 
-        WHERE lr.id = ? AND u.id = ?
+        JOIN employees e ON lr.employee_id = e.employee_id 
+        JOIN users_employee u ON e.user_id = u.id 
+        WHERE lr.leave_id = ? AND u.id = ?
       ");
       $stmt->bind_param('ii', $requestId, $userId);
       $stmt->execute();
@@ -981,9 +992,9 @@ try {
       $stmt = $mysqli->prepare("
         SELECT lr.*, u.first_name, u.last_name, u.email, u.avatar_path 
         FROM leave_requests lr 
-        JOIN employees e ON lr.employee_id = e.id 
-        JOIN users u ON e.user_id = u.id 
-        WHERE lr.id = ? AND u.id = ?
+        JOIN employees e ON lr.employee_id = e.employee_id 
+        JOIN users_employee u ON e.user_id = u.id 
+        WHERE lr.leave_id = ? AND u.id = ?
       ");
       $stmt->bind_param('ii', $requestId, $userId);
       $stmt->execute();
@@ -1010,7 +1021,7 @@ try {
       $requestId = (int)$_POST['id']; // JS sends via POST body
 
       // Move file deletion here, after $requestId is defined
-      $stmt = $mysqli->prepare("SELECT proof_path FROM leave_requests WHERE id = ?");
+      $stmt = $mysqli->prepare("SELECT proof_path FROM leave_requests WHERE leave_id = ?");
       $stmt->bind_param('i', $requestId);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -1021,17 +1032,17 @@ try {
       $stmt->close();
 
       // Get employee ID
-      $stmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ?");
+      $stmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ?");
       $stmt->bind_param('i', $userId);
       $stmt->execute();
       $result = $stmt->get_result();
       $emp = $result->fetch_assoc();
       $stmt->close();
       if (!$emp) throw new Exception('Employee not found');
-      $employeeId = $emp['id'];
+      $employeeId = (int)$emp['employee_id'];
 
       // Check if request is Pending and belongs to user
-      $stmt = $mysqli->prepare("SELECT status FROM leave_requests WHERE id = ? AND employee_id = ?");
+      $stmt = $mysqli->prepare("SELECT status FROM leave_requests WHERE leave_id = ? AND employee_id = ?");
       $stmt->bind_param('ii', $requestId, $employeeId);
       $stmt->execute();
       $result = $stmt->get_result();
@@ -1041,7 +1052,7 @@ try {
       if ($req['status'] !== 'Pending') throw new Exception('Only pending requests can be canceled');
 
       // Delete the request
-      $stmt = $mysqli->prepare("DELETE FROM leave_requests WHERE id = ?");
+      $stmt = $mysqli->prepare("DELETE FROM leave_requests WHERE leave_id = ?");
       $stmt->bind_param('i', $requestId);
       if (!$stmt->execute()) {
         throw new Exception('Failed to cancel request');

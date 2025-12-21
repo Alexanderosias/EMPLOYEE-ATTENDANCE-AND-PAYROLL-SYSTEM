@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 18, 2025 at 08:00 AM
+-- Generation Time: Dec 21, 2025 at 06:29 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -108,7 +108,9 @@ CREATE TABLE `activity` (
   `DueDate` datetime DEFAULT NULL,
   `IsActive` tinyint(1) DEFAULT 1,
   `CreatedBy` int(11) DEFAULT NULL,
-  `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp()
+  `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp(),
+  `Instructions` text DEFAULT NULL,
+  `AllowLate` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -227,16 +229,16 @@ CREATE TABLE `allowance_releases` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `all_users_view`
+-- Stand-in structure for view `all_users_view`
+-- (See below for the actual view)
 --
-
 CREATE TABLE `all_users_view` (
-  `username` varchar(100) DEFAULT NULL,
-  `password` varchar(255) DEFAULT NULL,
-  `role` enum('admin','student','instructor') DEFAULT NULL,
-  `user_ref_id` int(11) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+`username` varchar(100)
+,`password` varchar(255)
+,`role` enum('admin','student','instructor')
+,`user_ref_id` int(11)
+,`created_at` timestamp
+);
 
 -- --------------------------------------------------------
 
@@ -252,6 +254,13 @@ CREATE TABLE `announcement` (
   `PostedBy` int(11) DEFAULT NULL,
   `PostedAt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `announcement`
+--
+
+INSERT INTO `announcement` (`AnnouncementID`, `SubSchedID`, `Title`, `Content`, `PostedBy`, `PostedAt`) VALUES
+(0, 2, 'IGG', 'GGGGGGGGGGGGGGGGGGG', 33, '2025-12-21 13:40:45');
 
 -- --------------------------------------------------------
 
@@ -349,6 +358,13 @@ CREATE TABLE `assignment` (
   `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `assignment`
+--
+
+INSERT INTO `assignment` (`AssignmentID`, `SubSchedID`, `Title`, `Description`, `Instructions`, `TotalPoints`, `DueDate`, `AllowLate`, `IsActive`, `CreatedBy`, `CreatedAt`) VALUES
+(0, 2, 'HSKADH', 'AKFHKJAFB', 'AKFHKJA', 100, '2025-12-21 09:33:00', 0, 1, 33, '2025-12-21 13:33:59');
+
 -- --------------------------------------------------------
 
 --
@@ -378,14 +394,12 @@ CREATE TABLE `assignmentsubmission` (
 --
 
 CREATE TABLE `attendance` (
-  `id` bigint(20) UNSIGNED NOT NULL,
-  `student_id` int(10) UNSIGNED NOT NULL,
-  `subject_id` int(10) UNSIGNED NOT NULL,
-  `date` date NOT NULL,
-  `time_in` time NOT NULL,
-  `status` enum('Present','Absent') NOT NULL,
-  `marked_by` int(10) UNSIGNED DEFAULT NULL,
-  `marked_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `attendance_id` int(11) NOT NULL,
+  `student_id` int(11) DEFAULT NULL,
+  `subject_id` int(11) DEFAULT NULL,
+  `attendance_date` date DEFAULT NULL,
+  `status` enum('present','absent','late') DEFAULT 'present',
+  `recorded_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -419,20 +433,17 @@ CREATE TABLE `attendance_logs` (
 --
 
 CREATE TABLE `attendance_logs_security` (
-  `log_id` int(11) NOT NULL,
-  `user_security_id` int(11) DEFAULT NULL,
-  `log_date` date DEFAULT NULL,
-  `time_in` time DEFAULT NULL,
-  `time_out` time DEFAULT NULL
+  `id_security` int(11) NOT NULL,
+  `user_id_security` int(11) NOT NULL,
+  `log_type_security` enum('check_in','check_out') NOT NULL,
+  `log_date_security` date NOT NULL,
+  `log_time_security` time NOT NULL,
+  `location_security` varchar(100) DEFAULT NULL,
+  `notes_security` text DEFAULT NULL,
+  `auto_logout_security` tinyint(1) DEFAULT 0,
+  `created_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `attendance_logs_security`
---
-
-INSERT INTO `attendance_logs_security` (`log_id`, `user_security_id`, `log_date`, `time_in`, `time_out`) VALUES
-(1, 1, '2025-12-15', '06:00:00', '18:00:00'),
-(2, 2, '2025-12-15', '18:00:00', '06:00:00');
 
 -- --------------------------------------------------------
 
@@ -476,20 +487,17 @@ CREATE TABLE `attendance_schedules` (
 --
 
 CREATE TABLE `attendance_schedules_security` (
-  `schedule_id` int(11) NOT NULL,
-  `user_security_id` int(11) DEFAULT NULL,
-  `schedule_date` date DEFAULT NULL,
-  `time_in` time DEFAULT NULL,
-  `time_out` time DEFAULT NULL
+  `id_security` int(11) NOT NULL,
+  `user_id_security` int(11) NOT NULL,
+  `schedule_type_security` enum('fixed','flexible','shift') NOT NULL,
+  `expected_check_in_security` time NOT NULL,
+  `expected_check_out_security` time NOT NULL,
+  `effective_date_security` date NOT NULL,
+  `end_date_security` date DEFAULT NULL,
+  `is_active_security` tinyint(1) DEFAULT 1,
+  `created_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `attendance_schedules_security`
---
-
-INSERT INTO `attendance_schedules_security` (`schedule_id`, `user_security_id`, `schedule_date`, `time_in`, `time_out`) VALUES
-(1, 1, '2025-12-16', '06:00:00', '18:00:00'),
-(2, 2, '2025-12-16', '18:00:00', '06:00:00');
 
 -- --------------------------------------------------------
 
@@ -501,8 +509,7 @@ CREATE TABLE `attendance_settings` (
   `setting_id` int(11) NOT NULL,
   `setting_name` varchar(100) DEFAULT NULL,
   `setting_value` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `auto_ot_minutes` int(11) DEFAULT 30
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -512,38 +519,23 @@ CREATE TABLE `attendance_settings` (
 --
 
 CREATE TABLE `attendance_settings_security` (
-  `setting_id` int(11) NOT NULL,
-  `setting_name` varchar(100) DEFAULT NULL,
-  `setting_value` varchar(255) DEFAULT NULL
+  `id_security` int(11) NOT NULL,
+  `setting_key_security` varchar(100) NOT NULL,
+  `setting_value_security` text NOT NULL,
+  `description_security` text DEFAULT NULL,
+  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `attendance_settings_security`
 --
 
-INSERT INTO `attendance_settings_security` (`setting_id`, `setting_name`, `setting_value`) VALUES
-(1, 'patrol_interval_minutes', '30'),
-(2, 'report_time', '08:00'),
-(3, 'shift_change_time', '18:00');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `attendance_sync_queue`
---
-
-CREATE TABLE `attendance_sync_queue` (
-  `id` int(11) NOT NULL,
-  `sync_type` varchar(50) NOT NULL,
-  `table_name` varchar(50) NOT NULL,
-  `record_id` varchar(100) NOT NULL,
-  `action` varchar(20) NOT NULL DEFAULT 'insert',
-  `data` text DEFAULT NULL,
-  `status` varchar(20) NOT NULL DEFAULT 'pending',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `processed_at` timestamp NULL DEFAULT NULL,
-  `error_message` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `attendance_settings_security` (`id_security`, `setting_key_security`, `setting_value_security`, `description_security`, `updated_at_security`) VALUES
+(1, 'grace_period_minutes', '15', 'Allowed minutes before/after scheduled time', '2025-10-29 17:12:04'),
+(2, 'auto_logout_time', '18:00:00', 'Automatic logout time for shifts', '2025-10-29 17:12:04'),
+(3, 'max_hours_per_day', '12', 'Maximum allowed working hours per day', '2025-10-29 17:12:04'),
+(4, 'enable_auto_logout', '1', 'Enable automatic logout at end of day', '2025-10-29 17:12:04'),
+(5, 'require_location', '1', 'Require location when checking in/out', '2025-10-29 17:12:04');
 
 -- --------------------------------------------------------
 
@@ -569,80 +561,23 @@ INSERT INTO `audit_logs` (`audit_id`, `action`, `description`, `performed_by`, `
 -- --------------------------------------------------------
 
 --
--- Table structure for table `backup_attendance`
---
-
-CREATE TABLE `backup_attendance` (
-  `id` bigint(20) UNSIGNED NOT NULL DEFAULT 0,
-  `student_id` int(10) UNSIGNED NOT NULL,
-  `subject_id` int(10) UNSIGNED NOT NULL,
-  `date` date NOT NULL,
-  `time_in` time NOT NULL,
-  `status` enum('Present','Absent') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `marked_by` int(10) UNSIGNED DEFAULT NULL,
-  `marked_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `backup_enrollments`
---
-
-CREATE TABLE `backup_enrollments` (
-  `id` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `student_id` int(10) UNSIGNED NOT NULL,
-  `subject_id` int(10) UNSIGNED NOT NULL,
-  `enrolled_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `backup_restore_settings`
 --
 
 CREATE TABLE `backup_restore_settings` (
   `id` int(11) NOT NULL,
   `backup_time` time DEFAULT NULL,
-  `restore_enabled` tinyint(1) DEFAULT NULL
+  `restore_enabled` tinyint(1) DEFAULT NULL,
+  `backup_frequency` varchar(20) DEFAULT 'weekly',
+  `session_timeout_minutes` int(11) DEFAULT 30
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
 --
--- Table structure for table `backup_students`
+-- Dumping data for table `backup_restore_settings`
 --
 
-CREATE TABLE `backup_students` (
-  `id` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `student_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `name` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `course` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `year_level` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `qr_code_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `photo_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `email` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `class_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `backup_users`
---
-
-CREATE TABLE `backup_users` (
-  `id` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `email` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `password_hash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `role` enum('admin','teacher') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'teacher',
-  `teacher_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `department` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `insId` int(11) DEFAULT NULL COMMENT 'Links to enrollment system instructors.InsID',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `backup_restore_settings` (`id`, `backup_time`, `restore_enabled`, `backup_frequency`, `session_timeout_minutes`) VALUES
+(1, NULL, 1, 'weekly', 30);
 
 -- --------------------------------------------------------
 
@@ -670,8 +605,7 @@ CREATE TABLE `billing` (
 
 INSERT INTO `billing` (`billing_id`, `StudID`, `fee_id`, `amount`, `billing_date`, `status`, `total_amount`, `balance`, `total_fees`, `paid_amount`, `created_at`) VALUES
 (1, 23, NULL, NULL, NULL, NULL, 0.00, -8000.00, 0.00, 8000.00, '2025-12-15 09:02:34'),
-(2, 24, NULL, NULL, NULL, NULL, 0.00, -4000.00, 2000.00, 6000.00, '2025-12-15 09:27:38'),
-(3, 2024118, NULL, NULL, NULL, NULL, 0.00, 0.00, 2462.00, 2462.00, '2025-12-17 09:26:07');
+(2, 24, NULL, NULL, NULL, NULL, 0.00, -4000.00, 2000.00, 6000.00, '2025-12-15 09:27:38');
 
 -- --------------------------------------------------------
 
@@ -710,7 +644,7 @@ INSERT INTO `books` (`BookID`, `isbn`, `title`, `author`, `category`, `publisher
 CREATE TABLE `cases` (
   `case_id` int(11) NOT NULL,
   `case_number` varchar(20) DEFAULT NULL,
-  `StudID` int(11) DEFAULT NULL,
+  `StudGuidance_ID` int(11) DEFAULT NULL,
   `case_type_id` int(11) DEFAULT NULL,
   `status_id` int(11) DEFAULT NULL,
   `priority_id` int(11) DEFAULT NULL,
@@ -836,8 +770,7 @@ CREATE TABLE `classes` (
   `class_id` int(11) NOT NULL,
   `subject_id` int(11) DEFAULT NULL,
   `teacher_id` int(11) DEFAULT NULL,
-  `term_id` int(11) DEFAULT NULL,
-  `class_name` varchar(255) DEFAULT NULL
+  `term_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -925,18 +858,6 @@ INSERT INTO `client_queue` (`queue_id`, `service_type_id`, `client_name`, `statu
 -- --------------------------------------------------------
 
 --
--- Table structure for table `connection_debug`
---
-
-CREATE TABLE `connection_debug` (
-  `id` int(11) NOT NULL,
-  `source` varchar(100) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `courses`
 --
 
@@ -944,95 +865,8 @@ CREATE TABLE `courses` (
   `course_id` int(11) NOT NULL,
   `course_code` varchar(50) DEFAULT NULL,
   `course_name` varchar(150) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `department` varchar(255) DEFAULT NULL,
-  `duration` varchar(50) DEFAULT NULL,
-  `status` enum('Active','Inactive','Archived') DEFAULT 'Active',
-  `description` text DEFAULT NULL
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `current_backup_attendance`
---
-
-CREATE TABLE `current_backup_attendance` (
-  `id` bigint(20) UNSIGNED NOT NULL DEFAULT 0,
-  `student_id` int(10) UNSIGNED NOT NULL,
-  `subject_id` int(10) UNSIGNED NOT NULL,
-  `date` date NOT NULL,
-  `time_in` time NOT NULL,
-  `status` enum('Present','Absent') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `marked_by` int(10) UNSIGNED DEFAULT NULL,
-  `marked_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `current_backup_enrollments`
---
-
-CREATE TABLE `current_backup_enrollments` (
-  `id` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `student_id` int(10) UNSIGNED NOT NULL,
-  `subject_id` int(10) UNSIGNED NOT NULL,
-  `enrolled_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `current_backup_students`
---
-
-CREATE TABLE `current_backup_students` (
-  `id` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `student_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `name` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `course` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `year_level` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `qr_code_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `photo_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `email` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `class_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `current_backup_subjects`
---
-
-CREATE TABLE `current_backup_subjects` (
-  `id` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `subject_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `subject_name` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `units` int(11) NOT NULL DEFAULT 3,
-  `schedule` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `room` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `instructor` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `teacher_id` int(10) UNSIGNED DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `current_backup_users`
---
-
-CREATE TABLE `current_backup_users` (
-  `id` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `email` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `password_hash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `role` enum('admin','teacher') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'teacher',
-  `teacher_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `department` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `insId` int(11) DEFAULT NULL COMMENT 'Links to enrollment system instructors.InsID',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1052,7 +886,7 @@ CREATE TABLE `departments` (
 --
 
 INSERT INTO `departments` (`department_id`, `department_name`, `created_at`, `updated_at`) VALUES
-(1, 'System Administrator', NULL, NULL);
+(1, 'Computer Engineering', '2025-12-21 17:15:58', NULL);
 
 -- --------------------------------------------------------
 
@@ -1194,9 +1028,7 @@ INSERT INTO `document_types` (`Doctype_id`, `Name`, `Requirements_approval`, `re
 (6, 'Certificate of Completion', 0, 0, 'Certificate of completion for specific courses or programs', 100.00, 3, 1, '2025-12-12 06:29:33', '2025-12-12 06:29:33'),
 (7, 'Certified True Copy', 0, 0, 'Authentication and certified true copies of academic documents', 50.00, 3, 1, '2025-12-12 06:29:33', '2025-12-12 06:29:33'),
 (8, 'Recommendation Letter', 0, 0, 'Official letter of recommendation from faculty or administration', 0.00, 3, 1, '2025-12-12 06:29:33', '2025-12-12 06:29:33'),
-(10, 'Verification', 0, 1, 'For other document papers', 200.00, 3, 1, '2025-12-17 02:40:31', '2025-12-17 02:40:49'),
-(14, 'ahahahaa', 0, 0, 'haahahaha', 30.00, 3, 0, '2025-12-17 09:14:24', '2025-12-17 09:14:24'),
-(15, 'hahahah', 0, 1, 'hasjhdsahjdjsa', 878.00, 3, 1, '2025-12-17 09:23:44', '2025-12-17 09:23:44');
+(10, 'Verification', 0, 1, 'For other document papers', 200.00, 3, 1, '2025-12-17 02:40:31', '2025-12-17 02:40:49');
 
 -- --------------------------------------------------------
 
@@ -1370,7 +1202,7 @@ CREATE TABLE `employees` (
 --
 
 INSERT INTO `employees` (`employee_id`, `user_id`, `first_name`, `last_name`, `department_id`, `position_id`, `hire_date`, `address`, `gender`, `marital_status`, `status`, `email`, `contact_number`, `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `rate_per_hour`, `rate_per_day`, `annual_paid_leave_days`, `annual_unpaid_leave_days`, `annual_sick_leave_days`, `avatar_path`, `created_at`, `updated_at`, `date_of_birth`) VALUES
-(1, 0, 'Alexander', 'Osias', 1, 1, '2025-12-18', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Father', 15.00, 120.00, 10, 10, 10, NULL, NULL, NULL, '2003-04-05');
+(1, 2, 'Alexander', 'Osias', 1, 1, '2025-12-22', 'So. Bugho', 'Male', 'Single', 'Active', 'alexanderosias123@gmail.com', '09305909175', 'Alexander Osias', '09305909175', 'Father', 15.00, 120.00, 10, 10, 10, NULL, '2025-12-21 17:29:22', '2025-12-21 17:29:22', '2003-04-05');
 
 -- --------------------------------------------------------
 
@@ -1405,47 +1237,18 @@ CREATE TABLE `enrollment` (
   `Summer` tinyint(1) DEFAULT 0,
   `Status` varchar(20) DEFAULT 'pending',
   `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp(),
-  `SubSchedID` int(11) DEFAULT NULL,
-  `EnrollDate` timestamp NOT NULL DEFAULT current_timestamp()
+  `SubSchedID` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `enrollment`
 --
 
-INSERT INTO `enrollment` (`EnrollID`, `StudID`, `EPeriodID`, `Semester`, `Summer`, `Status`, `CreatedAt`, `SubSchedID`, `EnrollDate`) VALUES
-(0, 2024111, 1, '1st Sem', 0, 'completed', '2025-12-17 07:22:09', NULL, '2025-12-17 09:18:33');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `enrollments`
---
-
-CREATE TABLE `enrollments` (
-  `enrollment_id` int(11) NOT NULL,
-  `student_id` int(11) DEFAULT NULL,
-  `class_id` int(11) DEFAULT NULL,
-  `enrollment_date` date DEFAULT NULL,
-  `StudID` int(11) NOT NULL COMMENT 'FK to students table',
-  `schedule_id` int(11) NOT NULL COMMENT 'FK to schedules table',
-  `status` enum('Enrolled','Waitlist','Dropped') NOT NULL COMMENT 'Enrollment status'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `enrollments`
---
-
-INSERT INTO `enrollments` (`enrollment_id`, `student_id`, `class_id`, `enrollment_date`, `StudID`, `schedule_id`, `status`) VALUES
-(4, NULL, NULL, NULL, 2024110, 1001, 'Waitlist'),
-(8, NULL, NULL, NULL, 1, 1006, 'Enrolled'),
-(9, NULL, NULL, NULL, 1, 1003, 'Enrolled'),
-(10, NULL, NULL, NULL, 12345, 1003, 'Enrolled'),
-(11, NULL, NULL, NULL, 1, 1011, 'Enrolled'),
-(13, NULL, NULL, NULL, 12345, 1007, 'Enrolled'),
-(14, NULL, NULL, NULL, 6789, 1003, 'Enrolled'),
-(15, NULL, NULL, NULL, 6789, 1013, 'Enrolled'),
-(16, NULL, NULL, NULL, 3457, 1013, 'Enrolled');
+INSERT INTO `enrollment` (`EnrollID`, `StudID`, `EPeriodID`, `Semester`, `Summer`, `Status`, `CreatedAt`, `SubSchedID`) VALUES
+(1, 2024111, 1, '1st Sem', 0, 'completed', '2025-12-17 07:22:09', NULL),
+(2, 2024121, 1, '1st Sem', 0, 'enrolled', '2025-12-21 16:24:03', NULL),
+(3, 2024122, 1, '1st Sem', 0, 'completed', '2025-12-21 16:34:17', NULL),
+(4, 2024124, 1, '1st Sem', 0, 'completed', '2025-12-21 16:45:15', NULL);
 
 -- --------------------------------------------------------
 
@@ -1675,9 +1478,7 @@ INSERT INTO `fees` (`fee_id`, `fee_name`, `amount`, `description`, `created_at`,
 (1, NULL, 3600.00, 'BSIT Prelim Tuition Fee Payment', '2025-12-16 16:40:24', 'BSIT_PTUITION', '2025 - 26', '1st Semester', '2025-12-17 00:40:24', 'BSIT', '1st Year'),
 (4, 'Medical Fee', 300.00, 'Health services fee', '2025-12-15 08:50:54', '', '', '', '2025-12-15 16:50:54', 'ALL', 'ALL'),
 (5, NULL, 2000.00, 'Prelim Tuition Fee', '2025-12-15 08:58:33', 'TUITION', '2025-26', '1st Sem', '2025-12-15 16:58:33', 'BSIT', '1st Year'),
-(6, NULL, 750.00, 'ID FEE', '2025-12-17 09:08:53', 'ID FEE', 'ALL', 'ALL', '2025-12-17 17:08:53', 'ALL', 'ALL'),
-(8, NULL, 1231.00, 'qwrqwq', '2025-12-17 09:25:59', 'qwrq', '2025-26', '1st Semester', '2025-12-17 17:25:59', 'Bachelor of Science in Information Technology', '1st Year'),
-(9, NULL, 123114.00, 'qwrtqwe', '2025-12-17 09:27:16', 'qtqwq', '2025-26', '1st Semester', '2025-12-17 17:27:16', 'Bachelor of Science in Information Technology', '1st Year');
+(6, NULL, 750.00, 'ID FEE', '2025-12-17 09:08:53', 'ID FEE', 'ALL', 'ALL', '2025-12-17 17:08:53', 'ALL', 'ALL');
 
 -- --------------------------------------------------------
 
@@ -1852,19 +1653,20 @@ INSERT INTO `guidance_settings` (`setting_id`, `setting_key`, `setting_value`, `
 --
 
 CREATE TABLE `guidance_users` (
+  `GuidanceUserID` int(11) NOT NULL,
   `UserID` int(11) NOT NULL,
-  `Username` varchar(50) NOT NULL,
-  `email` varchar(100) DEFAULT NULL,
-  `Password` varchar(255) NOT NULL,
-  `Role` varchar(20) NOT NULL
+  `profile_picture` varchar(255) DEFAULT NULL,
+  `contact_number` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `guidance_users`
 --
 
-INSERT INTO `guidance_users` (`UserID`, `Username`, `email`, `Password`, `Role`) VALUES
-(1, 'adfcguidance', 'adfcguidance@example.com', '$2y$10$njZ4dhYYsH4JUyf2T66tX.STI3.ra0I00R9wXRdspnwFgjSqlAbLW', 'Admin');
+INSERT INTO `guidance_users` (`GuidanceUserID`, `UserID`, `profile_picture`, `contact_number`, `created_at`, `updated_at`) VALUES
+(1, 36, NULL, NULL, '2025-12-21 16:43:30', '2025-12-21 16:43:30');
 
 -- --------------------------------------------------------
 
@@ -1943,35 +1745,7 @@ CREATE TABLE `instructor` (
 --
 
 INSERT INTO `instructor` (`InsID`, `FName`, `LName`, `MI`, `ExtName`, `Sex`, `CivilStatus`, `Address`, `PhoneNo`, `HighestDeg`, `ProfLicense`, `DeptID`, `PrimaryTeachingDisp`, `FullTimePartTime`, `BachelorDegree`, `BachelorSchoolID`, `MastersDegree`, `MastersSchoolID`, `DoctorateDegree`, `DoctorateSchoolID`, `Tenure`, `FacultyRank`, `TeachingLoad`, `SubjectsTaught`, `AnnualSalary`, `UserID`, `MName`) VALUES
-(1, 'Francisco', 'Rivas', '', NULL, '1', NULL, NULL, NULL, '903', '24', 1, '460100', '1', 'Bachelor of Science in Information Technology', '178912', 'Master in Information Technology', '178912', '', '', '1', '20', '30', 'System Integration, System Architecture', 1.00, NULL, NULL),
-(2, 'Jake', 'Cornista', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Calabia');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `instructors`
---
-
-CREATE TABLE `instructors` (
-  `instructor_id` int(11) NOT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `department` varchar(100) DEFAULT NULL,
-  `hired_date` date DEFAULT NULL,
-  `max_hours_week` int(11) NOT NULL COMMENT 'Maximum teaching hours per week',
-  `availability` varchar(100) DEFAULT NULL COMMENT 'Available schedule slots',
-  `name` varchar(100) NOT NULL COMMENT 'Instructor’s name',
-  `username` varchar(100) DEFAULT NULL,
-  `password` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `instructors`
---
-
-INSERT INTO `instructors` (`instructor_id`, `user_id`, `department`, `hired_date`, `max_hours_week`, `availability`, `name`, `username`, `password`) VALUES
-(33, NULL, 'IT', NULL, 10, 'TTH 7:00-5:00', 'Prof. Adela Onlao', 'adela', '$2y$10$6qaXI4dNqoaZpNhbeek.i.XbHBZX3.RYZOKTJeuQ3/WDMqLceaeMa'),
-(36, NULL, 'CS', NULL, 10, 'TTH 7:00-5:00', 'Prof.Dennis Gresola', 'Dennis', NULL),
-(37, 32, 'IT', NULL, 15, 'MWF 7:00-6:00', 'Prof. Francisco Rivas', 'Francisco', NULL);
+(1, 'Francisco', 'Rivas', '', NULL, '1', NULL, NULL, NULL, '903', '24', 1, '460100', '1', 'Bachelor of Science in Information Technology', '178912', 'Master in Information Technology', '178912', '', '', '1', '20', '30', 'System Integration, System Architecture', 1.00, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1996,7 +1770,7 @@ CREATE TABLE `job_positions` (
 --
 
 INSERT INTO `job_positions` (`position_id`, `department_id`, `position_name`, `working_hours_per_day`, `rate_per_day`, `rate_per_hour`, `payroll_frequency`, `created_at`, `updated_at`) VALUES
-(1, NULL, 'Instructor', 8.00, 120.00, 15.00, 'bi-weekly', NULL, NULL);
+(1, NULL, 'System Administrator', 8.00, 120.00, 15.00, 'bi-weekly', '2025-12-21 17:28:23', NULL);
 
 -- --------------------------------------------------------
 
@@ -2016,13 +1790,6 @@ CREATE TABLE `keys_m` (
   `Location` varchar(150) DEFAULT NULL,
   `Date_Added` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `keys_m`
---
-
-INSERT INTO `keys_m` (`KeyID`, `key_name`, `description`, `status`, `created_at`, `Room_ID`, `Key_Code`, `QRCode`, `Location`, `Date_Added`) VALUES
-(1, NULL, NULL, 'Available', '2025-12-17 09:14:55', 'Lab1', 'K-Lab1', 'K-Lab1', 'Laboratory 1', '2025-12-17 02:11:46');
 
 -- --------------------------------------------------------
 
@@ -2044,13 +1811,6 @@ CREATE TABLE `key_logs` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `overdue_notified` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `key_logs`
---
-
-INSERT INTO `key_logs` (`LogID`, `KeyID`, `Key_UserID`, `Location`, `Date`, `TimeBorrowed`, `TimeReturned`, `DueDate`, `Status`, `created_at`, `updated_at`, `overdue_notified`) VALUES
-(1, 0, 0, 'Laboratory 1', '2025-12-17', '17:15:44', NULL, '2025-12-17 22:09:00', 'Borrowed', '2025-12-17 09:15:44', '2025-12-17 09:15:44', 0);
 
 -- --------------------------------------------------------
 
@@ -2095,22 +1855,9 @@ CREATE TABLE `key_management_security` (
   `last_maintenance_security` date DEFAULT NULL,
   `created_by_security` int(11) NOT NULL,
   `created_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `key_management_security`
---
-
-INSERT INTO `key_management_security` (`id_security`, `key_name_security`, `key_code_security`, `key_type_id_security`, `location_security`, `current_holder_security`, `borrowed_at_security`, `expected_return_security`, `actual_return_security`, `status_security`, `condition_notes_security`, `last_maintenance_security`, `created_by_security`, `created_at_security`, `updated_at_security`) VALUES
-(1, 'Lab 1 Key', 'KEY-LAB 1', 1, 'First Floor Laboratory', NULL, NULL, NULL, NULL, 'available', NULL, NULL, 1, '2025-10-28 11:30:05', '2025-12-02 15:28:59'),
-(2, 'Lab 2 Key', 'KEY-LAB-2', 1, 'First Floor Laboratory', NULL, NULL, NULL, NULL, 'available', NULL, NULL, 1, '2025-10-28 11:30:05', '2025-12-02 15:30:00'),
-(3, 'Lab 3 Key', 'KEY-LAB-3', 1, 'First Floor Laboratory', NULL, NULL, NULL, '2025-11-24 00:33:54', 'available', NULL, NULL, 1, '2025-10-28 11:30:05', '2025-12-02 15:30:35'),
-(4, 'Faculty Room', 'KEY-FAC', 1, 'Faculty Building Room ', NULL, NULL, NULL, '2025-12-11 06:04:03', 'available', '\nStatus Update: OK pamn', NULL, 1, '2025-10-28 11:30:05', '2025-12-11 06:04:28'),
-(7, 'Key Room 208', 'Key 208', 1, 'Second Floor Room 208', NULL, NULL, NULL, NULL, 'available', '', NULL, 12, '2025-12-02 21:20:34', '2025-12-02 21:20:34'),
-(8, 'Key Room 206', 'Key 206', 1, 'Second Floor Room 206', NULL, '2025-12-11 04:28:02', '2025-12-12 04:28:02', '2025-12-11 04:28:22', 'available', '', NULL, 12, '2025-12-02 21:23:45', '2025-12-11 04:28:22'),
-(9, 'Key Room 305', 'Key 305', 1, 'Third Floor Room 305', NULL, NULL, NULL, NULL, 'available', '', NULL, 12, '2025-12-02 21:30:03', '2025-12-02 21:30:03'),
-(10, 'Key Room 302', 'Key 302', 1, 'Third Floor', NULL, NULL, NULL, NULL, 'available', 'OK pa', NULL, 13, '2025-12-09 04:42:40', '2025-12-09 04:42:40');
 
 -- --------------------------------------------------------
 
@@ -2147,20 +1894,9 @@ CREATE TABLE `key_transaction_logs_security` (
   `transaction_type_security` enum('borrow','return','maintenance','transfer') NOT NULL,
   `transaction_time_security` timestamp NOT NULL DEFAULT current_timestamp(),
   `notes_security` text DEFAULT NULL,
-  `admin_id_security` int(11) DEFAULT NULL
+  `admin_id_security` int(11) DEFAULT NULL,
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `key_transaction_logs_security`
---
-
-INSERT INTO `key_transaction_logs_security` (`id_security`, `key_id_security`, `user_id_security`, `transaction_type_security`, `transaction_time_security`, `notes_security`, `admin_id_security`) VALUES
-(8, 7, 12, '', '2025-12-02 21:20:34', 'Key added to inventory: Key Room 208 (Key 208)', 12),
-(9, 8, 12, '', '2025-12-02 21:23:45', 'Key added to inventory: Key Room 206 (Key 206)', 12),
-(10, 9, 12, '', '2025-12-02 21:30:03', 'Key added to inventory: Key Room 305 (Key 305)', 12),
-(12, 8, 10, 'borrow', '2025-12-11 04:28:02', 'Key borrowed by security guard', 10),
-(13, 8, 10, 'return', '2025-12-11 04:28:22', 'Key returned by security guard', 10),
-(15, 4, 10, '', '2025-12-11 06:04:28', 'Status changed to available: OK pamn', 10);
 
 -- --------------------------------------------------------
 
@@ -2202,11 +1938,11 @@ CREATE TABLE `key_types_security` (
 --
 
 INSERT INTO `key_types_security` (`id_security`, `type_name_security`, `description_security`, `is_active_security`, `created_at_security`) VALUES
-(1, 'Room Key', 'Keys for individual rooms and offices', 1, '2025-10-28 11:30:05'),
-(2, 'Master Key', 'Master keys for building access', 1, '2025-10-28 11:30:05'),
-(3, 'Cabinet Key', 'Keys for storage cabinets and lockers', 1, '2025-10-28 11:30:05'),
-(4, 'Vehicle Key', 'Keys for institutional vehicles', 1, '2025-10-28 11:30:05'),
-(5, 'Special Access', 'Keys for restricted areas', 1, '2025-10-28 11:30:05');
+(1, 'Room Key', 'Keys for individual rooms and offices', 1, '2025-10-28 03:30:05'),
+(2, 'Master Key', 'Master keys for building access', 1, '2025-10-28 03:30:05'),
+(3, 'Cabinet Key', 'Keys for storage cabinets and lockers', 1, '2025-10-28 03:30:05'),
+(4, 'Vehicle Key', 'Keys for institutional vehicles', 1, '2025-10-28 03:30:05'),
+(5, 'Special Access', 'Keys for restricted areas', 1, '2025-10-28 03:30:05');
 
 -- --------------------------------------------------------
 
@@ -2224,13 +1960,6 @@ CREATE TABLE `key_users` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `key_users`
---
-
-INSERT INTO `key_users` (`Key_UsersID`, `Lname`, `Fname`, `Department`, `Role`, `Email`, `created_at`, `updated_at`) VALUES
-(1, 'Baquiran', 'Rommel', 'IT', 'Instructor', 'baquiran@gmail.com', '2025-12-17 09:15:30', '2025-12-17 09:15:30');
 
 -- --------------------------------------------------------
 
@@ -2267,17 +1996,18 @@ CREATE TABLE `laboratories_security` (
   `room_number_security` varchar(20) NOT NULL,
   `capacity_security` int(11) DEFAULT NULL,
   `is_active_security` tinyint(1) DEFAULT 1,
-  `created_at_security` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `laboratories_security`
 --
 
-INSERT INTO `laboratories_security` (`id_security`, `lab_code_security`, `lab_name_security`, `building_security`, `room_number_security`, `capacity_security`, `is_active_security`, `created_at_security`) VALUES
-(1, 'LAB-1', 'Computer Laboratory 1', 'First Floor', 'Room Lab 1', 40, 1, '2025-10-28 11:30:05'),
-(2, 'LAB-2', 'Computer Laboratory 2', 'First Floor', 'Room Lab 2', 40, 1, '2025-10-28 11:30:05'),
-(3, 'LAB-3', 'Computer Laboratory 3\r\n', 'First Floor', 'Room Lab 3', 40, 1, '2025-10-28 11:30:05');
+INSERT INTO `laboratories_security` (`id_security`, `lab_code_security`, `lab_name_security`, `building_security`, `room_number_security`, `capacity_security`, `is_active_security`, `created_at_security`, `student_id_security`) VALUES
+(1, 'LAB-1', 'Computer Laboratory 1', 'First Floor', 'Room Lab 1', 40, 1, '2025-10-28 03:30:05', NULL),
+(2, 'LAB-2', 'Computer Laboratory 2', 'First Floor', 'Room Lab 2', 40, 1, '2025-10-28 03:30:05', NULL),
+(3, 'LAB-3', 'Computer Laboratory 3\r\n', 'First Floor', 'Room Lab 3', 40, 1, '2025-10-28 03:30:05', NULL);
 
 -- --------------------------------------------------------
 
@@ -2313,7 +2043,8 @@ CREATE TABLE `lab_access_logs_security` (
   `access_type_security` enum('entry','exit') NOT NULL,
   `access_time_security` timestamp NOT NULL DEFAULT current_timestamp(),
   `purpose_security` varchar(200) DEFAULT NULL,
-  `notes_security` text DEFAULT NULL
+  `notes_security` text DEFAULT NULL,
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -2357,18 +2088,19 @@ CREATE TABLE `lab_equipment_security` (
   `next_maintenance_security` date DEFAULT NULL,
   `notes_security` text DEFAULT NULL,
   `created_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `lab_equipment_security`
 --
 
-INSERT INTO `lab_equipment_security` (`id_security`, `lab_id_security`, `equipment_name_security`, `model_security`, `serial_number_security`, `purchase_date_security`, `warranty_expiry_security`, `status_security`, `last_maintenance_security`, `next_maintenance_security`, `notes_security`, `created_at_security`, `updated_at_security`) VALUES
-(1, 1, 'Desktop Computer', 'Dell Optiplex 7070', 'SN-DELL-001', NULL, NULL, 'operational', NULL, NULL, NULL, '2025-10-28 11:30:05', '2025-10-28 11:30:05'),
-(2, 1, 'Monitor', 'Dell 24-inch', 'SN-MON-001', NULL, NULL, 'operational', NULL, NULL, NULL, '2025-10-28 11:30:05', '2025-10-28 11:30:05'),
-(3, 1, 'Network Switch', 'Cisco 24-port', 'SN-CISCO-001', NULL, NULL, 'operational', NULL, NULL, NULL, '2025-10-28 11:30:05', '2025-10-28 11:30:05'),
-(4, 2, 'Desktop Computer', 'HP ProDesk', 'SN-HP-001', NULL, NULL, 'maintenance', NULL, NULL, NULL, '2025-10-28 11:30:05', '2025-10-28 11:30:05');
+INSERT INTO `lab_equipment_security` (`id_security`, `lab_id_security`, `equipment_name_security`, `model_security`, `serial_number_security`, `purchase_date_security`, `warranty_expiry_security`, `status_security`, `last_maintenance_security`, `next_maintenance_security`, `notes_security`, `created_at_security`, `updated_at_security`, `student_id_security`) VALUES
+(1, 1, 'Desktop Computer', 'Dell Optiplex 7070', 'SN-DELL-001', NULL, NULL, 'operational', NULL, NULL, NULL, '2025-10-28 03:30:05', '2025-10-28 03:30:05', NULL),
+(2, 1, 'Monitor', 'Dell 24-inch', 'SN-MON-001', NULL, NULL, 'operational', NULL, NULL, NULL, '2025-10-28 03:30:05', '2025-10-28 03:30:05', NULL),
+(3, 1, 'Network Switch', 'Cisco 24-port', 'SN-CISCO-001', NULL, NULL, 'operational', NULL, NULL, NULL, '2025-10-28 03:30:05', '2025-10-28 03:30:05', NULL),
+(4, 2, 'Desktop Computer', 'HP ProDesk', 'SN-HP-001', NULL, NULL, 'maintenance', NULL, NULL, NULL, '2025-10-28 03:30:05', '2025-10-28 03:30:05', NULL);
 
 -- --------------------------------------------------------
 
@@ -2413,15 +2145,16 @@ CREATE TABLE `lab_incidents_security` (
   `resolved_by_security` int(11) DEFAULT NULL,
   `resolved_at_security` timestamp NULL DEFAULT NULL,
   `created_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `lab_incidents_security`
 --
 
-INSERT INTO `lab_incidents_security` (`id_security`, `reported_by_security`, `lab_id_security`, `equipment_id_security`, `incident_type_security`, `title_security`, `description_security`, `severity_security`, `status_security`, `reported_date_security`, `estimated_cost_security`, `resolution_notes_security`, `resolved_by_security`, `resolved_at_security`, `created_at_security`, `updated_at_security`) VALUES
-(5, 13, 1, 1, 'damage', 'Naguba an monitor', 'Naguba', 'medium', 'reported', '2025-12-07', 1500.00, NULL, NULL, NULL, '2025-12-07 06:45:45', '2025-12-07 06:45:45');
+INSERT INTO `lab_incidents_security` (`id_security`, `reported_by_security`, `lab_id_security`, `equipment_id_security`, `incident_type_security`, `title_security`, `description_security`, `severity_security`, `status_security`, `reported_date_security`, `estimated_cost_security`, `resolution_notes_security`, `resolved_by_security`, `resolved_at_security`, `created_at_security`, `updated_at_security`, `student_id_security`) VALUES
+(5, 13, 1, 1, 'damage', 'Naguba an monitor', 'Naguba', 'medium', 'reported', '2025-12-07', 1500.00, NULL, NULL, NULL, '2025-12-06 22:45:45', '2025-12-06 22:45:45', NULL);
 
 -- --------------------------------------------------------
 
@@ -2576,12 +2309,12 @@ CREATE TABLE `lost_found_categories_security` (
 --
 
 INSERT INTO `lost_found_categories_security` (`id_security`, `category_name_security`, `description_security`, `is_active_security`, `created_at_security`) VALUES
-(1, 'Electronics', 'Mobile phones, laptops, tablets, calculators, etc.', 1, '2025-10-28 11:30:05'),
-(2, 'Documents', 'IDs, certificates, notebooks, books, etc.', 1, '2025-10-28 11:30:05'),
-(3, 'Accessories', 'Bags, wallets, keys, jewelry, etc.', 1, '2025-10-28 11:30:05'),
-(4, 'Clothing', 'Jackets, uniforms, hats, shoes, etc.', 1, '2025-10-28 11:30:05'),
-(5, 'School Supplies', 'Pens, notebooks, binders, etc.', 1, '2025-10-28 11:30:05'),
-(6, 'Personal Items', 'Water bottles, lunch boxes, etc.', 1, '2025-10-28 11:30:05');
+(1, 'Electronics', 'Mobile phones, laptops, tablets, calculators, etc.', 1, '2025-10-28 03:30:05'),
+(2, 'Documents', 'IDs, certificates, notebooks, books, etc.', 1, '2025-10-28 03:30:05'),
+(3, 'Accessories', 'Bags, wallets, keys, jewelry, etc.', 1, '2025-10-28 03:30:05'),
+(4, 'Clothing', 'Jackets, uniforms, hats, shoes, etc.', 1, '2025-10-28 03:30:05'),
+(5, 'School Supplies', 'Pens, notebooks, binders, etc.', 1, '2025-10-28 03:30:05'),
+(6, 'Personal Items', 'Water bottles, lunch boxes, etc.', 1, '2025-10-28 03:30:05');
 
 -- --------------------------------------------------------
 
@@ -2636,17 +2369,17 @@ CREATE TABLE `lost_found_items_security` (
   `resolution_notes_security` text DEFAULT NULL,
   `verification_notes_security` text DEFAULT NULL,
   `created_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `lost_found_items_security`
 --
 
-INSERT INTO `lost_found_items_security` (`id_security`, `reported_by_security`, `item_type_security`, `category_id_security`, `item_name_security`, `description_security`, `location_found_security`, `date_reported_security`, `date_occurred_security`, `color_security`, `brand_security`, `serial_number_security`, `contact_info_security`, `status_security`, `is_verified_security`, `photo_path_security`, `claimed_by_security`, `claimed_at_security`, `resolved_by_security`, `resolved_at_security`, `resolution_notes_security`, `verification_notes_security`, `created_at_security`, `updated_at_security`) VALUES
-(10, 13, 'lost', 1, 'phone', 'Nawawara an kan jisil phone', 'lab 1', '2025-12-04', '2025-12-07', 'black', 'tecno', 'asjdhajsdhad', '09823827378', 'open', 0, 'lost_found_1765082957_6935074daec44.png', NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-06 20:49:17', '2025-12-11 07:12:18'),
-(12, 14, 'lost', 1, 'Hp Laptop', 'Aray KOh', 'Lab 1', '2025-12-12', '2025-12-12', 'Gray', 'HP', '', NULL, 'resolved', 0, '693aeb22efbf2_1765468962.png', NULL, NULL, 11, '2025-12-11 09:07:22', 'Found by another user. Found item ID: 13. Reported by user ID: 11', NULL, '2025-12-11 08:02:42', '2025-12-11 09:07:22'),
-(13, 11, 'found', 1, 'Hp Laptop', 'Found item matches a lost item report.\r\n\r\nLost Item Details:\r\n• Lost on: Dec 12, 2025\r\n• Lost at: Lab 1\r\n• Reported by: Rommel Baquiran', 'Lab 1', '2025-12-12', '2025-12-12', 'Gray', 'HP', '', NULL, 'resolved', 1, '693afa4a1da3f_1765472842.png', 14, '2025-12-11 09:09:10', 10, '2025-12-11 09:12:02', 'Claim details: This is mine i have a proof Proof: hheheh', 'its yours', '2025-12-11 09:07:22', '2025-12-11 09:12:02');
+INSERT INTO `lost_found_items_security` (`id_security`, `reported_by_security`, `item_type_security`, `category_id_security`, `item_name_security`, `description_security`, `location_found_security`, `date_reported_security`, `date_occurred_security`, `color_security`, `brand_security`, `serial_number_security`, `contact_info_security`, `status_security`, `is_verified_security`, `photo_path_security`, `claimed_by_security`, `claimed_at_security`, `resolved_by_security`, `resolved_at_security`, `resolution_notes_security`, `verification_notes_security`, `created_at_security`, `updated_at_security`, `student_id_security`) VALUES
+(10, 13, 'lost', 1, 'phone', 'Nawawara an kan jisil phone', 'lab 1', '2025-12-04', '2025-12-07', 'black', 'tecno', 'asjdhajsdhad', '09823827378', 'open', 0, 'lost_found_1765082957_6935074daec44.png', NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-06 12:49:17', '2025-12-10 23:12:18', NULL),
+(13, 11, 'found', 1, 'Hp Laptop ko', 'Found item matches a lost item report.\r\n\r\nLost Item Details:\r\n• Lost on: Dec 12, 2025\r\n• Lost at: Lab 1\r\n• Reported by: Rommel Baquiran', 'Lab 1', '2025-12-12', '2025-12-12', 'Gray', 'HP', '', '', 'resolved', 1, '693afa4a1da3f_1765472842.png', 14, '2025-12-11 01:09:10', 10, '2025-12-11 01:12:02', 'Claim details: This is mine i have a proof Proof: hheheh', 'its yours', '2025-12-11 01:07:22', '2025-12-14 21:47:02', NULL);
 
 -- --------------------------------------------------------
 
@@ -2722,7 +2455,8 @@ CREATE TABLE `materialfolder` (
 INSERT INTO `materialfolder` (`FolderID`, `SubSchedID`, `ParentFolderID`, `FolderName`, `Description`, `CreatedBy`, `CreatedAt`, `UpdatedAt`) VALUES
 (1, 2, NULL, 'hshshs', 'sjdjjd', 33, '2025-12-17 09:01:09', '2025-12-17 09:01:09'),
 (2, 2, NULL, 'hshshs', 'intro', 33, '2025-12-17 09:05:59', '2025-12-17 09:05:59'),
-(3, 3, NULL, 'dsjsdd', 'sjfhdsjf', 33, '2025-12-17 09:06:11', '2025-12-17 09:06:11');
+(3, 3, NULL, 'dsjsdd', 'sjfhdsjf', 33, '2025-12-17 09:06:11', '2025-12-17 09:06:11'),
+(4, 2, NULL, 'DRAG & DROP', NULL, NULL, '2025-12-21 13:01:37', '2025-12-21 13:01:37');
 
 -- --------------------------------------------------------
 
@@ -2838,7 +2572,7 @@ CREATE TABLE `notifications` (
 --
 
 INSERT INTO `notifications` (`notification_id`, `user_id`, `title`, `message`, `is_read`, `created_at`, `fname`, `lname`, `gmail`, `dateadded`) VALUES
-(1, 1, '⏰ Key Overdue Alert', 'The key K-LAB1 from Laboratory 1 is overdue.', 0, '2025-12-17 06:59:49', NULL, NULL, NULL, '2025-12-17 14:59:49');
+(0, 1, '⏰ Key Overdue Alert', 'The key K-LAB1 from Laboratory 1 is overdue.', 0, '2025-12-17 06:59:49', NULL, NULL, NULL, '2025-12-17 14:59:49');
 
 -- --------------------------------------------------------
 
@@ -2942,9 +2676,7 @@ INSERT INTO `payments` (`payment_id`, `payment_date`, `billing_id`, `amount_paid
 (4, '2025-12-15', 1, 2000.00, 1, 'OR-64999', 'TUITION - Prelim Tuition Fee Payment'),
 (5, '2025-12-15', 2, 2000.00, 1, 'OR-69031', 'TUITION - Prelim Tuition Fee Payment'),
 (6, '2025-12-15', 2, 2000.00, 1, 'OR-69031', 'TUITION - Prelim Tuition Fee Payment'),
-(7, '2025-12-16', 2, 2000.00, 1, 'OR-91128', 'TUITION - Prelim Tuition Fee Payment'),
-(13, '2025-12-17', 3, 1231.00, 1, 'OR-47331', 'qwrq - qwrqwq Payment'),
-(14, '2025-12-17', 3, 1231.00, 1, 'OR-25998', 'qwrq - qwrqwq Payment');
+(7, '2025-12-16', 2, 2000.00, 1, 'OR-91128', 'TUITION - Prelim Tuition Fee Payment');
 
 -- --------------------------------------------------------
 
@@ -3011,6 +2743,7 @@ INSERT INTO `payment_status` (`status_id`, `student_id`, `status`, `updated_at`)
 CREATE TABLE `payroll` (
   `payroll_id` int(11) NOT NULL,
   `employee_id` int(11) DEFAULT NULL,
+  `basic_pay` decimal(12,2) NOT NULL DEFAULT 0.00,
   `basic_salary` decimal(10,2) DEFAULT NULL,
   `net_salary` decimal(10,2) DEFAULT NULL,
   `payroll_date` date DEFAULT NULL,
@@ -3119,41 +2852,41 @@ CREATE TABLE `permission_keys_security` (
 --
 
 INSERT INTO `permission_keys_security` (`id_security`, `permission_key_security`, `permission_name_security`, `description_security`, `module_security`, `is_active_security`, `created_at_security`) VALUES
-(1, 'report_violations', 'Report Violations', 'Can report new violations and incidents', 'violations', 1, '2025-10-30 03:55:47'),
-(2, 'view_violations', 'View Violations', 'Can view violations list and details', 'violations', 1, '2025-10-30 03:55:47'),
-(3, 'review_violations', 'Review Violations', 'Can review and verify reported violations', 'violations', 1, '2025-10-30 03:55:47'),
-(4, 'edit_violations', 'Edit Violations', 'Can edit existing violation records', 'violations', 1, '2025-10-30 03:55:47'),
-(5, 'delete_violations', 'Delete Violations', 'Can delete violation records', 'violations', 1, '2025-10-30 03:55:47'),
-(6, 'check_attendance', 'Check Attendance', 'Can check in/out for attendance', 'attendance', 1, '2025-10-30 03:55:47'),
-(7, 'view_attendance', 'View Attendance', 'Can view attendance logs and records', 'attendance', 1, '2025-10-30 03:55:47'),
-(8, 'manage_attendance', 'Manage Attendance', 'Can manage and edit attendance records', 'attendance', 1, '2025-10-30 03:55:47'),
-(9, 'access_labs', 'Access Laboratories', 'Can access laboratory areas', 'lab_security', 1, '2025-10-30 03:55:47'),
-(10, 'manage_labs', 'Manage Laboratories', 'Can manage laboratory access and incidents', 'lab_security', 1, '2025-10-30 03:55:47'),
-(11, 'report_lab_incidents', 'Report Lab Incidents', 'Can report laboratory incidents and issues', 'lab_security', 1, '2025-10-30 03:55:47'),
-(12, 'view_lab_incidents', 'View Lab Incidents', 'Can view laboratory incident reports', 'lab_security', 1, '2025-10-30 03:55:47'),
-(13, 'borrow_keys', 'Borrow Keys', 'Can borrow keys from key management', 'key_management', 1, '2025-10-30 03:55:47'),
-(14, 'return_keys', 'Return Keys', 'Can return borrowed keys', 'key_management', 1, '2025-10-30 03:55:47'),
-(15, 'manage_keys', 'Manage Keys', 'Can manage key inventory and assignments', 'key_management', 1, '2025-10-30 03:55:47'),
-(16, 'view_keys', 'View Keys', 'Can view key management system', 'key_management', 1, '2025-10-30 03:55:47'),
-(17, 'view_student_info', 'View Student Information', 'Can view student profiles and information', 'student_data', 1, '2025-10-30 03:55:47'),
-(18, 'edit_student_info', 'Edit Student Information', 'Can edit student information', 'student_data', 1, '2025-10-30 03:55:47'),
-(19, 'manage_users', 'Manage Users', 'Can create, edit, and manage user accounts', 'user_management', 1, '2025-10-30 03:55:47'),
-(20, 'view_users', 'View Users', 'Can view user list and profiles', 'user_management', 1, '2025-10-30 03:55:47'),
-(21, 'deactivate_users', 'Deactivate Users', 'Can deactivate user accounts', 'user_management', 1, '2025-10-30 03:55:47'),
-(22, 'view_reports', 'View Reports', 'Can view system reports and analytics', 'reports', 1, '2025-10-30 03:55:47'),
-(23, 'generate_reports', 'Generate Reports', 'Can generate custom reports', 'reports', 1, '2025-10-30 03:55:47'),
-(24, 'export_reports', 'Export Reports', 'Can export reports to various formats', 'reports', 1, '2025-10-30 03:55:47'),
-(25, 'manage_system', 'Manage System Settings', 'Can manage system configuration and settings', 'system', 1, '2025-10-30 03:55:47'),
-(26, 'view_system_logs', 'View System Logs', 'Can view system activity logs', 'system', 1, '2025-10-30 03:55:47'),
-(27, 'manage_permissions', 'Manage Permissions', 'Can manage user permissions and roles', 'system', 1, '2025-10-30 03:55:47'),
-(28, 'report_lost_found', 'Report Lost & Found', 'Can report lost and found items', 'lost_found', 1, '2025-10-30 03:55:47'),
-(29, 'view_lost_found', 'View Lost & Found', 'Can view lost and found items', 'lost_found', 1, '2025-10-30 03:55:47'),
-(30, 'manage_lost_found', 'Manage Lost & Found', 'Can manage lost and found items', 'lost_found', 1, '2025-10-30 03:55:47'),
-(31, 'claim_lost_found', 'Claim Lost & Found', 'Can claim lost and found items', 'lost_found', 1, '2025-10-30 03:55:47'),
-(32, 'view_assignments', 'View Assignments', 'Can view security assignments and schedules', 'security_team', 1, '2025-10-30 03:55:47'),
-(33, 'manage_assignments', 'Manage Assignments', 'Can manage security team assignments', 'security_team', 1, '2025-10-30 03:55:47'),
-(34, 'view_security_team', 'View Security Team', 'Can view security team members', 'security_team', 1, '2025-10-30 03:55:47'),
-(35, 'manage_security_team', 'Manage Security Team', 'Can manage security team members', 'security_team', 1, '2025-10-30 03:55:47');
+(1, 'report_violations', 'Report Violations', 'Can report new violations and incidents', 'violations', 1, '2025-10-29 19:55:47'),
+(2, 'view_violations', 'View Violations', 'Can view violations list and details', 'violations', 1, '2025-10-29 19:55:47'),
+(3, 'review_violations', 'Review Violations', 'Can review and verify reported violations', 'violations', 1, '2025-10-29 19:55:47'),
+(4, 'edit_violations', 'Edit Violations', 'Can edit existing violation records', 'violations', 1, '2025-10-29 19:55:47'),
+(5, 'delete_violations', 'Delete Violations', 'Can delete violation records', 'violations', 1, '2025-10-29 19:55:47'),
+(6, 'check_attendance', 'Check Attendance', 'Can check in/out for attendance', 'attendance', 1, '2025-10-29 19:55:47'),
+(7, 'view_attendance', 'View Attendance', 'Can view attendance logs and records', 'attendance', 1, '2025-10-29 19:55:47'),
+(8, 'manage_attendance', 'Manage Attendance', 'Can manage and edit attendance records', 'attendance', 1, '2025-10-29 19:55:47'),
+(9, 'access_labs', 'Access Laboratories', 'Can access laboratory areas', 'lab_security', 1, '2025-10-29 19:55:47'),
+(10, 'manage_labs', 'Manage Laboratories', 'Can manage laboratory access and incidents', 'lab_security', 1, '2025-10-29 19:55:47'),
+(11, 'report_lab_incidents', 'Report Lab Incidents', 'Can report laboratory incidents and issues', 'lab_security', 1, '2025-10-29 19:55:47'),
+(12, 'view_lab_incidents', 'View Lab Incidents', 'Can view laboratory incident reports', 'lab_security', 1, '2025-10-29 19:55:47'),
+(13, 'borrow_keys', 'Borrow Keys', 'Can borrow keys from key management', 'key_management', 1, '2025-10-29 19:55:47'),
+(14, 'return_keys', 'Return Keys', 'Can return borrowed keys', 'key_management', 1, '2025-10-29 19:55:47'),
+(15, 'manage_keys', 'Manage Keys', 'Can manage key inventory and assignments', 'key_management', 1, '2025-10-29 19:55:47'),
+(16, 'view_keys', 'View Keys', 'Can view key management system', 'key_management', 1, '2025-10-29 19:55:47'),
+(17, 'view_student_info', 'View Student Information', 'Can view student profiles and information', 'student_data', 1, '2025-10-29 19:55:47'),
+(18, 'edit_student_info', 'Edit Student Information', 'Can edit student information', 'student_data', 1, '2025-10-29 19:55:47'),
+(19, 'manage_users', 'Manage Users', 'Can create, edit, and manage user accounts', 'user_management', 1, '2025-10-29 19:55:47'),
+(20, 'view_users', 'View Users', 'Can view user list and profiles', 'user_management', 1, '2025-10-29 19:55:47'),
+(21, 'deactivate_users', 'Deactivate Users', 'Can deactivate user accounts', 'user_management', 1, '2025-10-29 19:55:47'),
+(22, 'view_reports', 'View Reports', 'Can view system reports and analytics', 'reports', 1, '2025-10-29 19:55:47'),
+(23, 'generate_reports', 'Generate Reports', 'Can generate custom reports', 'reports', 1, '2025-10-29 19:55:47'),
+(24, 'export_reports', 'Export Reports', 'Can export reports to various formats', 'reports', 1, '2025-10-29 19:55:47'),
+(25, 'manage_system', 'Manage System Settings', 'Can manage system configuration and settings', 'system', 1, '2025-10-29 19:55:47'),
+(26, 'view_system_logs', 'View System Logs', 'Can view system activity logs', 'system', 1, '2025-10-29 19:55:47'),
+(27, 'manage_permissions', 'Manage Permissions', 'Can manage user permissions and roles', 'system', 1, '2025-10-29 19:55:47'),
+(28, 'report_lost_found', 'Report Lost & Found', 'Can report lost and found items', 'lost_found', 1, '2025-10-29 19:55:47'),
+(29, 'view_lost_found', 'View Lost & Found', 'Can view lost and found items', 'lost_found', 1, '2025-10-29 19:55:47'),
+(30, 'manage_lost_found', 'Manage Lost & Found', 'Can manage lost and found items', 'lost_found', 1, '2025-10-29 19:55:47'),
+(31, 'claim_lost_found', 'Claim Lost & Found', 'Can claim lost and found items', 'lost_found', 1, '2025-10-29 19:55:47'),
+(32, 'view_assignments', 'View Assignments', 'Can view security assignments and schedules', 'security_team', 1, '2025-10-29 19:55:47'),
+(33, 'manage_assignments', 'Manage Assignments', 'Can manage security team assignments', 'security_team', 1, '2025-10-29 19:55:47'),
+(34, 'view_security_team', 'View Security Team', 'Can view security team members', 'security_team', 1, '2025-10-29 19:55:47'),
+(35, 'manage_security_team', 'Manage Security Team', 'Can manage security team members', 'security_team', 1, '2025-10-29 19:55:47');
 
 -- --------------------------------------------------------
 
@@ -3223,34 +2956,7 @@ CREATE TABLE `program` (
 --
 
 INSERT INTO `program` (`ProgramID`, `ProgName`, `Major`) VALUES
-(1, 'Bachelor of Science in Information Technology', 'Programming'),
-(2, 'Bachelor of Science in Tourism Management', 'Saka Saka');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `programs`
---
-
-CREATE TABLE `programs` (
-  `program_id` int(11) NOT NULL,
-  `program_code` varchar(50) DEFAULT NULL,
-  `program_name` varchar(150) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `name` varchar(100) NOT NULL COMMENT 'Full name of the program (e.g., BS Information Technology)',
-  `abbr` varchar(10) NOT NULL COMMENT 'Abbreviated name (e.g., BSIT)'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `programs`
---
-
-INSERT INTO `programs` (`program_id`, `program_code`, `program_name`, `created_at`, `name`, `abbr`) VALUES
-(1, NULL, NULL, '2025-12-17 06:49:22', 'BS Information Technology', 'BSIT'),
-(2, NULL, NULL, '2025-12-17 06:49:22', 'BS Computer Science', 'BSCS'),
-(3, NULL, NULL, '2025-12-17 06:49:22', 'BS Electrical Engineering', 'BSEE'),
-(4, NULL, NULL, '2025-12-17 06:49:22', 'BS Nursing', 'BSN'),
-(6, NULL, NULL, '2025-12-17 06:49:22', 'BS Criminology', 'BSCRIM');
+(1, 'Bachelor of Science in Information Technology', 'Programming');
 
 -- --------------------------------------------------------
 
@@ -3293,6 +2999,13 @@ CREATE TABLE `qr_codes` (
   `qr_image_path` varchar(500) DEFAULT NULL,
   `generated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `qr_codes`
+--
+
+INSERT INTO `qr_codes` (`qr_id`, `code`, `created_at`, `employee_id`, `qr_data`, `qr_image_path`, `generated_at`) VALUES
+(1, NULL, '2025-12-21 17:29:22', 1, 'First:Alexander|Last:Osias|Position:System Administrator|Joined:2025-12-22', 'qrcodes/AlexanderOsias_1_1.png', NULL);
 
 -- --------------------------------------------------------
 
@@ -3676,19 +3389,6 @@ INSERT INTO `sections` (`section_id`, `program_id`, `section_name`, `year_level`
 -- --------------------------------------------------------
 
 --
--- Table structure for table `security_assignments`
---
-
-CREATE TABLE `security_assignments` (
-  `assignment_id` int(11) NOT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `assigned_area` varchar(100) DEFAULT NULL,
-  `assigned_date` date DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `security_assignments_security`
 --
 
@@ -3700,7 +3400,8 @@ CREATE TABLE `security_assignments_security` (
   `assignment_date_security` date NOT NULL,
   `notes_security` text DEFAULT NULL,
   `assigned_by_security` int(11) NOT NULL,
-  `created_at_security` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -3782,36 +3483,6 @@ CREATE TABLE `special_events` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `staff_profiles`
---
-
-CREATE TABLE `staff_profiles` (
-  `StaffProfileID` int(11) NOT NULL,
-  `UserID` int(11) NOT NULL,
-  `Role` varchar(50) NOT NULL,
-  `FName` varchar(100) NOT NULL,
-  `LName` varchar(100) NOT NULL,
-  `MName` varchar(100) DEFAULT NULL,
-  `Age` int(11) DEFAULT NULL,
-  `Email` varchar(150) DEFAULT NULL,
-  `ContactNumber` varchar(50) DEFAULT NULL,
-  `profile_picture` varchar(255) DEFAULT NULL,
-  `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp(),
-  `UpdatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `staff_profiles`
---
-
-INSERT INTO `staff_profiles` (`StaffProfileID`, `UserID`, `Role`, `FName`, `LName`, `MName`, `Age`, `Email`, `ContactNumber`, `profile_picture`, `CreatedAt`, `UpdatedAt`) VALUES
-(1, 0, 'General Counselor', 'Vincent', 'Adorza', 'Ramos', 32, 'escabeche@gmail.com', '0912331231', 'uploads/avatars/user_temp_1765957641_2c471b02.jpg', '2025-12-17 07:47:21', '2025-12-17 07:47:21'),
-(0, 1, 'Admin', '', '', '', 0, 'adfcguidance@example.com', '', NULL, '2025-12-17 08:38:43', '2025-12-17 08:38:43'),
-(0, 1, 'Admin', '', '', '', 0, 'adfcguidance@example.com', '', NULL, '2025-12-17 08:38:58', '2025-12-17 08:38:58');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `student`
 --
 
@@ -3851,11 +3522,8 @@ CREATE TABLE `student` (
   `GrantAuthorityNumber` varchar(100) DEFAULT NULL,
   `YearGranted` varchar(10) DEFAULT NULL,
   `DateGranted` timestamp NULL DEFAULT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `name` varchar(100) NOT NULL COMMENT 'Full name of student',
   `username` varchar(100) DEFAULT NULL,
   `password` varchar(255) DEFAULT NULL,
-  `program_id` int(11) NOT NULL COMMENT 'FK to programs table',
   `UserID` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -3863,41 +3531,9 @@ CREATE TABLE `student` (
 -- Dumping data for table `student`
 --
 
-INSERT INTO `student` (`StudID`, `StudType`, `SchoolID`, `FName`, `LName`, `MName`, `ExtName`, `Age`, `DateOfBirth`, `PlaceOfBirth`, `Province`, `Sex`, `CivilStatus`, `Religion`, `Nationality`, `PhoneNo`, `EmailAddr`, `FathersName`, `MothersMName`, `Course`, `YearLvl`, `Semester`, `Block`, `DeptID`, `Summer`, `CHEDScholar`, `EnrollmentClass`, `Address`, `Guardian`, `LastSchoolAtt`, `QRcode`, `IsGraduate`, `GrantAuthorityNumber`, `YearGranted`, `DateGranted`, `user_id`, `name`, `username`, `password`, `program_id`, `UserID`) VALUES
-(2024118, 'New Student', '456258', 'Raphael', 'Tayag', 'Enrile', '', 30, '1995-12-07', 'Javier, Leyte', NULL, 'Male', 'Single', 'INC', 'Filipino', '09876543218', 'Raprap@gmail.com', 'Abdul James Tayag', 'Ella Mae Bulaklak Enrile', 'Bachelor of Science in Information Technology', '1st Year', '1st Sem', '0', 1, 0, 'Yes', 'Regular', 'Brgy Binuntugon, Javier, Leyte', 'Abdul James Tayag', 'ACLC', 'qr_456258_1765963496.png', 0, NULL, NULL, NULL, NULL, '', NULL, NULL, 0, NULL);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `student_doc`
---
-
-CREATE TABLE `student_doc` (
-  `StudID` int(11) NOT NULL,
-  `SchoolID` varchar(20) NOT NULL,
-  `FName` varchar(50) NOT NULL,
-  `LName` varchar(50) NOT NULL,
-  `DateOfBirth` date NOT NULL,
-  `Sex` enum('Male','Female','Other') DEFAULT NULL,
-  `EmailAddr` varchar(100) NOT NULL,
-  `PhoneNo` varchar(15) DEFAULT NULL,
-  `Address` text DEFAULT NULL,
-  `status` enum('Active','Inactive','Graduated','Suspended') DEFAULT 'Active',
-  `has_registered` tinyint(1) DEFAULT 0,
-  `registered_at` datetime DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `student_doc`
---
-
-INSERT INTO `student_doc` (`StudID`, `SchoolID`, `FName`, `LName`, `DateOfBirth`, `Sex`, `EmailAddr`, `PhoneNo`, `Address`, `status`, `has_registered`, `registered_at`, `created_at`) VALUES
-(1, 'STU-2024001', 'Buddy', 'Dudzzz', '2000-05-15', 'Male', 'buddydudzzz@gmail.com', '09691894248', 'Sample Address', 'Active', 1, '2025-12-17 11:06:36', '2025-11-22 13:02:37'),
-(2, 'STU-2024002', 'Jake', 'Cornista', '2001-03-22', 'Male', 'cornistajake6@gmail.com', '097866787', 'Another Address', 'Active', 1, '2025-12-17 11:08:54', '2025-12-10 02:18:27'),
-(3, 'STU-2024003', 'Charles', 'Parena', '1999-11-30', 'Male', 'zofri467@gmail.com', '09691894248', 'Third Address', 'Active', 1, '2025-12-17 11:13:01', '2025-11-26 00:52:18'),
-(4, 'TEST-001', 'Test', 'User', '0000-00-00', NULL, 'test@email.com', NULL, NULL, 'Active', 0, NULL, '2025-12-16 06:51:35'),
-(5, 'STU-2024004', 'jhun', 'adolf', '2025-12-16', 'Male', 'junjun@gmail.com', '09837238273', 'tagpuro sangyaw', 'Active', 1, '2025-12-17 15:17:05', '2025-12-17 07:16:33');
+INSERT INTO `student` (`StudID`, `StudType`, `SchoolID`, `FName`, `LName`, `MName`, `ExtName`, `Age`, `DateOfBirth`, `PlaceOfBirth`, `Province`, `Sex`, `CivilStatus`, `Religion`, `Nationality`, `PhoneNo`, `EmailAddr`, `FathersName`, `MothersMName`, `Course`, `YearLvl`, `Semester`, `Block`, `DeptID`, `Summer`, `CHEDScholar`, `EnrollmentClass`, `Address`, `Guardian`, `LastSchoolAtt`, `QRcode`, `IsGraduate`, `GrantAuthorityNumber`, `YearGranted`, `DateGranted`, `username`, `password`, `UserID`) VALUES
+(2024122, 'New Student', '213547', 'Diego', 'Fundavilla', 'Mijara', '', 22, '2003-02-03', 'Pastrana, Leyte', NULL, 'Male', 'Single', 'Roman Catholic', 'Filipino', '09876543219', 'DiegoFunda@gmail.com', 'Edmundo Fundavilla', 'Edna Sister Travis', 'Bachelor of Science in Information Technology', '1st Year', '1st Sem', '0', 1, 0, 'Yes', 'Regular', 'Brgy 89, New York Avenue, Pastrana, Leyte', 'Edmundo Fundavilla', 'Pastrana Senior High School', 'qr_213547_1766334854.png', 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(2024124, 'New Student', '213546', 'Brent', 'Natalo', 'Benile', 'Jr', 23, '2002-11-22', 'Matalom, Leyte', NULL, 'Male', 'Single', 'Roman Catholic', 'Filipino', '09123456789', 'brent.natalo@gmail.com', 'Diego N. Natalo', 'Marissa Daylo Benile', 'Bachelor of Science in Information Technology', '1st Year', '1st Sem', '0', 1, 0, 'No', 'Regular', 'Brgy. Binuntugan, Matalom, Leyte', 'Marissa Daylo Benile', 'ACLC', 'qr_213546_1766335512.png', 0, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -3906,64 +3542,17 @@ INSERT INTO `student_doc` (`StudID`, `SchoolID`, `FName`, `LName`, `DateOfBirth`
 --
 
 CREATE TABLE `student_guidance` (
-  `StudID` int(11) NOT NULL,
-  `StudType` varchar(20) DEFAULT NULL,
-  `SchoolID` varchar(20) DEFAULT NULL,
-  `FName` varchar(50) NOT NULL,
-  `LName` varchar(50) NOT NULL,
-  `MName` varchar(50) DEFAULT NULL,
-  `ExtName` varchar(10) DEFAULT NULL,
+  `StudGuidance_ID` int(11) NOT NULL,
+  `StudID` int(11) DEFAULT NULL,
   `profile_picture` varchar(255) DEFAULT NULL,
-  `Age` int(11) DEFAULT NULL,
-  `DateOfBirth` date DEFAULT NULL,
-  `PlaceOfBirth` varchar(100) DEFAULT NULL,
-  `Province` varchar(100) DEFAULT NULL,
-  `Sex` varchar(10) DEFAULT NULL,
-  `CivilStatus` varchar(20) DEFAULT NULL,
-  `Religion` varchar(50) DEFAULT NULL,
   `PersonalEmail` varchar(255) DEFAULT NULL,
   `StudentPhone` varchar(50) DEFAULT NULL,
   `GuardianPhone` varchar(50) DEFAULT NULL,
   `GuardianName` varchar(255) DEFAULT NULL,
   `CompleteAddress` varchar(500) DEFAULT NULL,
-  `YearLevel` varchar(50) DEFAULT NULL,
-  `Program` varchar(200) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `student_identification`
---
-
-CREATE TABLE `student_identification` (
-  `StudentID` int(11) NOT NULL,
-  `StudentNumber` varchar(20) NOT NULL,
-  `FullName` varchar(100) NOT NULL,
-  `Course` varchar(50) NOT NULL,
-  `YearLevel` int(11) NOT NULL,
-  `ContactNo` varchar(15) NOT NULL,
-  `GuardianName` varchar(100) NOT NULL,
-  `GuardianContact` varchar(15) NOT NULL,
-  `Birthdate` date NOT NULL,
-  `Address` varchar(255) DEFAULT NULL,
-  `Qr_token` varchar(64) NOT NULL,
-  `Photo` varchar(255) DEFAULT NULL,
-  `Signature` varchar(255) DEFAULT NULL,
-  `Qrimage` varchar(255) NOT NULL,
-  `CreatedAt` datetime DEFAULT current_timestamp(),
-  `ExpiryDate` date DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `student_identification`
---
-
-INSERT INTO `student_identification` (`StudentID`, `StudentNumber`, `FullName`, `Course`, `YearLevel`, `ContactNo`, `GuardianName`, `GuardianContact`, `Birthdate`, `Address`, `Qr_token`, `Photo`, `Signature`, `Qrimage`, `CreatedAt`, `ExpiryDate`) VALUES
-(0, '22-843763', 'Juan Versoza', 'BSCS', 2, '09436278382', 'Test5', '09347623842', '2003-02-17', 'hahahha', '44b61da84b275278e9a9296a92a4a5a1', '1765953875_1705282658145-removebg-preview.png', '1765953875_b1256934-da0f-4fd4-83bc-f681da624725 (1).png', 'qr_img/44b61da84b275278e9a9296a92a4a5a1.png', '2025-12-17 15:39:35', '2028-12-17'),
-(0, '22-433034', 'Hay Versoza', 'BSCE', 4, '09436278382', 'Test5', '09347623842', '2003-02-17', 'test', '0d96aab8a2f89d6bd73c4f0bd2c33aff', '1765953959_image-removebg-preview (9).png', '1765953959_b1256934-da0f-4fd4-83bc-f681da624725 (1).png', 'qr_img/0d96aab8a2f89d6bd73c4f0bd2c33aff.png', '2025-12-17 15:40:59', '2026-12-17');
 
 -- --------------------------------------------------------
 
@@ -3986,7 +3575,7 @@ CREATE TABLE `student_instructor_assignments` (
 
 CREATE TABLE `student_passwords` (
   `password_id` int(11) NOT NULL,
-  `stud_id` int(11) NOT NULL,
+  `StudID` int(11) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `reset_token` varchar(100) DEFAULT NULL,
   `reset_token_expires` datetime DEFAULT NULL,
@@ -3998,7 +3587,7 @@ CREATE TABLE `student_passwords` (
 -- Dumping data for table `student_passwords`
 --
 
-INSERT INTO `student_passwords` (`password_id`, `stud_id`, `password_hash`, `reset_token`, `reset_token_expires`, `created_at`, `updated_at`) VALUES
+INSERT INTO `student_passwords` (`password_id`, `StudID`, `password_hash`, `reset_token`, `reset_token_expires`, `created_at`, `updated_at`) VALUES
 (3, 1, '$2y$10$uSf/3MI402wwS2yLlTR0neBVnqDw.KE62wnX.PpaIRu/SFgzI0dFe', NULL, NULL, '2025-12-17 03:06:36', '2025-12-17 03:06:36'),
 (4, 2, '$2y$10$HjOh1BJnBG.2/GETxP4ZyO285S3/Zhfu8u2C.R0HF7GGOcnJpUr8m', NULL, NULL, '2025-12-17 03:08:54', '2025-12-17 03:08:54'),
 (5, 3, '$2y$10$ql/kliR70FBLDYdGfxFUZOcXB1jj5lXPjhldIlXSs9bz3/apbchPu', NULL, NULL, '2025-12-17 03:13:01', '2025-12-17 03:13:01'),
@@ -4034,41 +3623,6 @@ CREATE TABLE `student_requests` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `student_schedules`
---
-
-CREATE TABLE `student_schedules` (
-  `id` int(11) NOT NULL,
-  `student_id` int(11) DEFAULT NULL,
-  `schedule_id` int(11) DEFAULT NULL,
-  `assigned_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `student_subjects`
---
-
-CREATE TABLE `student_subjects` (
-  `id` int(11) NOT NULL,
-  `student_id` int(11) DEFAULT NULL,
-  `subject_id` int(11) DEFAULT NULL,
-  `assigned_at` datetime DEFAULT NULL,
-  `created_by` int(11) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `student_subjects`
---
-
-INSERT INTO `student_subjects` (`id`, `student_id`, `subject_id`, `assigned_at`, `created_by`, `created_at`) VALUES
-(0, 22, 5, NULL, NULL, '2025-12-17 08:43:44');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `subject`
 --
 
@@ -4079,23 +3633,16 @@ CREATE TABLE `subject` (
   `DescTitle` varchar(150) DEFAULT NULL,
   `Unit` decimal(3,1) DEFAULT NULL,
   `Cost` decimal(10,2) DEFAULT NULL,
-  `type` enum('Lecture','Lab','Lecture/Lab') NOT NULL COMMENT 'Subject type',
-  `year_level` int(11) NOT NULL COMMENT 'Year level required'
+  `type` enum('Lecture','Lab','Lecture/Lab') NOT NULL COMMENT 'Subject type'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `subject`
 --
 
-INSERT INTO `subject` (`SubjectID`, `SubCode`, `SubName`, `DescTitle`, `Unit`, `Cost`, `type`, `year_level`) VALUES
-(1, 'ITP114', 'General Mathematics', 'Gen Math', 3.0, NULL, 'Lecture', 0),
-(2, 'CS101', 'Introduction to Programming', NULL, 3.0, NULL, 'Lecture/Lab', 1),
-(3, 'IT302', 'Web Development', NULL, 3.0, NULL, 'Lab', 3),
-(4, 'EE301', 'Circuit Analysis', NULL, 4.0, NULL, 'Lecture', 3),
-(5, 'MATH101', 'College Algebra', NULL, 3.0, NULL, 'Lecture', 1),
-(6, 'ITP 411L', 'System Integration', NULL, 4.0, NULL, 'Lab', 0),
-(9, 'ITP 301L', 'System Architecture', NULL, 3.0, NULL, 'Lecture/Lab', 3),
-(11, 'ITE 401L', 'System Integration', NULL, 4.0, NULL, 'Lab', 4);
+INSERT INTO `subject` (`SubjectID`, `SubCode`, `SubName`, `DescTitle`, `Unit`, `Cost`, `type`) VALUES
+(13, 'IP101', 'Integrative Programming', NULL, 3.0, 3144.00, 'Lecture'),
+(14, 'SA101', 'System Architecture', NULL, 3.0, 3144.00, 'Lecture');
 
 -- --------------------------------------------------------
 
@@ -4116,26 +3663,9 @@ CREATE TABLE `subjectenrollment` (
 --
 
 INSERT INTO `subjectenrollment` (`EnrollID`, `StudID`, `SubjectID`, `EPeriodID`, `EnrollDate`) VALUES
-(0, 2024111, 1, 1, '2025-12-17 07:26:51'),
-(0, 2024111, 2, 1, '2025-12-17 07:26:51'),
-(0, 2024111, 3, 1, '2025-12-17 07:26:51');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `subjects`
---
-
-CREATE TABLE `subjects` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `subject_code` varchar(50) NOT NULL,
-  `subject_name` varchar(191) NOT NULL,
-  `units` int(11) NOT NULL DEFAULT 3,
-  `schedule` varchar(191) NOT NULL,
-  `room` varchar(50) NOT NULL,
-  `instructor` varchar(100) NOT NULL,
-  `teacher_id` int(10) UNSIGNED DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+(1, 2024122, 13, 1, '2025-12-21 16:35:19'),
+(2, 2024122, 14, 1, '2025-12-21 16:35:20'),
+(3, 2024124, 13, 1, '2025-12-21 16:45:43');
 
 -- --------------------------------------------------------
 
@@ -4156,9 +3686,9 @@ CREATE TABLE `subsched` (
 --
 
 INSERT INTO `subsched` (`SubSchedID`, `Schedule`, `Room`, `SubjectID`, `InsID`) VALUES
-(1, '1:00-2:00 MW', 'LAB 2', 1, NULL),
-(2, '7:00-8:00 MW', 'LAB 2', 2, NULL),
-(3, '8:00-10:00 MW', 'LAB 2', 3, NULL);
+(6, '7:00-8:00 MW', 'LAB 2', 13, 1),
+(7, '8:00-10:00 MW', 'LAB 2', 14, 1),
+(8, '7:00-8:00 MW', 'LAB 2', 13, 1);
 
 -- --------------------------------------------------------
 
@@ -4197,15 +3727,9 @@ CREATE TABLE `system_logs_security` (
   `record_id_security` int(11) DEFAULT NULL,
   `ip_address_security` varchar(45) DEFAULT NULL,
   `user_agent_security` text DEFAULT NULL,
-  `created_at_security` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `system_logs_security`
---
-
-INSERT INTO `system_logs_security` (`id_security`, `user_id_security`, `action_security`, `description_security`, `module_security`, `record_id_security`, `ip_address_security`, `user_agent_security`, `created_at_security`) VALUES
-(0, 15, 'user_logout', 'User logged out of system', 'auth', NULL, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '2025-12-15 08:35:49');
 
 -- --------------------------------------------------------
 
@@ -4328,10 +3852,7 @@ CREATE TABLE `thirteenth_month_payroll` (
 CREATE TABLE `time_date_settings` (
   `id` int(11) NOT NULL,
   `timezone` varchar(100) DEFAULT NULL,
-  `format` varchar(50) DEFAULT NULL,
-  `grace_in_minutes` int(11) DEFAULT 0,
-  `grace_out_minutes` int(11) DEFAULT 0,
-  `company_hours_per_day` decimal(5,2) DEFAULT 8.00
+  `format` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -4484,7 +4005,8 @@ INSERT INTO `users` (`UserID`, `Username`, `Fname`, `Lname`, `Email`, `Departmen
 (30, 'siaaa', NULL, NULL, NULL, NULL, NULL, NULL, 'siasia', 'admin', '2025-12-17 08:27:37', NULL, NULL, NULL, 1),
 (32, 'admin101@gmail.com', 'admin1', 'admin111', 'admin101@lms.edu', NULL, NULL, NULL, '$2y$10$OxF1atMy26WIzC82UnufCOlbg5v4p795VEl2d3KBMPEtDx.o/LucG', 'student', '2025-12-17 08:35:36', NULL, NULL, NULL, 1),
 (33, 'admin@lms.edu', NULL, NULL, 'admin@lms.edu', NULL, NULL, NULL, '$2y$10$O7C0OQzj4dD.CyGsdMMA2euExfPwuE7u7Az.ZnmK9TwLpJJLj4L7C', 'Admin', '2025-12-17 08:37:08', NULL, NULL, NULL, 1),
-(35, 'GR', NULL, NULL, NULL, NULL, NULL, NULL, '8365f20e6414ae81dc4be25972e2fa77', 'Teacher', '2025-12-17 09:03:39', NULL, NULL, NULL, 1);
+(35, 'GR', NULL, NULL, NULL, NULL, NULL, NULL, '8365f20e6414ae81dc4be25972e2fa77', 'Teacher', '2025-12-17 09:03:39', NULL, NULL, NULL, 1),
+(36, 'adfcadmin', NULL, NULL, NULL, NULL, NULL, NULL, '$2y$10$9O1G6LbJF2aRCuPl6pwHbOngUpF1rXm519gRsMbFw6/3AyxXNDq2C', 'Admin', '2025-12-21 16:35:56', NULL, NULL, NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -4562,8 +4084,8 @@ CREATE TABLE `users_employee` (
 --
 
 INSERT INTO `users_employee` (`id`, `first_name`, `last_name`, `email`, `phone_number`, `address`, `department_id`, `password_hash`, `is_active`, `created_at`, `updated_at`, `avatar_path`, `roles`) VALUES
-(0, 'Alexander', 'Osias', 'alexanderosias123@gmail.com', '09305909175', 'So. Bugho', 1, '$2y$10$h6DDUHev8U5PhpT/60UFuer5uQHinicxdcJKmsIWaqsjt00jJlFPO', 1, '2025-12-18 06:55:08', '2025-12-18 06:55:08', NULL, '[\"employee\"]'),
-(1, 'rommel', 'baquiran', 'superadmin@gmail.com', '092637346353', 'taga balay', 1, '$2y$10$eFmGsmOld4JDMgkJunzcx.IQo6gPwS8CvtMecl0rY21mm30oZgCYy', 1, '2025-12-15 09:33:24', '2025-12-15 09:33:24', NULL, '[\"head_admin\"]');
+(1, 'rommel', 'baquiran', 'superadmin@gmail.com', '092637346353', 'taga balay', 1, '$2y$10$eFmGsmOld4JDMgkJunzcx.IQo6gPwS8CvtMecl0rY21mm30oZgCYy', 1, '2025-12-15 09:33:24', '2025-12-15 09:33:24', NULL, '[\"head_admin\"]'),
+(2, 'Alexander', 'Osias', 'alexanderosias123@gmail.com', '09305909175', 'So. Bugho', 1, '$2y$10$gdvunNHnVHDQiXEi8dyb0udli7bsuSKcI7ZRRPXbDNzzUK5NPwu.e', 1, '2025-12-21 17:29:22', '2025-12-21 17:29:22', NULL, '[\"employee\"]');
 
 -- --------------------------------------------------------
 
@@ -4604,7 +4126,7 @@ CREATE TABLE `users_security` (
   `password_security` varchar(255) NOT NULL,
   `role_security` enum('super_admin','admin','security_manager','security_guard','instructor','employee','student') NOT NULL,
   `full_name_security` varchar(100) NOT NULL,
-  `student_id_security` varchar(20) DEFAULT NULL,
+  `student_id_security` int(11) DEFAULT NULL,
   `employee_id_security` varchar(20) DEFAULT NULL,
   `department_security` varchar(100) DEFAULT NULL,
   `phone_security` varchar(20) DEFAULT NULL,
@@ -4619,24 +4141,15 @@ CREATE TABLE `users_security` (
 --
 
 INSERT INTO `users_security` (`id_security`, `username_security`, `email_security`, `password_security`, `role_security`, `full_name_security`, `student_id_security`, `employee_id_security`, `department_security`, `phone_security`, `is_active_security`, `last_login_security`, `created_at_security`, `updated_at_security`) VALUES
-(1, 'superadmin', 'superadminadfc@gmail.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'super_admin', 'Super Administrator', NULL, 'EMP-001', 'Administration', '+639123456789', 1, '2025-12-12 00:58:18', '2025-10-28 11:30:05', '2025-12-12 00:58:18'),
-(10, 'LadyGuard', 'ladyguard@gmail.com', '$2y$10$ZbNniZIY49jSgePQphEWIOEHsbk8U1sQ4ydC6fJGNq5FSgHR/VU.2', 'security_guard', 'Ate Guard', '', '121243', 'Security', '09373628472', 1, '2025-12-12 04:21:24', '2025-11-30 18:26:00', '2025-12-12 04:21:24'),
-(11, 'shane', 'shane@gmail.com', '$2y$10$3rCZSuikIYkYHdV2gyLm9Ok/OO2wDOh8ruTp0w.gGk3VQJeQhX0C2', 'student', 'Jezelle Shane Hechanova', '12-12345', '', 'IT', '09461461277', 1, '2025-12-11 09:24:51', '2025-11-30 18:28:50', '2025-12-11 09:24:51'),
-(12, 'sec.manager', 'sec@gmail.com', '$2y$10$riXWeVZmE.Et5CRpOKTDVeX9kacYN/DiCYD7OauJIyUboYKc5h23G', 'security_manager', 'Security Manager', '', '101010', 'Security', '09372647362', 1, '2025-12-11 21:28:40', '2025-12-02 15:51:33', '2025-12-11 21:28:40'),
-(13, 'adfcadmin', 'admin@gmail.com', '$2y$10$DrqpRDP9uuyd8zlGWJskDebyAAN7BEXBXALri.bcPpMxDlLuNOMXe', 'admin', 'Administrator', '', '12345', 'Administrator', '09273676182', 1, '2025-12-10 22:43:36', '2025-12-06 04:51:44', '2025-12-10 22:43:36'),
-(14, 'rommel', 'rommelbaquiran15@gmail.com', '$2y$10$LbmivRuAbY3qyc80C0D2IONpxTjaqv7Xcfs8Ic3vA9fuLqj6y1rDK', 'student', 'Rommel Baquiran', '12-12346', NULL, 'IT', '09661498101', 1, '2025-12-12 00:50:20', '2025-12-11 05:16:35', '2025-12-12 00:50:20'),
-(15, 'rivas', 'rivas@gmail.com', '$2y$10$G9qex53y.hDkEmGTnIRbWu5jK6lSi5XdalO6WpESo1YnMHffg0nr6', 'instructor', 'Francis Rivas', '', '98-12374', 'IT INSTRUCTOR', '09635464737', 1, '2025-12-11 21:08:43', '2025-12-11 19:23:27', '2025-12-11 21:08:43'),
-(16, 'paul', 'paul@gmail.com', '$2y$10$Sqc/qpGy.G9hJdXFgQ2y2OBKJn5s9rx6TfKwRvJorFXHPZ77BTdJS', 'employee', 'Paul Employee', '', '09-09876', 'ADFC', '09463738274', 1, '2025-12-12 01:25:21', '2025-12-11 20:07:51', '2025-12-12 01:25:21'),
-(0, 'salas', 'salas@gmail.com', '$2y$10$an/OzhGRtQYWn8WPQkepGu10HRC06y3FkhcEu8n/.1/SOPWRLDG4.', 'instructor', 'Romme', NULL, NULL, NULL, '', 1, '2025-12-15 08:55:50', '2025-12-15 08:40:15', '2025-12-15 08:55:50'),
-(1, 'superadmin', 'superadminadfc@gmail.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'super_admin', 'Super Administrator', NULL, 'EMP-001', 'Administration', '+639123456789', 1, '2025-12-12 00:58:18', '2025-10-28 11:30:05', '2025-12-12 00:58:18'),
-(10, 'LadyGuard', 'ladyguard@gmail.com', '$2y$10$ZbNniZIY49jSgePQphEWIOEHsbk8U1sQ4ydC6fJGNq5FSgHR/VU.2', 'security_guard', 'Ate Guard', '', '121243', 'Security', '09373628472', 1, '2025-12-12 04:21:24', '2025-11-30 18:26:00', '2025-12-12 04:21:24'),
-(11, 'shane', 'shane@gmail.com', '$2y$10$3rCZSuikIYkYHdV2gyLm9Ok/OO2wDOh8ruTp0w.gGk3VQJeQhX0C2', 'student', 'Jezelle Shane Hechanova', '12-12345', '', 'IT', '09461461277', 1, '2025-12-11 09:24:51', '2025-11-30 18:28:50', '2025-12-11 09:24:51'),
-(12, 'sec.manager', 'sec@gmail.com', '$2y$10$riXWeVZmE.Et5CRpOKTDVeX9kacYN/DiCYD7OauJIyUboYKc5h23G', 'security_manager', 'Security Manager', '', '101010', 'Security', '09372647362', 1, '2025-12-11 21:28:40', '2025-12-02 15:51:33', '2025-12-11 21:28:40'),
-(13, 'adfcadmin', 'admin@gmail.com', '$2y$10$DrqpRDP9uuyd8zlGWJskDebyAAN7BEXBXALri.bcPpMxDlLuNOMXe', 'admin', 'Administrator', '', '12345', 'Administrator', '09273676182', 1, '2025-12-10 22:43:36', '2025-12-06 04:51:44', '2025-12-10 22:43:36'),
-(14, 'rommel', 'rommelbaquiran15@gmail.com', '$2y$10$LbmivRuAbY3qyc80C0D2IONpxTjaqv7Xcfs8Ic3vA9fuLqj6y1rDK', 'student', 'Rommel Baquiran', '12-12346', NULL, 'IT', '09661498101', 1, '2025-12-12 00:50:20', '2025-12-11 05:16:35', '2025-12-12 00:50:20'),
-(15, 'rivas', 'rivas@gmail.com', '$2y$10$G9qex53y.hDkEmGTnIRbWu5jK6lSi5XdalO6WpESo1YnMHffg0nr6', 'instructor', 'Francis Rivas', '', '98-12374', 'IT INSTRUCTOR', '09635464737', 1, '2025-12-11 21:08:43', '2025-12-11 19:23:27', '2025-12-11 21:08:43'),
-(16, 'paul', 'paul@gmail.com', '$2y$10$Sqc/qpGy.G9hJdXFgQ2y2OBKJn5s9rx6TfKwRvJorFXHPZ77BTdJS', 'employee', 'Paul Employee', '', '09-09876', 'ADFC', '09463738274', 1, '2025-12-12 01:25:21', '2025-12-11 20:07:51', '2025-12-12 01:25:21'),
-(0, 'makoy', 'makoy@gmail.com', '$2y$10$SZh0UlzPSI3bOquQHzcTvOf5hnKA8pSpHuAZ3yInnfX1V82b3EzSO', 'employee', 'mak', NULL, NULL, NULL, '', 1, '2025-12-15 08:55:50', '2025-12-15 08:55:19', '2025-12-15 08:55:50');
+(1, 'superadmin', 'superadminadfc@gmail.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'super_admin', 'Super Administrator', NULL, 'EMP-001', 'Administration', '+639123456789', 1, '2025-12-15 00:59:02', '2025-10-28 03:30:05', '2025-12-15 00:59:02'),
+(10, 'LadyGuard', 'ladyguard@gmail.com', '$2y$10$ZbNniZIY49jSgePQphEWIOEHsbk8U1sQ4ydC6fJGNq5FSgHR/VU.2', 'security_guard', 'Ate Guard', NULL, '121243', 'Security', '09373628472', 1, '2025-12-14 20:09:27', '2025-11-30 10:26:00', '2025-12-14 20:09:27'),
+(11, 'shane', 'shane@gmail.com', '$2y$10$3rCZSuikIYkYHdV2gyLm9Ok/OO2wDOh8ruTp0w.gGk3VQJeQhX0C2', 'student', 'Jezelle Shane Hechanova', NULL, '', 'IT', '09461461277', 1, '2025-12-11 01:24:51', '2025-11-30 10:28:50', '2025-12-11 01:24:51'),
+(12, 'sec.manager', 'sec@gmail.com', '$2y$10$riXWeVZmE.Et5CRpOKTDVeX9kacYN/DiCYD7OauJIyUboYKc5h23G', 'security_manager', 'Security Manager', NULL, '101010', 'Security', '09372647362', 1, '2025-12-11 13:28:40', '2025-12-02 07:51:33', '2025-12-11 13:28:40'),
+(13, 'adfcadmin', 'admin@gmail.com', '$2y$10$nf0GrsUFCnxrXBjlVmxPge/OdcF.TzDHGv8QAm00RwsEjy3hSnrWe', 'admin', 'Administrator', NULL, '12345', 'Administrator', '09273676182', 1, '2025-12-14 23:16:32', '2025-12-05 20:51:44', '2025-12-14 23:16:32'),
+(14, 'rommel', 'rommelbaquiran15@gmail.com', '$2y$10$LbmivRuAbY3qyc80C0D2IONpxTjaqv7Xcfs8Ic3vA9fuLqj6y1rDK', 'student', 'Rommel Baquiran', NULL, NULL, 'IT', '09661498101', 1, '2025-12-14 21:19:13', '2025-12-10 21:16:35', '2025-12-14 21:19:13'),
+(15, 'rivas', 'rivas@gmail.com', '$2y$10$G9qex53y.hDkEmGTnIRbWu5jK6lSi5XdalO6WpESo1YnMHffg0nr6', 'instructor', 'Francis Rivas', NULL, '98-12374', 'IT INSTRUCTOR', '09635464737', 1, '2025-12-15 00:58:10', '2025-12-11 11:23:27', '2025-12-15 00:58:10'),
+(16, 'paul', 'paul@gmail.com', '$2y$10$Sqc/qpGy.G9hJdXFgQ2y2OBKJn5s9rx6TfKwRvJorFXHPZ77BTdJS', 'employee', 'Paul Employee', NULL, '09-09876', 'ADFC', '09463738274', 1, '2025-12-14 22:03:15', '2025-12-11 12:07:51', '2025-12-14 22:03:15'),
+(17, 'perez', 'perez@gmail.com', '$2y$10$IyRnDEgQOrqJhDKUmIFZyus3WB9gZHEbogGCYwL36MeAhpkIJysxy', 'employee', 'Sandara Perez', NULL, '23-45678', 'ADFC', '09463647263', 1, NULL, '2025-12-14 23:12:08', '2025-12-14 23:12:08');
 
 -- --------------------------------------------------------
 
@@ -4663,122 +4176,123 @@ CREATE TABLE `user_permissions_security` (
   `permission_key_security` varchar(50) NOT NULL,
   `permission_value_security` tinyint(1) DEFAULT 1,
   `granted_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
-  `granted_by_security` int(11) DEFAULT NULL
+  `granted_by_security` int(11) DEFAULT NULL,
+  `student_id_security` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user_permissions_security`
 --
 
-INSERT INTO `user_permissions_security` (`id_security`, `user_id_security`, `permission_key_security`, `permission_value_security`, `granted_at_security`, `granted_by_security`) VALUES
-(259, 1, 'access_labs', 1, '2025-10-30 03:55:47', 1),
-(260, 1, 'borrow_keys', 1, '2025-10-30 03:55:47', 1),
-(261, 1, 'check_attendance', 1, '2025-10-30 03:55:47', 1),
-(262, 1, 'claim_lost_found', 1, '2025-10-30 03:55:47', 1),
-(263, 1, 'deactivate_users', 1, '2025-10-30 03:55:47', 1),
-(264, 1, 'delete_violations', 1, '2025-10-30 03:55:47', 1),
-(265, 1, 'edit_student_info', 1, '2025-10-30 03:55:47', 1),
-(266, 1, 'edit_violations', 1, '2025-10-30 03:55:47', 1),
-(267, 1, 'export_reports', 1, '2025-10-30 03:55:47', 1),
-(268, 1, 'generate_reports', 1, '2025-10-30 03:55:47', 1),
-(269, 1, 'manage_assignments', 1, '2025-10-30 03:55:47', 1),
-(270, 1, 'manage_attendance', 1, '2025-10-30 03:55:47', 1),
-(271, 1, 'manage_keys', 1, '2025-10-30 03:55:47', 1),
-(272, 1, 'manage_labs', 1, '2025-10-30 03:55:47', 1),
-(273, 1, 'manage_lost_found', 1, '2025-10-30 03:55:47', 1),
-(274, 1, 'manage_permissions', 1, '2025-10-30 03:55:47', 1),
-(275, 1, 'manage_security_team', 1, '2025-10-30 03:55:47', 1),
-(276, 1, 'manage_system', 1, '2025-10-30 03:55:47', 1),
-(277, 1, 'manage_users', 1, '2025-10-30 03:55:47', 1),
-(278, 1, 'report_lab_incidents', 1, '2025-10-30 03:55:47', 1),
-(279, 1, 'report_lost_found', 1, '2025-10-30 03:55:47', 1),
-(280, 1, 'report_violations', 1, '2025-10-30 03:55:47', 1),
-(281, 1, 'return_keys', 1, '2025-10-30 03:55:47', 1),
-(282, 1, 'review_violations', 1, '2025-10-30 03:55:47', 1),
-(283, 1, 'view_assignments', 1, '2025-10-30 03:55:47', 1),
-(284, 1, 'view_attendance', 1, '2025-10-30 03:55:47', 1),
-(285, 1, 'view_keys', 1, '2025-10-30 03:55:47', 1),
-(286, 1, 'view_lab_incidents', 1, '2025-10-30 03:55:47', 1),
-(287, 1, 'view_lost_found', 1, '2025-10-30 03:55:47', 1),
-(288, 1, 'view_reports', 1, '2025-10-30 03:55:47', 1),
-(289, 1, 'view_security_team', 1, '2025-10-30 03:55:47', 1),
-(290, 1, 'view_student_info', 1, '2025-10-30 03:55:47', 1),
-(291, 1, 'view_system_logs', 1, '2025-10-30 03:55:47', 1),
-(292, 1, 'view_users', 1, '2025-10-30 03:55:47', 1),
-(293, 1, 'view_violations', 1, '2025-10-30 03:55:47', 1),
-(474, 12, 'manage_attendance', 1, '2025-12-02 18:43:51', 1),
-(475, 12, 'manage_keys', 1, '2025-12-02 18:43:51', 1),
-(476, 12, 'view_keys', 1, '2025-12-02 18:43:51', 1),
-(477, 12, 'access_labs', 1, '2025-12-02 18:43:51', 1),
-(478, 12, 'manage_labs', 1, '2025-12-02 18:43:51', 1),
-(479, 12, 'report_lab_incidents', 1, '2025-12-02 18:43:51', 1),
-(480, 12, 'view_lab_incidents', 1, '2025-12-02 18:43:51', 1),
-(481, 12, 'manage_lost_found', 1, '2025-12-02 18:43:51', 1),
-(482, 12, 'view_lost_found', 1, '2025-12-02 18:43:51', 1),
-(483, 12, 'export_reports', 1, '2025-12-02 18:43:51', 1),
-(484, 12, 'generate_reports', 1, '2025-12-02 18:43:51', 1),
-(485, 12, 'view_reports', 1, '2025-12-02 18:43:51', 1),
-(486, 12, 'manage_assignments', 1, '2025-12-02 18:43:51', 1),
-(487, 12, 'manage_security_team', 1, '2025-12-02 18:43:51', 1),
-(488, 12, 'view_assignments', 1, '2025-12-02 18:43:51', 1),
-(489, 12, 'view_security_team', 1, '2025-12-02 18:43:51', 1),
-(490, 12, 'delete_violations', 1, '2025-12-02 18:43:51', 1),
-(491, 12, 'edit_violations', 1, '2025-12-02 18:43:51', 1),
-(492, 12, 'report_violations', 1, '2025-12-02 18:43:51', 1),
-(493, 12, 'review_violations', 1, '2025-12-02 18:43:51', 1),
-(494, 12, 'view_violations', 1, '2025-12-02 18:43:51', 1),
-(495, 13, 'manage_attendance', 1, '2025-12-06 04:56:50', 1),
-(496, 13, 'manage_keys', 1, '2025-12-06 04:56:50', 1),
-(497, 13, 'access_labs', 1, '2025-12-06 04:56:50', 1),
-(498, 13, 'manage_labs', 1, '2025-12-06 04:56:50', 1),
-(499, 13, 'report_lab_incidents', 1, '2025-12-06 04:56:50', 1),
-(500, 13, 'view_lab_incidents', 1, '2025-12-06 04:56:50', 1),
-(501, 13, 'manage_lost_found', 1, '2025-12-06 04:56:50', 1),
-(502, 13, 'report_lost_found', 1, '2025-12-06 04:56:50', 1),
-(503, 13, 'export_reports', 1, '2025-12-06 04:56:50', 1),
-(504, 13, 'generate_reports', 1, '2025-12-06 04:56:50', 1),
-(505, 13, 'view_reports', 1, '2025-12-06 04:56:50', 1),
-(506, 13, 'manage_permissions', 1, '2025-12-06 04:56:50', 1),
-(507, 13, 'manage_system', 1, '2025-12-06 04:56:50', 1),
-(508, 13, 'deactivate_users', 1, '2025-12-06 04:56:50', 1),
-(509, 13, 'manage_users', 1, '2025-12-06 04:56:50', 1),
-(510, 13, 'view_users', 1, '2025-12-06 04:56:50', 1),
-(511, 13, 'delete_violations', 1, '2025-12-06 04:56:50', 1),
-(512, 13, 'edit_violations', 1, '2025-12-06 04:56:50', 1),
-(513, 13, 'view_violations', 1, '2025-12-06 04:56:50', 1),
-(514, 10, 'check_attendance', 1, '2025-12-11 00:28:14', 1),
-(515, 10, 'manage_attendance', 1, '2025-12-11 00:28:14', 1),
-(516, 10, 'view_attendance', 1, '2025-12-11 00:28:14', 1),
-(517, 10, 'manage_keys', 1, '2025-12-11 00:28:14', 1),
-(518, 10, 'report_lab_incidents', 1, '2025-12-11 00:28:14', 1),
-(519, 10, 'view_lab_incidents', 1, '2025-12-11 00:28:14', 1),
-(520, 10, 'claim_lost_found', 1, '2025-12-11 00:28:14', 1),
-(521, 10, 'manage_lost_found', 1, '2025-12-11 00:28:14', 1),
-(522, 10, 'report_lost_found', 1, '2025-12-11 00:28:14', 1),
-(523, 10, 'view_lost_found', 1, '2025-12-11 00:28:14', 1),
-(524, 10, 'edit_violations', 1, '2025-12-11 00:28:14', 1),
-(525, 10, 'report_violations', 1, '2025-12-11 00:28:14', 1),
-(526, 10, 'review_violations', 1, '2025-12-11 00:28:14', 1),
-(566, 15, 'view_attendance', 1, '2025-12-11 19:55:57', 1),
-(567, 15, 'borrow_keys', 1, '2025-12-11 19:55:57', 1),
-(568, 15, 'manage_keys', 1, '2025-12-11 19:55:57', 1),
-(569, 15, 'return_keys', 1, '2025-12-11 19:55:57', 1),
-(570, 15, 'view_keys', 1, '2025-12-11 19:55:57', 1),
-(571, 15, 'claim_lost_found', 1, '2025-12-11 19:55:57', 1),
-(572, 15, 'manage_lost_found', 1, '2025-12-11 19:55:57', 1),
-(573, 15, 'report_lost_found', 1, '2025-12-11 19:55:57', 1),
-(574, 15, 'view_lost_found', 1, '2025-12-11 19:55:57', 1),
-(575, 15, 'edit_violations', 1, '2025-12-11 19:55:57', 1),
-(576, 15, 'report_violations', 1, '2025-12-11 19:55:57', 1),
-(577, 15, 'review_violations', 1, '2025-12-11 19:55:57', 1),
-(578, 15, 'view_violations', 1, '2025-12-11 19:55:57', 1),
-(586, 16, 'check_attendance', 1, '2025-12-11 20:08:55', 1),
-(587, 16, 'view_attendance', 1, '2025-12-11 20:08:55', 1),
-(588, 16, 'borrow_keys', 1, '2025-12-11 20:08:55', 1),
-(589, 16, 'view_keys', 1, '2025-12-11 20:08:55', 1),
-(590, 16, 'claim_lost_found', 1, '2025-12-11 20:08:55', 1),
-(591, 16, 'report_lost_found', 1, '2025-12-11 20:08:55', 1),
-(592, 16, 'view_lost_found', 1, '2025-12-11 20:08:55', 1);
+INSERT INTO `user_permissions_security` (`id_security`, `user_id_security`, `permission_key_security`, `permission_value_security`, `granted_at_security`, `granted_by_security`, `student_id_security`) VALUES
+(259, 1, 'access_labs', 1, '2025-10-29 19:55:47', 1, NULL),
+(260, 1, 'borrow_keys', 1, '2025-10-29 19:55:47', 1, NULL),
+(261, 1, 'check_attendance', 1, '2025-10-29 19:55:47', 1, NULL),
+(262, 1, 'claim_lost_found', 1, '2025-10-29 19:55:47', 1, NULL),
+(263, 1, 'deactivate_users', 1, '2025-10-29 19:55:47', 1, NULL),
+(264, 1, 'delete_violations', 1, '2025-10-29 19:55:47', 1, NULL),
+(265, 1, 'edit_student_info', 1, '2025-10-29 19:55:47', 1, NULL),
+(266, 1, 'edit_violations', 1, '2025-10-29 19:55:47', 1, NULL),
+(267, 1, 'export_reports', 1, '2025-10-29 19:55:47', 1, NULL),
+(268, 1, 'generate_reports', 1, '2025-10-29 19:55:47', 1, NULL),
+(269, 1, 'manage_assignments', 1, '2025-10-29 19:55:47', 1, NULL),
+(270, 1, 'manage_attendance', 1, '2025-10-29 19:55:47', 1, NULL),
+(271, 1, 'manage_keys', 1, '2025-10-29 19:55:47', 1, NULL),
+(272, 1, 'manage_labs', 1, '2025-10-29 19:55:47', 1, NULL),
+(273, 1, 'manage_lost_found', 1, '2025-10-29 19:55:47', 1, NULL),
+(274, 1, 'manage_permissions', 1, '2025-10-29 19:55:47', 1, NULL),
+(275, 1, 'manage_security_team', 1, '2025-10-29 19:55:47', 1, NULL),
+(276, 1, 'manage_system', 1, '2025-10-29 19:55:47', 1, NULL),
+(277, 1, 'manage_users', 1, '2025-10-29 19:55:47', 1, NULL),
+(278, 1, 'report_lab_incidents', 1, '2025-10-29 19:55:47', 1, NULL),
+(279, 1, 'report_lost_found', 1, '2025-10-29 19:55:47', 1, NULL),
+(280, 1, 'report_violations', 1, '2025-10-29 19:55:47', 1, NULL),
+(281, 1, 'return_keys', 1, '2025-10-29 19:55:47', 1, NULL),
+(282, 1, 'review_violations', 1, '2025-10-29 19:55:47', 1, NULL),
+(283, 1, 'view_assignments', 1, '2025-10-29 19:55:47', 1, NULL),
+(284, 1, 'view_attendance', 1, '2025-10-29 19:55:47', 1, NULL),
+(285, 1, 'view_keys', 1, '2025-10-29 19:55:47', 1, NULL),
+(286, 1, 'view_lab_incidents', 1, '2025-10-29 19:55:47', 1, NULL),
+(287, 1, 'view_lost_found', 1, '2025-10-29 19:55:47', 1, NULL),
+(288, 1, 'view_reports', 1, '2025-10-29 19:55:47', 1, NULL),
+(289, 1, 'view_security_team', 1, '2025-10-29 19:55:47', 1, NULL),
+(290, 1, 'view_student_info', 1, '2025-10-29 19:55:47', 1, NULL),
+(291, 1, 'view_system_logs', 1, '2025-10-29 19:55:47', 1, NULL),
+(292, 1, 'view_users', 1, '2025-10-29 19:55:47', 1, NULL),
+(293, 1, 'view_violations', 1, '2025-10-29 19:55:47', 1, NULL),
+(474, 12, 'manage_attendance', 1, '2025-12-02 10:43:51', 1, NULL),
+(475, 12, 'manage_keys', 1, '2025-12-02 10:43:51', 1, NULL),
+(476, 12, 'view_keys', 1, '2025-12-02 10:43:51', 1, NULL),
+(477, 12, 'access_labs', 1, '2025-12-02 10:43:51', 1, NULL),
+(478, 12, 'manage_labs', 1, '2025-12-02 10:43:51', 1, NULL),
+(479, 12, 'report_lab_incidents', 1, '2025-12-02 10:43:51', 1, NULL),
+(480, 12, 'view_lab_incidents', 1, '2025-12-02 10:43:51', 1, NULL),
+(481, 12, 'manage_lost_found', 1, '2025-12-02 10:43:51', 1, NULL),
+(482, 12, 'view_lost_found', 1, '2025-12-02 10:43:51', 1, NULL),
+(483, 12, 'export_reports', 1, '2025-12-02 10:43:51', 1, NULL),
+(484, 12, 'generate_reports', 1, '2025-12-02 10:43:51', 1, NULL),
+(485, 12, 'view_reports', 1, '2025-12-02 10:43:51', 1, NULL),
+(486, 12, 'manage_assignments', 1, '2025-12-02 10:43:51', 1, NULL),
+(487, 12, 'manage_security_team', 1, '2025-12-02 10:43:51', 1, NULL),
+(488, 12, 'view_assignments', 1, '2025-12-02 10:43:51', 1, NULL),
+(489, 12, 'view_security_team', 1, '2025-12-02 10:43:51', 1, NULL),
+(490, 12, 'delete_violations', 1, '2025-12-02 10:43:51', 1, NULL),
+(491, 12, 'edit_violations', 1, '2025-12-02 10:43:51', 1, NULL),
+(492, 12, 'report_violations', 1, '2025-12-02 10:43:51', 1, NULL),
+(493, 12, 'review_violations', 1, '2025-12-02 10:43:51', 1, NULL),
+(494, 12, 'view_violations', 1, '2025-12-02 10:43:51', 1, NULL),
+(495, 13, 'manage_attendance', 1, '2025-12-05 20:56:50', 1, NULL),
+(496, 13, 'manage_keys', 1, '2025-12-05 20:56:50', 1, NULL),
+(497, 13, 'access_labs', 1, '2025-12-05 20:56:50', 1, NULL),
+(498, 13, 'manage_labs', 1, '2025-12-05 20:56:50', 1, NULL),
+(499, 13, 'report_lab_incidents', 1, '2025-12-05 20:56:50', 1, NULL),
+(500, 13, 'view_lab_incidents', 1, '2025-12-05 20:56:50', 1, NULL),
+(501, 13, 'manage_lost_found', 1, '2025-12-05 20:56:50', 1, NULL),
+(502, 13, 'report_lost_found', 1, '2025-12-05 20:56:50', 1, NULL),
+(503, 13, 'export_reports', 1, '2025-12-05 20:56:50', 1, NULL),
+(504, 13, 'generate_reports', 1, '2025-12-05 20:56:50', 1, NULL),
+(505, 13, 'view_reports', 1, '2025-12-05 20:56:50', 1, NULL),
+(506, 13, 'manage_permissions', 1, '2025-12-05 20:56:50', 1, NULL),
+(507, 13, 'manage_system', 1, '2025-12-05 20:56:50', 1, NULL),
+(508, 13, 'deactivate_users', 1, '2025-12-05 20:56:50', 1, NULL),
+(509, 13, 'manage_users', 1, '2025-12-05 20:56:50', 1, NULL),
+(510, 13, 'view_users', 1, '2025-12-05 20:56:50', 1, NULL),
+(511, 13, 'delete_violations', 1, '2025-12-05 20:56:50', 1, NULL),
+(512, 13, 'edit_violations', 1, '2025-12-05 20:56:50', 1, NULL),
+(513, 13, 'view_violations', 1, '2025-12-05 20:56:50', 1, NULL),
+(514, 10, 'check_attendance', 1, '2025-12-10 16:28:14', 1, NULL),
+(515, 10, 'manage_attendance', 1, '2025-12-10 16:28:14', 1, NULL),
+(516, 10, 'view_attendance', 1, '2025-12-10 16:28:14', 1, NULL),
+(517, 10, 'manage_keys', 1, '2025-12-10 16:28:14', 1, NULL),
+(518, 10, 'report_lab_incidents', 1, '2025-12-10 16:28:14', 1, NULL),
+(519, 10, 'view_lab_incidents', 1, '2025-12-10 16:28:14', 1, NULL),
+(520, 10, 'claim_lost_found', 1, '2025-12-10 16:28:14', 1, NULL),
+(521, 10, 'manage_lost_found', 1, '2025-12-10 16:28:14', 1, NULL),
+(522, 10, 'report_lost_found', 1, '2025-12-10 16:28:14', 1, NULL),
+(523, 10, 'view_lost_found', 1, '2025-12-10 16:28:14', 1, NULL),
+(524, 10, 'edit_violations', 1, '2025-12-10 16:28:14', 1, NULL),
+(525, 10, 'report_violations', 1, '2025-12-10 16:28:14', 1, NULL),
+(526, 10, 'review_violations', 1, '2025-12-10 16:28:14', 1, NULL),
+(566, 15, 'view_attendance', 1, '2025-12-11 11:55:57', 1, NULL),
+(567, 15, 'borrow_keys', 1, '2025-12-11 11:55:57', 1, NULL),
+(568, 15, 'manage_keys', 1, '2025-12-11 11:55:57', 1, NULL),
+(569, 15, 'return_keys', 1, '2025-12-11 11:55:57', 1, NULL),
+(570, 15, 'view_keys', 1, '2025-12-11 11:55:57', 1, NULL),
+(571, 15, 'claim_lost_found', 1, '2025-12-11 11:55:57', 1, NULL),
+(572, 15, 'manage_lost_found', 1, '2025-12-11 11:55:57', 1, NULL),
+(573, 15, 'report_lost_found', 1, '2025-12-11 11:55:57', 1, NULL),
+(574, 15, 'view_lost_found', 1, '2025-12-11 11:55:57', 1, NULL),
+(575, 15, 'edit_violations', 1, '2025-12-11 11:55:57', 1, NULL),
+(576, 15, 'report_violations', 1, '2025-12-11 11:55:57', 1, NULL),
+(577, 15, 'review_violations', 1, '2025-12-11 11:55:57', 1, NULL),
+(578, 15, 'view_violations', 1, '2025-12-11 11:55:57', 1, NULL),
+(586, 16, 'check_attendance', 1, '2025-12-11 12:08:55', 1, NULL),
+(587, 16, 'view_attendance', 1, '2025-12-11 12:08:55', 1, NULL),
+(588, 16, 'borrow_keys', 1, '2025-12-11 12:08:55', 1, NULL),
+(589, 16, 'view_keys', 1, '2025-12-11 12:08:55', 1, NULL),
+(590, 16, 'claim_lost_found', 1, '2025-12-11 12:08:55', 1, NULL),
+(591, 16, 'report_lost_found', 1, '2025-12-11 12:08:55', 1, NULL),
+(592, 16, 'view_lost_found', 1, '2025-12-11 12:08:55', 1, NULL);
 
 -- --------------------------------------------------------
 
@@ -4816,16 +4330,16 @@ CREATE TABLE `violations_security` (
   `reviewed_at_security` timestamp NULL DEFAULT NULL,
   `resolution_notes_security` text DEFAULT NULL,
   `created_at_security` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at_security` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `student_id_security_foreign` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `violations_security`
 --
 
-INSERT INTO `violations_security` (`id_security`, `reported_by_security`, `student_id_security`, `student_name_security`, `violation_type_id_security`, `severity_security`, `description_security`, `location_security`, `points_security`, `status_security`, `evidence_photo_security`, `reviewed_by_security`, `reviewed_at_security`, `resolution_notes_security`, `created_at_security`, `updated_at_security`) VALUES
-(9, 10, '12-12345', 'Jezelle Shane Hechanova', 8, 'high', 'nag hihits', 'On 6th Floor', 3, 'reported', NULL, 12, '2025-12-11 17:59:55', 'Adik na', '2025-12-06 01:02:55', '2025-12-11 17:59:55'),
-(11, 10, '12-12346', 'Rommel Baquiran', 2, 'low', 'asdasdad', 'Main gate', 1, 'reported', 'violations_1765541234_693c05727dfa6.jpg', NULL, NULL, 'Cute hahahah', '2025-12-12 04:07:14', '2025-12-12 04:07:14');
+INSERT INTO `violations_security` (`id_security`, `reported_by_security`, `student_id_security`, `student_name_security`, `violation_type_id_security`, `severity_security`, `description_security`, `location_security`, `points_security`, `status_security`, `evidence_photo_security`, `reviewed_by_security`, `reviewed_at_security`, `resolution_notes_security`, `created_at_security`, `updated_at_security`, `student_id_security_foreign`) VALUES
+(11, 10, '2', 'Rommel Baquiran', 2, 'low', 'asdasdad', 'Main gate', 1, 'reported', 'violations_1765541234_693c05727dfa6.jpg', NULL, NULL, 'Cute hahahah', '2025-12-11 20:07:14', '2025-12-11 20:07:14', NULL);
 
 -- --------------------------------------------------------
 
@@ -4861,13 +4375,22 @@ CREATE TABLE `violation_types_security` (
 --
 
 INSERT INTO `violation_types_security` (`id_security`, `type_name_security`, `severity_security`, `default_points_security`, `description_security`, `is_active_security`, `created_by_security`, `created_at_security`) VALUES
-(1, 'No ID', 'medium', 2, 'Not wearing identification inside campus premises', 1, 1, '2025-10-28 11:30:05'),
-(2, 'Improper Uniform', 'low', 1, 'Not following prescribed dress code/uniform policy', 1, 1, '2025-10-28 11:30:05'),
-(4, 'Unauthorized Area', 'high', 3, 'Accessing restricted areas without permission', 1, 1, '2025-10-28 11:30:05'),
-(5, 'Disruptive Behavior', 'medium', 2, 'Causing disturbance in academic areas', 1, 1, '2025-10-28 11:30:05'),
-(6, 'Academic Dishonesty', 'critical', 5, 'Cheating, plagiarism, or other academic violations', 1, 1, '2025-10-28 11:30:05'),
-(7, 'Vandalism', 'high', 4, 'Damaging school property', 1, 1, '2025-10-28 11:30:05'),
-(8, 'Smoking in Campus', 'high', 3, 'Smoking in non-designated areas', 1, 1, '2025-10-28 11:30:05');
+(1, 'No ID', 'medium', 2, 'Not wearing identification inside campus premises', 1, 1, '2025-10-28 03:30:05'),
+(2, 'Improper Uniform', 'low', 1, 'Not following prescribed dress code/uniform policy', 1, 1, '2025-10-28 03:30:05'),
+(4, 'Unauthorized Area', 'high', 3, 'Accessing restricted areas without permission', 1, 1, '2025-10-28 03:30:05'),
+(5, 'Disruptive Behavior', 'medium', 2, 'Causing disturbance in academic areas', 1, 1, '2025-10-28 03:30:05'),
+(6, 'Academic Dishonesty', 'critical', 5, 'Cheating, plagiarism, or other academic violations', 1, 1, '2025-10-28 03:30:05'),
+(7, 'Vandalism', 'high', 4, 'Damaging school property', 1, 1, '2025-10-28 03:30:05'),
+(8, 'Smoking in Campus', 'high', 3, 'Smoking in non-designated areas', 1, 1, '2025-10-28 03:30:05');
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `all_users_view`
+--
+DROP TABLE IF EXISTS `all_users_view`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `all_users_view`  AS SELECT `u`.`username` AS `username`, `u`.`password` AS `password`, `u`.`role` AS `role`, `u`.`user_ref_id` AS `user_ref_id`, `u`.`created_at` AS `created_at` FROM `class_users` AS `u` ;
 
 --
 -- Indexes for dumped tables
@@ -4878,6 +4401,12 @@ INSERT INTO `violation_types_security` (`id_security`, `type_name_security`, `se
 --
 ALTER TABLE `academic_term`
   ADD PRIMARY KEY (`term_id`);
+
+--
+-- Indexes for table `activity`
+--
+ALTER TABLE `activity`
+  ADD KEY `SubSchedID` (`SubSchedID`);
 
 --
 -- Indexes for table `activity_logs`
@@ -4936,10 +4465,7 @@ ALTER TABLE `assessment_weights`
 -- Indexes for table `attendance`
 --
 ALTER TABLE `attendance`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uniq_student_date` (`student_id`,`date`),
-  ADD KEY `idx_date` (`date`),
-  ADD KEY `fk_attendance_user` (`marked_by`);
+  ADD PRIMARY KEY (`attendance_id`);
 
 --
 -- Indexes for table `attendance_logs`
@@ -4947,6 +4473,15 @@ ALTER TABLE `attendance`
 ALTER TABLE `attendance_logs`
   ADD PRIMARY KEY (`log_id`),
   ADD KEY `fk_attendance_employee` (`employee_id`);
+
+--
+-- Indexes for table `attendance_logs_security`
+--
+ALTER TABLE `attendance_logs_security`
+  ADD PRIMARY KEY (`id_security`),
+  ADD KEY `idx_user_date` (`user_id_security`,`log_date_security`),
+  ADD KEY `idx_attendance_user_date` (`user_id_security`,`log_date_security`),
+  ADD KEY `fk_attendance_logs_student` (`student_id_security`);
 
 --
 -- Indexes for table `attendance_queue`
@@ -4961,18 +4496,25 @@ ALTER TABLE `attendance_schedules`
   ADD PRIMARY KEY (`schedule_id`);
 
 --
+-- Indexes for table `attendance_schedules_security`
+--
+ALTER TABLE `attendance_schedules_security`
+  ADD PRIMARY KEY (`id_security`),
+  ADD UNIQUE KEY `idx_user_effective_date` (`user_id_security`,`effective_date_security`),
+  ADD KEY `fk_attendance_schedules_student` (`student_id_security`);
+
+--
 -- Indexes for table `attendance_settings`
 --
 ALTER TABLE `attendance_settings`
   ADD PRIMARY KEY (`setting_id`);
 
 --
--- Indexes for table `attendance_sync_queue`
+-- Indexes for table `attendance_settings_security`
 --
-ALTER TABLE `attendance_sync_queue`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_status` (`status`),
-  ADD KEY `idx_sync_type` (`sync_type`);
+ALTER TABLE `attendance_settings_security`
+  ADD PRIMARY KEY (`id_security`),
+  ADD UNIQUE KEY `setting_key` (`setting_key_security`);
 
 --
 -- Indexes for table `audit_logs`
@@ -5004,7 +4546,8 @@ ALTER TABLE `books`
 -- Indexes for table `cases`
 --
 ALTER TABLE `cases`
-  ADD PRIMARY KEY (`case_id`);
+  ADD PRIMARY KEY (`case_id`),
+  ADD KEY `fk_cases_StudGuidance_ID` (`StudGuidance_ID`);
 
 --
 -- Indexes for table `case_counselors`
@@ -5062,12 +4605,6 @@ ALTER TABLE `clearances_doc`
 ALTER TABLE `client_queue`
   ADD PRIMARY KEY (`queue_id`),
   ADD KEY `service_type_id` (`service_type_id`);
-
---
--- Indexes for table `connection_debug`
---
-ALTER TABLE `connection_debug`
-  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `courses`
@@ -5161,14 +4698,8 @@ ALTER TABLE `employee_schedules`
 ALTER TABLE `enrollment`
   ADD PRIMARY KEY (`EnrollID`),
   ADD KEY `idx_enrollment_student` (`StudID`),
-  ADD KEY `idx_enrollment_period` (`EPeriodID`);
-
---
--- Indexes for table `enrollments`
---
-ALTER TABLE `enrollments`
-  ADD PRIMARY KEY (`enrollment_id`),
-  ADD KEY `class_id` (`class_id`);
+  ADD KEY `idx_enrollment_period` (`EPeriodID`),
+  ADD KEY `SubSchedID` (`SubSchedID`);
 
 --
 -- Indexes for table `enrollperiod`
@@ -5256,7 +4787,8 @@ ALTER TABLE `guidance_settings`
 -- Indexes for table `guidance_users`
 --
 ALTER TABLE `guidance_users`
-  ADD PRIMARY KEY (`UserID`);
+  ADD PRIMARY KEY (`GuidanceUserID`),
+  ADD KEY `fk_guidance_users_UserID` (`UserID`);
 
 --
 -- Indexes for table `holidays`
@@ -5277,12 +4809,6 @@ ALTER TABLE `instructor`
   ADD PRIMARY KEY (`InsID`),
   ADD KEY `idx_instructor_dept` (`DeptID`),
   ADD KEY `UserID` (`UserID`);
-
---
--- Indexes for table `instructors`
---
-ALTER TABLE `instructors`
-  ADD PRIMARY KEY (`instructor_id`);
 
 --
 -- Indexes for table `job_positions`
@@ -5318,17 +4844,12 @@ ALTER TABLE `key_management`
 ALTER TABLE `key_management_security`
   ADD PRIMARY KEY (`id_security`),
   ADD UNIQUE KEY `key_code` (`key_code_security`),
+  ADD UNIQUE KEY `unique_key_name_location` (`key_name_security`,`location_security`),
   ADD KEY `key_type_id` (`key_type_id_security`),
   ADD KEY `current_holder` (`current_holder_security`),
   ADD KEY `created_by` (`created_by_security`),
-  ADD KEY `idx_key_management_status` (`status_security`);
-
---
--- Indexes for table `key_transaction_logs`
---
-ALTER TABLE `key_transaction_logs`
-  ADD PRIMARY KEY (`transaction_id`),
-  ADD KEY `key_id` (`key_id`);
+  ADD KEY `idx_key_management_status` (`status_security`),
+  ADD KEY `fk_key_management_student` (`student_id_security`);
 
 --
 -- Indexes for table `key_transaction_logs_security`
@@ -5337,7 +4858,8 @@ ALTER TABLE `key_transaction_logs_security`
   ADD PRIMARY KEY (`id_security`),
   ADD KEY `key_id` (`key_id_security`),
   ADD KEY `user_id` (`user_id_security`),
-  ADD KEY `admin_id` (`admin_id_security`);
+  ADD KEY `admin_id` (`admin_id_security`),
+  ADD KEY `fk_key_transaction_logs_student` (`student_id_security`);
 
 --
 -- Indexes for table `key_types`
@@ -5368,14 +4890,8 @@ ALTER TABLE `laboratories`
 --
 ALTER TABLE `laboratories_security`
   ADD PRIMARY KEY (`id_security`),
-  ADD UNIQUE KEY `lab_code` (`lab_code_security`);
-
---
--- Indexes for table `lab_access_logs`
---
-ALTER TABLE `lab_access_logs`
-  ADD PRIMARY KEY (`access_id`),
-  ADD KEY `lab_id` (`lab_id`);
+  ADD UNIQUE KEY `lab_code` (`lab_code_security`),
+  ADD KEY `fk_laboratories_student` (`student_id_security`);
 
 --
 -- Indexes for table `lab_access_logs_security`
@@ -5383,14 +4899,8 @@ ALTER TABLE `lab_access_logs`
 ALTER TABLE `lab_access_logs_security`
   ADD PRIMARY KEY (`id_security`),
   ADD KEY `user_id` (`user_id_security`),
-  ADD KEY `lab_id` (`lab_id_security`);
-
---
--- Indexes for table `lab_equipment`
---
-ALTER TABLE `lab_equipment`
-  ADD PRIMARY KEY (`equipment_id`),
-  ADD KEY `lab_id` (`lab_id`);
+  ADD KEY `lab_id` (`lab_id_security`),
+  ADD KEY `fk_lab_access_logs_student` (`student_id_security`);
 
 --
 -- Indexes for table `lab_equipment_security`
@@ -5398,14 +4908,9 @@ ALTER TABLE `lab_equipment`
 ALTER TABLE `lab_equipment_security`
   ADD PRIMARY KEY (`id_security`),
   ADD UNIQUE KEY `serial_number` (`serial_number_security`),
-  ADD KEY `lab_id` (`lab_id_security`);
-
---
--- Indexes for table `lab_incidents`
---
-ALTER TABLE `lab_incidents`
-  ADD PRIMARY KEY (`incident_id`),
-  ADD KEY `lab_id` (`lab_id`);
+  ADD UNIQUE KEY `unique_equipment_lab` (`equipment_name_security`,`lab_id_security`,`serial_number_security`(50)),
+  ADD KEY `lab_id` (`lab_id_security`),
+  ADD KEY `fk_lab_equipment_student` (`student_id_security`);
 
 --
 -- Indexes for table `lab_incidents_security`
@@ -5416,7 +4921,8 @@ ALTER TABLE `lab_incidents_security`
   ADD KEY `lab_id` (`lab_id_security`),
   ADD KEY `equipment_id` (`equipment_id_security`),
   ADD KEY `resolved_by` (`resolved_by_security`),
-  ADD KEY `idx_lab_incidents_status` (`status_security`);
+  ADD KEY `idx_lab_incidents_status` (`status_security`),
+  ADD KEY `fk_lab_incidents_student` (`student_id_security`);
 
 --
 -- Indexes for table `learningmaterials`
@@ -5448,23 +4954,10 @@ ALTER TABLE `logs`
   ADD PRIMARY KEY (`log_id`);
 
 --
--- Indexes for table `lost_found_categories`
---
-ALTER TABLE `lost_found_categories`
-  ADD PRIMARY KEY (`category_id`);
-
---
 -- Indexes for table `lost_found_categories_security`
 --
 ALTER TABLE `lost_found_categories_security`
   ADD PRIMARY KEY (`id_security`);
-
---
--- Indexes for table `lost_found_items`
---
-ALTER TABLE `lost_found_items`
-  ADD PRIMARY KEY (`item_id`),
-  ADD KEY `category_id` (`category_id`);
 
 --
 -- Indexes for table `lost_found_items_security`
@@ -5475,7 +4968,8 @@ ALTER TABLE `lost_found_items_security`
   ADD KEY `category_id` (`category_id_security`),
   ADD KEY `claimed_by` (`claimed_by_security`),
   ADD KEY `resolved_by` (`resolved_by_security`),
-  ADD KEY `idx_lost_found_status` (`status_security`);
+  ADD KEY `idx_lost_found_status` (`status_security`),
+  ADD KEY `fk_lost_found_items_student` (`student_id_security`);
 
 --
 -- Indexes for table `lost_keys`
@@ -5556,7 +5050,8 @@ ALTER TABLE `notifications_for_id`
 --
 ALTER TABLE `overtime_requests`
   ADD PRIMARY KEY (`overtime_id`),
-  ADD KEY `employee_id` (`employee_id`);
+  ADD KEY `employee_id` (`employee_id`),
+  ADD KEY `fk_ot_attendance` (`attendance_log_id`);
 
 --
 -- Indexes for table `password_resets`
@@ -5584,7 +5079,23 @@ ALTER TABLE `payments_doc`
 -- Indexes for table `payroll`
 --
 ALTER TABLE `payroll`
+  ADD PRIMARY KEY (`payroll_id`),
   ADD KEY `fk_payroll_employee` (`employee_id`);
+
+--
+-- Indexes for table `payroll_audit`
+--
+ALTER TABLE `payroll_audit`
+  ADD PRIMARY KEY (`audit_id`);
+
+--
+-- Indexes for table `permission_keys_security`
+--
+ALTER TABLE `permission_keys_security`
+  ADD PRIMARY KEY (`id_security`),
+  ADD UNIQUE KEY `permission_key` (`permission_key_security`),
+  ADD KEY `idx_permission_keys_module` (`module_security`),
+  ADD KEY `idx_permission_keys_active` (`is_active_security`);
 
 --
 -- Indexes for table `pickup_schedules`
@@ -5597,7 +5108,8 @@ ALTER TABLE `pickup_schedules`
 -- Indexes for table `program`
 --
 ALTER TABLE `program`
-  ADD PRIMARY KEY (`ProgramID`);
+  ADD PRIMARY KEY (`ProgramID`),
+  ADD UNIQUE KEY `uq_program_name` (`ProgName`);
 
 --
 -- Indexes for table `qr_codes`
@@ -5653,6 +5165,22 @@ ALTER TABLE `request_counters`
   ADD UNIQUE KEY `date` (`date`);
 
 --
+-- Indexes for table `security_assignments_security`
+--
+ALTER TABLE `security_assignments_security`
+  ADD PRIMARY KEY (`id_security`),
+  ADD KEY `guard_id` (`guard_id_security`),
+  ADD KEY `assigned_by` (`assigned_by_security`),
+  ADD KEY `fk_security_assignments_student` (`student_id_security`);
+
+--
+-- Indexes for table `snapshots`
+--
+ALTER TABLE `snapshots`
+  ADD PRIMARY KEY (`snapshot_id`),
+  ADD KEY `fk_snapshots_attendance` (`attendance_log_id`);
+
+--
 -- Indexes for table `special_events`
 --
 ALTER TABLE `special_events`
@@ -5663,48 +5191,58 @@ ALTER TABLE `special_events`
 --
 ALTER TABLE `student`
   ADD PRIMARY KEY (`StudID`),
-  ADD KEY `UserID` (`UserID`);
-
---
--- Indexes for table `student_doc`
---
-ALTER TABLE `student_doc`
-  ADD PRIMARY KEY (`StudID`),
-  ADD UNIQUE KEY `student_number` (`SchoolID`),
-  ADD UNIQUE KEY `EmailAddr` (`EmailAddr`);
+  ADD UNIQUE KEY `SchoolID` (`SchoolID`),
+  ADD KEY `UserID` (`UserID`),
+  ADD KEY `DeptID_2` (`DeptID`),
+  ADD KEY `IsGraduate` (`IsGraduate`);
 
 --
 -- Indexes for table `student_guidance`
 --
 ALTER TABLE `student_guidance`
-  ADD PRIMARY KEY (`StudID`);
+  ADD PRIMARY KEY (`StudGuidance_ID`),
+  ADD KEY `fk_student_guidance_StudID` (`StudID`);
 
 --
 -- Indexes for table `student_passwords`
 --
 ALTER TABLE `student_passwords`
   ADD PRIMARY KEY (`password_id`),
-  ADD UNIQUE KEY `stud_id` (`stud_id`),
-  ADD KEY `idx_student_passwords_stud_id` (`stud_id`);
+  ADD UNIQUE KEY `stud_id` (`StudID`),
+  ADD KEY `idx_student_passwords_stud_id` (`StudID`);
 
 --
 -- Indexes for table `subject`
 --
 ALTER TABLE `subject`
-  ADD PRIMARY KEY (`SubjectID`);
+  ADD PRIMARY KEY (`SubjectID`),
+  ADD UNIQUE KEY `uq_subject_subcode` (`SubCode`) USING BTREE;
 
 --
--- Indexes for table `subjects`
+-- Indexes for table `subjectenrollment`
 --
-ALTER TABLE `subjects`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `subject_code` (`subject_code`);
+ALTER TABLE `subjectenrollment`
+  ADD PRIMARY KEY (`EnrollID`),
+  ADD KEY `idx_subjectenrollment_student` (`StudID`),
+  ADD KEY `idx_subjectenrollment_subject` (`SubjectID`),
+  ADD KEY `idx_subjectenrollment_period` (`EPeriodID`);
 
 --
 -- Indexes for table `subsched`
 --
 ALTER TABLE `subsched`
-  ADD PRIMARY KEY (`SubSchedID`);
+  ADD PRIMARY KEY (`SubSchedID`) USING BTREE,
+  ADD KEY `idx_subsched_subject` (`SubjectID`) USING BTREE,
+  ADD KEY `idx_subsched_instructor` (`InsID`) USING BTREE;
+
+--
+-- Indexes for table `system_logs_security`
+--
+ALTER TABLE `system_logs_security`
+  ADD PRIMARY KEY (`id_security`),
+  ADD KEY `user_id` (`user_id_security`),
+  ADD KEY `idx_system_logs_created_at` (`created_at_security`),
+  ADD KEY `fk_system_logs_student` (`student_id_security`);
 
 --
 -- Indexes for table `teacher_subjects`
@@ -5712,6 +5250,13 @@ ALTER TABLE `subsched`
 ALTER TABLE `teacher_subjects`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_teacher_subject` (`teacher_id`,`subject_id`);
+
+--
+-- Indexes for table `thirteenth_month_payroll`
+--
+ALTER TABLE `thirteenth_month_payroll`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_thirteenth_employee_year` (`employee_id`,`year`);
 
 --
 -- Indexes for table `users`
@@ -5741,14 +5286,48 @@ ALTER TABLE `users_for_id`
   ADD KEY `RoleID` (`RoleID`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- Indexes for table `users_security`
 --
+ALTER TABLE `users_security`
+  ADD PRIMARY KEY (`id_security`),
+  ADD UNIQUE KEY `username` (`username_security`),
+  ADD UNIQUE KEY `email` (`email_security`),
+  ADD KEY `fk_users_security_student` (`student_id_security`);
 
 --
--- AUTO_INCREMENT for table `attendance`
+-- Indexes for table `user_permissions_security`
 --
-ALTER TABLE `attendance`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE `user_permissions_security`
+  ADD PRIMARY KEY (`id_security`),
+  ADD UNIQUE KEY `unique_user_permission` (`user_id_security`,`permission_key_security`),
+  ADD KEY `granted_by` (`granted_by_security`),
+  ADD KEY `idx_user_permissions_user_id` (`user_id_security`),
+  ADD KEY `idx_user_permissions_key` (`permission_key_security`),
+  ADD KEY `fk_user_permissions_student` (`student_id_security`);
+
+--
+-- Indexes for table `violations_security`
+--
+ALTER TABLE `violations_security`
+  ADD PRIMARY KEY (`id_security`),
+  ADD KEY `idx_violations_student_id` (`student_id_security`),
+  ADD KEY `idx_violations_status` (`status_security`),
+  ADD KEY `reported_by` (`reported_by_security`),
+  ADD KEY `violation_type_id` (`violation_type_id_security`),
+  ADD KEY `reviewed_by` (`reviewed_by_security`),
+  ADD KEY `idx_violations_created_at` (`created_at_security`),
+  ADD KEY `fk_violations_student` (`student_id_security_foreign`);
+
+--
+-- Indexes for table `violation_types_security`
+--
+ALTER TABLE `violation_types_security`
+  ADD PRIMARY KEY (`id_security`),
+  ADD KEY `created_by` (`created_by_security`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
 
 --
 -- AUTO_INCREMENT for table `attendance_logs`
@@ -5757,16 +5336,28 @@ ALTER TABLE `attendance_logs`
   MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `attendance_sync_queue`
+-- AUTO_INCREMENT for table `attendance_logs_security`
 --
-ALTER TABLE `attendance_sync_queue`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `attendance_logs_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
+
+--
+-- AUTO_INCREMENT for table `attendance_schedules_security`
+--
+ALTER TABLE `attendance_schedules_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `attendance_settings_security`
+--
+ALTER TABLE `attendance_settings_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `billing`
 --
 ALTER TABLE `billing`
-  MODIFY `billing_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `billing_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `cases`
@@ -5799,6 +5390,12 @@ ALTER TABLE `departments`
   MODIFY `department_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT for table `dept`
+--
+ALTER TABLE `dept`
+  MODIFY `DeptID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT for table `document_requests`
 --
 ALTER TABLE `document_requests`
@@ -5808,7 +5405,7 @@ ALTER TABLE `document_requests`
 -- AUTO_INCREMENT for table `document_types`
 --
 ALTER TABLE `document_types`
-  MODIFY `Doctype_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `Doctype_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `employees`
@@ -5823,6 +5420,18 @@ ALTER TABLE `employee_schedules`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `enrollment`
+--
+ALTER TABLE `enrollment`
+  MODIFY `EnrollID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `enrollperiod`
+--
+ALTER TABLE `enrollperiod`
+  MODIFY `EPeriodID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- AUTO_INCREMENT for table `event_logs_doc`
 --
 ALTER TABLE `event_logs_doc`
@@ -5832,7 +5441,7 @@ ALTER TABLE `event_logs_doc`
 -- AUTO_INCREMENT for table `fees`
 --
 ALTER TABLE `fees`
-  MODIFY `fee_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `fee_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `gradesummary`
@@ -5850,7 +5459,7 @@ ALTER TABLE `guards`
 -- AUTO_INCREMENT for table `guidance_users`
 --
 ALTER TABLE `guidance_users`
-  MODIFY `UserID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `GuidanceUserID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `instructor`
@@ -5865,28 +5474,52 @@ ALTER TABLE `job_positions`
   MODIFY `position_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT for table `keys_m`
+-- AUTO_INCREMENT for table `key_management_security`
 --
-ALTER TABLE `keys_m`
-  MODIFY `KeyID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+ALTER TABLE `key_management_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
 
 --
--- AUTO_INCREMENT for table `key_logs`
+-- AUTO_INCREMENT for table `key_transaction_logs_security`
 --
-ALTER TABLE `key_logs`
-  MODIFY `LogID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+ALTER TABLE `key_transaction_logs_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
 
 --
--- AUTO_INCREMENT for table `key_users`
+-- AUTO_INCREMENT for table `key_types_security`
 --
-ALTER TABLE `key_users`
-  MODIFY `Key_UsersID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+ALTER TABLE `key_types_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT for table `laboratories_security`
+--
+ALTER TABLE `laboratories_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `lab_access_logs_security`
+--
+ALTER TABLE `lab_access_logs_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `lab_equipment_security`
+--
+ALTER TABLE `lab_equipment_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `lab_incidents_security`
+--
+ALTER TABLE `lab_incidents_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `learningmaterials`
 --
 ALTER TABLE `learningmaterials`
-  MODIFY `MaterialID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `MaterialID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `leave_requests`
@@ -5895,10 +5528,16 @@ ALTER TABLE `leave_requests`
   MODIFY `leave_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `lost_keys`
+-- AUTO_INCREMENT for table `lost_found_categories_security`
 --
-ALTER TABLE `lost_keys`
-  MODIFY `lost_key_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `lost_found_categories_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `lost_found_items_security`
+--
+ALTER TABLE `lost_found_items_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
 
 --
 -- AUTO_INCREMENT for table `materialaccesslog`
@@ -5910,19 +5549,13 @@ ALTER TABLE `materialaccesslog`
 -- AUTO_INCREMENT for table `materialfolder`
 --
 ALTER TABLE `materialfolder`
-  MODIFY `FolderID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT for table `notifications`
---
-ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `FolderID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `payments_doc`
@@ -5931,22 +5564,40 @@ ALTER TABLE `payments_doc`
   MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
+-- AUTO_INCREMENT for table `payroll`
+--
+ALTER TABLE `payroll`
+  MODIFY `payroll_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `payroll_audit`
+--
+ALTER TABLE `payroll_audit`
+  MODIFY `audit_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `permission_keys_security`
+--
+ALTER TABLE `permission_keys_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+
+--
 -- AUTO_INCREMENT for table `program`
 --
 ALTER TABLE `program`
-  MODIFY `ProgramID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `ProgramID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `qr_codes`
 --
 ALTER TABLE `qr_codes`
-  MODIFY `qr_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `qr_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `quiz`
 --
 ALTER TABLE `quiz`
-  MODIFY `QuizID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `QuizID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `quizanswer`
@@ -5964,37 +5615,61 @@ ALTER TABLE `quizattempt`
 -- AUTO_INCREMENT for table `quizchoice`
 --
 ALTER TABLE `quizchoice`
-  MODIFY `ChoiceID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ChoiceID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `quizquestion`
 --
 ALTER TABLE `quizquestion`
-  MODIFY `QuestionID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `QuestionID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `security_assignments_security`
+--
+ALTER TABLE `security_assignments_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `snapshots`
+--
+ALTER TABLE `snapshots`
+  MODIFY `snapshot_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `student`
 --
 ALTER TABLE `student`
-  MODIFY `StudID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2024119;
+  MODIFY `StudID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2024125;
 
 --
 -- AUTO_INCREMENT for table `student_guidance`
 --
 ALTER TABLE `student_guidance`
-  MODIFY `StudID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `StudGuidance_ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `subject`
 --
 ALTER TABLE `subject`
-  MODIFY `SubjectID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `SubjectID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- AUTO_INCREMENT for table `subjectenrollment`
+--
+ALTER TABLE `subjectenrollment`
+  MODIFY `EnrollID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `subsched`
 --
 ALTER TABLE `subsched`
-  MODIFY `SubSchedID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `SubSchedID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `system_logs_security`
+--
+ALTER TABLE `system_logs_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=425;
 
 --
 -- AUTO_INCREMENT for table `teacher_subjects`
@@ -6003,10 +5678,22 @@ ALTER TABLE `teacher_subjects`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT for table `thirteenth_month_payroll`
+--
+ALTER TABLE `thirteenth_month_payroll`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `UserID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `UserID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+
+--
+-- AUTO_INCREMENT for table `users_employee`
+--
+ALTER TABLE `users_employee`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `users_for_id`
@@ -6015,14 +5702,64 @@ ALTER TABLE `users_for_id`
   MODIFY `UserID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
+-- AUTO_INCREMENT for table `users_security`
+--
+ALTER TABLE `users_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
+
+--
+-- AUTO_INCREMENT for table `user_permissions_security`
+--
+ALTER TABLE `user_permissions_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1000;
+
+--
+-- AUTO_INCREMENT for table `violations_security`
+--
+ALTER TABLE `violations_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
+
+--
+-- AUTO_INCREMENT for table `violation_types_security`
+--
+ALTER TABLE `violation_types_security`
+  MODIFY `id_security` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `activity`
+--
+ALTER TABLE `activity`
+  ADD CONSTRAINT `activity_ibfk_2` FOREIGN KEY (`SubSchedID`) REFERENCES `subsched` (`SubSchedID`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `attendance_logs`
 --
 ALTER TABLE `attendance_logs`
   ADD CONSTRAINT `fk_attendance_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `attendance_logs_security`
+--
+ALTER TABLE `attendance_logs_security`
+  ADD CONSTRAINT `attendance_logs_security_ibfk_1` FOREIGN KEY (`user_id_security`) REFERENCES `users_security` (`id_security`),
+  ADD CONSTRAINT `fk_attendance_logs_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `attendance_schedules_security`
+--
+ALTER TABLE `attendance_schedules_security`
+  ADD CONSTRAINT `attendance_schedules_security_ibfk_1` FOREIGN KEY (`user_id_security`) REFERENCES `users_security` (`id_security`),
+  ADD CONSTRAINT `fk_attendance_schedules_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `cases`
+--
+ALTER TABLE `cases`
+  ADD CONSTRAINT `fk_cases_StudGuidance_ID` FOREIGN KEY (`StudGuidance_ID`) REFERENCES `student_guidance` (`StudGuidance_ID`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `employees`
@@ -6039,6 +5776,12 @@ ALTER TABLE `employee_schedules`
   ADD CONSTRAINT `fk_employee_schedules_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Constraints for table `enrollment`
+--
+ALTER TABLE `enrollment`
+  ADD CONSTRAINT `enrollment_ibfk_1` FOREIGN KEY (`SubSchedID`) REFERENCES `subsched` (`SubSchedID`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `gradesummary`
 --
 ALTER TABLE `gradesummary`
@@ -6046,10 +5789,65 @@ ALTER TABLE `gradesummary`
   ADD CONSTRAINT `gradesummary_ibfk_2` FOREIGN KEY (`SubSchedID`) REFERENCES `subsched` (`SubSchedID`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `guidance_users`
+--
+ALTER TABLE `guidance_users`
+  ADD CONSTRAINT `fk_guidance_users_UserID` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `instructor`
 --
 ALTER TABLE `instructor`
   ADD CONSTRAINT `instructor_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `key_management_security`
+--
+ALTER TABLE `key_management_security`
+  ADD CONSTRAINT `fk_key_management_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `key_management_security_ibfk_1` FOREIGN KEY (`key_type_id_security`) REFERENCES `key_types_security` (`id_security`),
+  ADD CONSTRAINT `key_management_security_ibfk_2` FOREIGN KEY (`current_holder_security`) REFERENCES `users_security` (`id_security`),
+  ADD CONSTRAINT `key_management_security_ibfk_3` FOREIGN KEY (`created_by_security`) REFERENCES `users_security` (`id_security`);
+
+--
+-- Constraints for table `key_transaction_logs_security`
+--
+ALTER TABLE `key_transaction_logs_security`
+  ADD CONSTRAINT `fk_key_transaction_logs_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `key_transaction_logs_security_ibfk_1` FOREIGN KEY (`key_id_security`) REFERENCES `key_management_security` (`id_security`),
+  ADD CONSTRAINT `key_transaction_logs_security_ibfk_2` FOREIGN KEY (`user_id_security`) REFERENCES `users_security` (`id_security`),
+  ADD CONSTRAINT `key_transaction_logs_security_ibfk_3` FOREIGN KEY (`admin_id_security`) REFERENCES `users_security` (`id_security`);
+
+--
+-- Constraints for table `laboratories_security`
+--
+ALTER TABLE `laboratories_security`
+  ADD CONSTRAINT `fk_laboratories_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `lab_access_logs_security`
+--
+ALTER TABLE `lab_access_logs_security`
+  ADD CONSTRAINT `fk_lab_access_logs_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `lab_access_logs_security_ibfk_1` FOREIGN KEY (`user_id_security`) REFERENCES `users_security` (`id_security`),
+  ADD CONSTRAINT `lab_access_logs_security_ibfk_2` FOREIGN KEY (`lab_id_security`) REFERENCES `laboratories_security` (`id_security`);
+
+--
+-- Constraints for table `lab_equipment_security`
+--
+ALTER TABLE `lab_equipment_security`
+  ADD CONSTRAINT `fk_lab_equipment_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `lab_equipment_security_ibfk_1` FOREIGN KEY (`lab_id_security`) REFERENCES `laboratories_security` (`id_security`);
+
+--
+-- Constraints for table `lab_incidents_security`
+--
+ALTER TABLE `lab_incidents_security`
+  ADD CONSTRAINT `fk_lab_incidents_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `lab_incidents_security_ibfk_1` FOREIGN KEY (`reported_by_security`) REFERENCES `users_security` (`id_security`),
+  ADD CONSTRAINT `lab_incidents_security_ibfk_2` FOREIGN KEY (`lab_id_security`) REFERENCES `laboratories_security` (`id_security`),
+  ADD CONSTRAINT `lab_incidents_security_ibfk_3` FOREIGN KEY (`equipment_id_security`) REFERENCES `lab_equipment_security` (`id_security`),
+  ADD CONSTRAINT `lab_incidents_security_ibfk_4` FOREIGN KEY (`resolved_by_security`) REFERENCES `users_security` (`id_security`);
 
 --
 -- Constraints for table `learningmaterials`
@@ -6067,11 +5865,28 @@ ALTER TABLE `leave_requests`
   ADD CONSTRAINT `fk_leave_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Constraints for table `lost_found_items_security`
+--
+ALTER TABLE `lost_found_items_security`
+  ADD CONSTRAINT `fk_lost_found_items_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `lost_found_items_security_ibfk_1` FOREIGN KEY (`reported_by_security`) REFERENCES `users_security` (`id_security`),
+  ADD CONSTRAINT `lost_found_items_security_ibfk_2` FOREIGN KEY (`category_id_security`) REFERENCES `lost_found_categories_security` (`id_security`),
+  ADD CONSTRAINT `lost_found_items_security_ibfk_3` FOREIGN KEY (`claimed_by_security`) REFERENCES `users_security` (`id_security`),
+  ADD CONSTRAINT `lost_found_items_security_ibfk_4` FOREIGN KEY (`resolved_by_security`) REFERENCES `users_security` (`id_security`);
+
+--
 -- Constraints for table `materialaccesslog`
 --
 ALTER TABLE `materialaccesslog`
   ADD CONSTRAINT `materialaccesslog_ibfk_1` FOREIGN KEY (`MaterialID`) REFERENCES `learningmaterials` (`MaterialID`) ON DELETE CASCADE,
   ADD CONSTRAINT `materialaccesslog_ibfk_2` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `overtime_requests`
+--
+ALTER TABLE `overtime_requests`
+  ADD CONSTRAINT `fk_ot_attendance` FOREIGN KEY (`attendance_log_id`) REFERENCES `attendance_logs` (`log_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_ot_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `payroll`
@@ -6120,10 +5935,74 @@ ALTER TABLE `quizquestion`
   ADD CONSTRAINT `quizquestion_ibfk_1` FOREIGN KEY (`QuizID`) REFERENCES `quiz` (`QuizID`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `security_assignments_security`
+--
+ALTER TABLE `security_assignments_security`
+  ADD CONSTRAINT `fk_security_assignments_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `security_assignments_security_ibfk_1` FOREIGN KEY (`guard_id_security`) REFERENCES `users_security` (`id_security`),
+  ADD CONSTRAINT `security_assignments_security_ibfk_2` FOREIGN KEY (`assigned_by_security`) REFERENCES `users_security` (`id_security`);
+
+--
+-- Constraints for table `snapshots`
+--
+ALTER TABLE `snapshots`
+  ADD CONSTRAINT `fk_snapshots_attendance` FOREIGN KEY (`attendance_log_id`) REFERENCES `attendance_logs` (`log_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `student`
 --
 ALTER TABLE `student`
   ADD CONSTRAINT `student_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `student_guidance`
+--
+ALTER TABLE `student_guidance`
+  ADD CONSTRAINT `fk_student_guidance_StudID` FOREIGN KEY (`StudID`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `subjectenrollment`
+--
+ALTER TABLE `subjectenrollment`
+  ADD CONSTRAINT `fk_subjectenrollment_period` FOREIGN KEY (`EPeriodID`) REFERENCES `enrollperiod` (`EPeriodID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_subjectenrollment_student` FOREIGN KEY (`StudID`) REFERENCES `student` (`StudID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_subjectenrollment_subject` FOREIGN KEY (`SubjectID`) REFERENCES `subject` (`SubjectID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `system_logs_security`
+--
+ALTER TABLE `system_logs_security`
+  ADD CONSTRAINT `fk_system_logs_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `system_logs_security_ibfk_1` FOREIGN KEY (`user_id_security`) REFERENCES `users_security` (`id_security`);
+
+--
+-- Constraints for table `users_security`
+--
+ALTER TABLE `users_security`
+  ADD CONSTRAINT `fk_users_security_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `user_permissions_security`
+--
+ALTER TABLE `user_permissions_security`
+  ADD CONSTRAINT `fk_user_permissions_student` FOREIGN KEY (`student_id_security`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `user_permissions_security_ibfk_1` FOREIGN KEY (`user_id_security`) REFERENCES `users_security` (`id_security`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_permissions_security_ibfk_2` FOREIGN KEY (`granted_by_security`) REFERENCES `users_security` (`id_security`);
+
+--
+-- Constraints for table `violations_security`
+--
+ALTER TABLE `violations_security`
+  ADD CONSTRAINT `fk_violations_student` FOREIGN KEY (`student_id_security_foreign`) REFERENCES `student` (`StudID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `violations_security_ibfk_1` FOREIGN KEY (`reported_by_security`) REFERENCES `users_security` (`id_security`),
+  ADD CONSTRAINT `violations_security_ibfk_2` FOREIGN KEY (`violation_type_id_security`) REFERENCES `violation_types_security` (`id_security`),
+  ADD CONSTRAINT `violations_security_ibfk_3` FOREIGN KEY (`reviewed_by_security`) REFERENCES `users_security` (`id_security`);
+
+--
+-- Constraints for table `violation_types_security`
+--
+ALTER TABLE `violation_types_security`
+  ADD CONSTRAINT `violation_types_security_ibfk_1` FOREIGN KEY (`created_by_security`) REFERENCES `users_security` (`id_security`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

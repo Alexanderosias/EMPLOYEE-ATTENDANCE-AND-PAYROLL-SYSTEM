@@ -12,14 +12,14 @@ try {
     $db = conn();
     $mysqli = $db['mysqli'];
 
-    // Resolve logged-in employee
+    // Resolve logged-in employee (employees.employee_id is PK in systemintegration schema)
     $userId = $_SESSION['user_id'] ?? null;
     if (!$userId) {
         http_response_code(401);
         echo json_encode(['success' => false, 'message' => 'Not logged in']);
         exit;
     }
-    $empStmt = $mysqli->prepare("SELECT id FROM employees WHERE user_id = ? LIMIT 1");
+    $empStmt = $mysqli->prepare("SELECT employee_id FROM employees WHERE user_id = ? LIMIT 1");
     $empStmt->bind_param('i', $userId);
     $empStmt->execute();
     $emp = $empStmt->get_result()->fetch_assoc();
@@ -29,7 +29,7 @@ try {
         echo json_encode(['success' => false, 'message' => 'Employee not found']);
         exit;
     }
-    $employeeId = (int)$emp['id'];
+    $employeeId = (int)$emp['employee_id'];
 
     $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
@@ -77,7 +77,7 @@ try {
             $end   = $endDt->format('Y-m-d');
         }
 
-        $sql = "SELECT id, payroll_period_start, payroll_period_end, gross_pay,
+        $sql = "SELECT payroll_id AS id, payroll_period_start, payroll_period_end, gross_pay,
                        philhealth_deduction, sss_deduction, pagibig_deduction,
                        other_deductions, total_deductions, net_pay, paid_status,
                        payment_date

@@ -148,7 +148,8 @@
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="dateOfBirth">Date of Birth</label>
-                                        <input type="date" id="dateOfBirth" readonly />
+                                        <input type="date" id="dateOfBirth" style="display:none;" />
+                                        <input type="text" id="dateOfBirthDisplay" readonly />
                                     </div>
                                     <div class="form-group">
                                         <label for="gender">Gender</label>
@@ -266,6 +267,7 @@
                 const phoneEl = document.getElementById('phoneNumber');
                 const addressEl = document.getElementById('address');
                 const dateOfBirthEl = document.getElementById('dateOfBirth');
+                const dateOfBirthDisplayEl = document.getElementById('dateOfBirthDisplay');
                 const genderEl = document.getElementById('gender');
 
                 const civilStatusEl = document.getElementById('civilStatus');
@@ -277,7 +279,33 @@
                 const saveBtn = document.querySelector('.btn.btn-primary');
                 let isEditingProfile = false;
 
+                function formatDobDisplay(isoDate) {
+                    if (!isoDate) return '';
+                    const clean = String(isoDate).split(' ')[0];
+                    const parts = clean.split('-');
+                    if (parts.length !== 3) return '';
+                    const year = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10);
+                    const day = parseInt(parts[2], 10);
+                    if (!year || !month || !day) return '';
+                    const months = [
+                        'January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'
+                    ];
+                    if (month < 1 || month > 12) return '';
+                    return months[month - 1] + ' ' + day + ', ' + year;
+                }
+
+                function cleanPhoneNumber(phone) {
+                    return (phone || '').replace(/\D/g, '');
+                }
+
+                function isValidPhone11(phoneDigits) {
+                    return /^09\d{9}$/.test(phoneDigits);
+                }
+
                 async function loadProfile() {
+
                     try {
                         const res = await fetch('../views/employee_profile_handler.php?action=get_profile');
                         const result = await res.json();
@@ -290,7 +318,14 @@
                         emailEl.value = d.email || '';
                         phoneEl.value = d.contact_number || d.phone_number || '';
                         addressEl.value = d.address || '';
-                        if (dateOfBirthEl) dateOfBirthEl.value = (d.date_of_birth || '').split(' ')[0] || '';
+                        if (dateOfBirthEl) {
+                            const rawDob = (d.date_of_birth || '').split(' ')[0] || '';
+                            dateOfBirthEl.value = rawDob;
+                            if (dateOfBirthDisplayEl) {
+                                dateOfBirthDisplayEl.value = formatDobDisplay(rawDob) || '';
+                            }
+                        }
+
                         genderEl.value = d.gender || '';
                         civilStatusEl.value = d.marital_status || '';
 
@@ -307,6 +342,11 @@
                 function setEditable(editing) {
                     const fields = [firstNameEl, lastNameEl, phoneEl, addressEl, dateOfBirthEl, emergencyNameEl, emergencyPhoneEl];
                     fields.forEach((el) => el && (el.readOnly = !editing));
+                    if (dateOfBirthEl && dateOfBirthDisplayEl) {
+                        dateOfBirthEl.style.display = editing ? '' : 'none';
+                        dateOfBirthDisplayEl.style.display = editing ? 'none' : '';
+                    }
+
                     if (editBtn && saveBtn) {
                         editBtn.style.display = editing ? 'none' : 'inline-flex';
                         saveBtn.style.display = editing ? 'inline-flex' : 'none';
@@ -320,15 +360,33 @@
 
                 async function saveProfile() {
                     try {
+                        const rawPhone = phoneEl.value.trim();
+                        const rawEmergency = emergencyPhoneEl.value.trim();
+                        const phoneDigits = cleanPhoneNumber(rawPhone);
+                        const emergencyDigits = cleanPhoneNumber(rawEmergency);
+
+                        if (!phoneDigits) {
+                            showStatus('Phone number is required', 'error');
+                            return;
+                        }
+                        if (!isValidPhone11(phoneDigits)) {
+                            showStatus('Phone number must be 11 digits and start with 09', 'error');
+                            return;
+                        }
+                        if (emergencyDigits && !isValidPhone11(emergencyDigits)) {
+                            showStatus('Emergency contact phone must be 11 digits and start with 09', 'error');
+                            return;
+                        }
+
                         const fd = new FormData();
                         fd.append('action', 'update_profile');
                         fd.append('first_name', firstNameEl.value.trim());
                         fd.append('last_name', lastNameEl.value.trim());
-                        fd.append('phone_number', phoneEl.value.trim());
+                        fd.append('phone_number', phoneDigits);
                         fd.append('address', addressEl.value.trim());
                         fd.append('date_of_birth', dateOfBirthEl ? dateOfBirthEl.value.trim() : '');
                         fd.append('emergency_contact_name', emergencyNameEl.value.trim());
-                        fd.append('emergency_contact_phone', emergencyPhoneEl.value.trim());
+                        fd.append('emergency_contact_phone', emergencyDigits);
 
                         const res = await fetch('../views/employee_profile_handler.php', { method: 'POST', body: fd });
                         const result = await res.json();
