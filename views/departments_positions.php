@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'auth.php';
 require_once 'conn.php';  
 
-define('BASE_PATH', ''); // Change to '' for localhost:8000, or '/newpath' for Hostinger
+define('BASE_PATH', '/eaaps'); // XAMPP Apache path, adjust for other deployments
 
 $db = null;
 $mysqli = null;

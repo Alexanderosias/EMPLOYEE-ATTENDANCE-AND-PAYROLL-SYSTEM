@@ -1,0 +1,68 @@
+/* Employee Payroll - responsive table styles */
+
+@media (max-width: 750px) {
+  /* Payroll filters + Apply button layout on mobile */
+  .payroll-filters {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .payroll-filters > div {
+    width: 100%;
+  }
+
+  .payroll-filters input[type="date"],
+  .payroll-filters select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .payroll-filters #pay-apply {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Stack payroll table rows as vertical cards on mobile */
+  .payroll-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .payroll-table thead {
+    display: none;
+  }
+
+  .payroll-table tbody,
+  .payroll-table tr,
+  .payroll-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .payroll-table tr {
+    margin-bottom: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .payroll-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+  }
+
+  .payroll-table td::before {
+    font-weight: 600;
+    color: #4b5563; /* text-gray-600 */
+  }
+
+  .payroll-table td:nth-child(1)::before { content: 'Period'; }
+  .payroll-table td:nth-child(2)::before { content: 'Gross'; }
+  .payroll-table td:nth-child(3)::before { content: 'Deductions'; }
+  .payroll-table td:nth-child(4)::before { content: 'Net'; }
+  .payroll-table td:nth-child(5)::before { content: 'Status'; }
+  .payroll-table td:nth-child(6)::before { content: 'Payment Date'; }
+}

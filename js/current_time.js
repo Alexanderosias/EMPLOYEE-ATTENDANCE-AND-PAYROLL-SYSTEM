@@ -52,6 +52,33 @@ function updateDateTime() {
 
   const formattedTime = `${hours}:${minutes}:${seconds} ${ampm}`;
 
+  // Compact format for small screens (mobile/tablet): e.g. "Sat, Dec 21 10:24 PM"
+  const isSmallScreen = window.matchMedia && window.matchMedia("(max-width: 750px)").matches;
+  if (isSmallScreen) {
+    const shortDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const shortMonths = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    const shortDay = shortDays[now.getDay()];
+    const shortMonth = shortMonths[now.getMonth()];
+    const compactTime = `${hours}:${minutes} ${ampm}`; // no seconds
+
+    document.getElementById("current-datetime").textContent = `${shortDay}, ${shortMonth} ${day} ${compactTime}`;
+    return;
+  }
+
   let formattedDate;
   if (dateFormat === "MM/DD/YYYY") {
     formattedDate = `${monthName} ${day}, ${year}`;

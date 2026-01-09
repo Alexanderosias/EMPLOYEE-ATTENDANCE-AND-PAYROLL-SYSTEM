@@ -1,4 +1,4 @@
-const BASE_PATH = ""; // Change to '' for localhost:8000, or '/newpath' for Hostinger
+const BASE_PATH = "/eaaps"; // XAMPP Apache base path
 const API_BASE = BASE_PATH + "/views/users_handler.php";
 
 // FETCH USERS

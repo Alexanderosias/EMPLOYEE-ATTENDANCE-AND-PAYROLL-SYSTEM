@@ -16,62 +16,111 @@
     <link rel="icon" href="../pages/img/adfc_logo.png" type="image/x-icon">
     <link rel="stylesheet" href="../pages/css/dashboard.css">
     <link rel="stylesheet" href="css/status-message.css">
+    <link rel="stylesheet" href="css/employee_attendance.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('eaaps_employee_sidebar_collapsed');
+                if (saved === '1') {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
+            } catch (e) {
+                // ignore
+            }
+        })();
+    </script>
 </head>
 
-<body>
+<body class="employee-layout">
     <div id="status-message" class="status-message"></div>
     <div class="flex min-h-screen">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <a class="sidebar-header" href="#">
-                <img src="../pages/img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="Logo" class="logo" />
-                <span class="app-name">EAAPS Employee</span>
-            </a>
+            <div class="sidebar-header">
+                <img id="sidebarProfileAvatar" src="../pages/icons/profile-picture.png" alt="Profile" class="logo" />
+                <span class="app-name" id="sidebarProfileName">Employee</span>
+                <button type="button" class="header-menu-btn" aria-label="Open navigation menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
             <nav class="sidebar-nav">
                 <ul>
                     <li>
-                        <a href="employee_dashboard.php">
-                            <img src="../pages/icons/home.png" alt="Dashboard" class="icon" />
+                        <a href="employee_dashboard.php" title="Dashboard">
+                            <img src="../pages/icons/home.png" alt="Dashboard" class="icon" style="height:24px; width:auto;" />
                             Dashboard
                         </a>
                     </li>
                     <li class="active">
-                        <a href="#">
-                            <img src="../pages/icons/clock.png" alt="Attendance" class="icon" />
+                        <a href="#" title="Attendance">
+                            <img src="../pages/icons/clock.png" alt="Attendance" class="icon" style="height:24px; width:auto;" />
                             Attendance
                         </a>
                     </li>
                     <li>
-                        <a href="employee_schedule.php">
-                            <img src="../pages/icons/calendar-deadline-date.png" alt="Schedule" class="icon" />
+                        <a href="employee_schedule.php" title="Schedule">
+                            <img src="../pages/icons/calendar-deadline-date.png" alt="Schedule" class="icon" style="height:24px; width:auto;" />
                             Schedule
                         </a>
                     </li>
                     <li>
-                        <a href="employee_payroll.php">
-                            <img src="../pages/icons/cash.png" alt="Payroll" class="icon" />
+                        <a href="employee_payroll.php" title="Payroll">
+                            <img src="../pages/icons/cash.png" alt="Payroll" class="icon" style="height:24px; width:auto;" />
                             Payroll
                         </a>
                     </li>
                     <li>
-                        <a href="employee_leave.php">
-                            <img src="../pages/icons/swap.png" alt="Leave" class="icon" />
+                        <a href="employee_leave.php" title="Leave">
+                            <img src="../pages/icons/swap.png" alt="Leave" class="icon" style="height:24px; width:auto;" />
                             Leave
                         </a>
                     </li>
                     <li>
-                        <a href="employee_profile.php">
-                            <img src="../pages/icons/user.png" alt="Profile" class="icon" />
+                        <a href="employee_profile.php" title="Profile">
+                            <img src="../pages/icons/user.png" alt="Profile" class="icon" style="height:24px; width:auto;" />
                             Profile
                         </a>
                     </li>
                 </ul>
             </nav>
-            <a class="logout-btn" href="../index.html">
-                <img src="../pages/icons/sign-out-option.png" alt="Logout" class="logout-icon" />
+
+            <div class="employee-mobile-menu">
+                <a href="employee_dashboard.php" class="employee-mobile-menu-item">
+                    <img src="../pages/icons/home.png" alt="Dashboard" class="icon" />
+                    Dashboard
+                </a>
+                <a href="employee_attendance.php" class="employee-mobile-menu-item">
+                    <img src="../pages/icons/clock.png" alt="Attendance" class="icon" />
+                    Attendance
+                </a>
+                <a href="employee_schedule.php" class="employee-mobile-menu-item">
+                    <img src="../pages/icons/calendar-deadline-date.png" alt="Schedule" class="icon" />
+                    Schedule
+                </a>
+                <a href="employee_payroll.php" class="employee-mobile-menu-item">
+                    <img src="../pages/icons/cash.png" alt="Payroll" class="icon" />
+                    Payroll
+                </a>
+                <a href="employee_leave.php" class="employee-mobile-menu-item">
+                    <img src="../pages/icons/swap.png" alt="Leave" class="icon" />
+                    Leave
+                </a>
+                <a href="employee_profile.php" class="employee-mobile-menu-item">
+                    <img src="../pages/icons/user.png" alt="Profile" class="icon" />
+                    Profile
+                </a>
+                <a href="../index.html" class="employee-mobile-menu-item employee-mobile-menu-logout">
+                    <img src="../pages/icons/sign-out-option.png" alt="Logout" class="icon" />
+                    Logout
+                </a>
+            </div>
+
+            <a class="logout-btn" href="../index.html" title="Logout">
+                <img src="../pages/icons/sign-out-option.png" alt="Logout" class="logout-icon" style="height:24px; width:auto;" />
                 Logout
             </a>
         </aside>
@@ -80,7 +129,10 @@
         <main class="main-content">
             <header class="dashboard-header">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <button id="sidebarToggle" class="sidebar-toggle-btn" type="button" aria-label="Toggle sidebar">
+                            <i class="fas fa-bars"></i>
+                        </button>
                         <h2>View Attendance</h2>
                     </div>
                     <div>
@@ -112,7 +164,7 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap items-end gap-3 mb-4">
+                    <div class="flex flex-wrap items-end gap-3 mb-4 attendance-filters">
                         <div>
                             <label for="att-start" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
                             <input id="att-start" type="date" class="border rounded px-3 py-2" />
@@ -148,7 +200,7 @@
                     </div>
 
                     <div class="rounded-xl border bg-white shadow-sm p-2 overflow-x-auto">
-                        <table class="min-w-full text-sm">
+                        <table class="min-w-full text-sm attendance-table">
                             <thead class="bg-gray-50 text-gray-700">
                                 <tr>
                                     <th class="text-left p-2">Date</th>
@@ -169,6 +221,8 @@
     </div>
 
     <script src="../js/dashboard.js"></script>
+    <script src="../js/employee_sidebar_toggle.js"></script>
+    <script src="../js/employee_sidebar_profile.js"></script>
     <script src="../js/current_time.js"></script>
     <script>
         function showStatus(message, type = 'success') {

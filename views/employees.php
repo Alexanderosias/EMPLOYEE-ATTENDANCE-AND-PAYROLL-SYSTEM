@@ -8,7 +8,7 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-define('BASE_PATH', ''); // Change to '' for localhost:8000, or '/newpath' for Hostinger
+define('BASE_PATH', '/eaaps'); // XAMPP Apache base path
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);

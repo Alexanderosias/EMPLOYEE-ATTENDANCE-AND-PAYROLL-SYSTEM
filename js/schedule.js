@@ -1,7 +1,7 @@
-const BASE_PATH = ""; // Change to '' for localhost:8000, or '/newpath' for Hostinger
+const BASE_PATH = "/eaaps"; // XAMPP Apache base path
 
-// Backend endpoint (path is relative to pages/*.php, e.g., pages/schedule_page.php)
-const API_BASE = "../views/schedules.php";
+// Backend endpoint (path is relative to project root when served from /eaaps)
+const API_BASE = BASE_PATH + "/views/schedules.php";
 
 function showStatus(message, type = "success") {
   const statusDiv = document.getElementById("status-message");

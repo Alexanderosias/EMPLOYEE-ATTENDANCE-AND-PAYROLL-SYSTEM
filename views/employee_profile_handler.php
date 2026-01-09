@@ -70,12 +70,15 @@ function ep_generate_qr($mysqli, $employeeId)
     $first = trim(preg_replace('/[|:]/', '', $emp['first_name'] ?? 'EMP'));
     if ($first === '') $first = 'EMP';
     $last  = trim(preg_replace('/[|:]/', '', $emp['last_name'] ?? ''));
-    $pos = trim($emp['position_name'] ?? 'N/A');
+    $pos = trim(preg_replace('/[|:]/', '', $emp['position_name'] ?? 'N/A'));
     $joined = (!empty($emp['date_joined']) && $emp['date_joined'] !== '0000-00-00') ? $emp['date_joined'] : 'N/A';
+    // Include ID for debugging but keep the same core keys the scanner expects
     $qr_data = "ID:$id|First:$first|Last:$last|Position:$pos|Joined:$joined";
 
     $dir = '../qrcodes/';
-    if (!is_dir($dir)) mkdir($dir, 0755, true);
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
     $base = $first . $last;
     if ($base === '') $base = 'EMP' . $id;
     $filename = $base . '.png';
@@ -84,7 +87,7 @@ function ep_generate_qr($mysqli, $employeeId)
         $filename = $base . '_' . $id . '_' . $counter . '.png';
         $counter++;
     }
-    $file_path = $dir . $filename;
+    $file_path = rtrim($dir, '/\\') . '/' . $filename;
     $web_path = 'qrcodes/' . $filename;
 
     // Generate PNG data using chillerlan/php-qrcode and write it to file
@@ -100,12 +103,26 @@ function ep_generate_qr($mysqli, $employeeId)
         return [null, null];
     }
 
+    // In some library versions render() returns a data URI; decode it if needed
+    if (strpos($imageData, 'data:') === 0) {
+        $base64Data = substr($imageData, strpos($imageData, ',') + 1);
+        $imageData = base64_decode($base64Data);
+        if ($imageData === false) {
+            error_log('Failed to decode Base64 QR image data (ep_generate_qr)');
+            return [null, null];
+        }
+    }
+
     if (file_put_contents($file_path, $imageData) === false) {
         error_log('Failed to write QR image file (ep_generate_qr): ' . $file_path);
         return [null, null];
     }
 
-    if (!file_exists($file_path)) return [null, null];
+    if (!file_exists($file_path)) {
+        error_log('QR generation reported success but file not found (ep_generate_qr): ' . $file_path);
+        return [null, null];
+    }
+
     return [$web_path, $qr_data];
 }
 

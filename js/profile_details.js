@@ -1,4 +1,4 @@
-const BASE_PATH = ""; // Change for deployment
+const BASE_PATH = "/eaaps"; // XAMPP Apache base path
 const API_BASE = BASE_PATH + "/views/profile_handler.php";
 
 let isEditMode = false;

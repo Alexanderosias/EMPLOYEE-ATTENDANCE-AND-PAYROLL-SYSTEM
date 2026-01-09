@@ -1,0 +1,22 @@
+/* Employee Schedule - responsive tweaks */
+
+@media (max-width: 750px) {
+  /* Stack weekly schedule rows vertically on small screens */
+  #weekly-schedule > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 8px 4px;
+  }
+
+  /* Slight separation between day rows */
+  #weekly-schedule > div + div {
+    border-top: 1px solid #e5e7eb;
+  }
+
+  /* Badge (Working / Off) below the time text */
+  #weekly-schedule > div > div:last-child {
+    margin-top: 2px;
+  }
+}

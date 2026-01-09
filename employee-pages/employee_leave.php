@@ -11,60 +11,109 @@
   <link rel="stylesheet" href="css/status-message.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('eaaps_employee_sidebar_collapsed');
+        if (saved === '1') {
+          document.documentElement.classList.add('sidebar-collapsed');
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+  </script>
 </head>
 
-<body>
+<body class="employee-layout">
+
   <!-- Status Message (for feedback) -->
   <div id="status-message" class="status-message"></div>
 
   <!-- Sidebar (Preserved with Custom CSS) -->
   <aside class="sidebar">
-    <a class="sidebar-header" href="#">
-      <img src="../pages/img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="Logo" class="logo" />
-      <span class="app-name">EAAPS Employee</span>
-    </a>
+    <div class="sidebar-header">
+      <img id="sidebarProfileAvatar" src="../pages/icons/profile-picture.png" alt="Profile" class="logo" />
+      <span class="app-name" id="sidebarProfileName">Employee</span>
+      <button type="button" class="header-menu-btn" aria-label="Open navigation menu">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+
     <nav class="sidebar-nav">
       <ul>
         <li>
-          <a href="employee_dashboard.php">
-            <img src="../pages/icons/home.png" alt="Dashboard" class="icon" />
+          <a href="employee_dashboard.php" title="Dashboard">
+            <img src="../pages/icons/home.png" alt="Dashboard" class="icon" style="height:24px; width:auto;" />
             Dashboard
           </a>
         </li>
         <li>
-          <a href="employee_attendance.php">
-            <img src="../pages/icons/clock.png" alt="Attendance" class="icon" />
+          <a href="employee_attendance.php" title="Attendance">
+            <img src="../pages/icons/clock.png" alt="Attendance" class="icon" style="height:24px; width:auto;" />
             Attendance
           </a>
         </li>
         <li>
-          <a href="employee_schedule.php">
-            <img src="../pages/icons/calendar-deadline-date.png" alt="Schedule" class="icon" />
+          <a href="employee_schedule.php" title="Schedule">
+            <img src="../pages/icons/calendar-deadline-date.png" alt="Schedule" class="icon" style="height:24px; width:auto;" />
             Schedule
           </a>
         </li>
         <li>
-          <a href="employee_payroll.php">
-            <img src="../pages/icons/cash.png" alt="Payroll" class="icon" />
+          <a href="employee_payroll.php" title="Payroll">
+            <img src="../pages/icons/cash.png" alt="Payroll" class="icon" style="height:24px; width:auto;" />
             Payroll
           </a>
         </li>
         <li class="active">
-          <a href="#">
-            <img src="../pages/icons/swap.png" alt="Leave" class="icon" />
+          <a href="#" title="Leave">
+            <img src="../pages/icons/swap.png" alt="Leave" class="icon" style="height:24px; width:auto;" />
             Leave
           </a>
         </li>
         <li>
-          <a href="employee_profile.php">
-            <img src="../pages/icons/user.png" alt="Profile" class="icon" />
+          <a href="employee_profile.php" title="Profile">
+            <img src="../pages/icons/user.png" alt="Profile" class="icon" style="height:24px; width:auto;" />
             Profile
           </a>
         </li>
       </ul>
     </nav>
-    <a class="logout-btn" href="../index.html">
-      <img src="../pages/icons/sign-out-option.png" alt="Logout" class="logout-icon" />
+
+    <div class="employee-mobile-menu">
+      <a href="employee_dashboard.php" class="employee-mobile-menu-item">
+        <img src="../pages/icons/home.png" alt="Dashboard" class="icon" />
+        Dashboard
+      </a>
+      <a href="employee_attendance.php" class="employee-mobile-menu-item">
+        <img src="../pages/icons/clock.png" alt="Attendance" class="icon" />
+        Attendance
+      </a>
+      <a href="employee_schedule.php" class="employee-mobile-menu-item">
+        <img src="../pages/icons/calendar-deadline-date.png" alt="Schedule" class="icon" />
+        Schedule
+      </a>
+      <a href="employee_payroll.php" class="employee-mobile-menu-item">
+        <img src="../pages/icons/cash.png" alt="Payroll" class="icon" />
+        Payroll
+      </a>
+      <a href="employee_leave.php" class="employee-mobile-menu-item">
+        <img src="../pages/icons/swap.png" alt="Leave" class="icon" />
+        Leave
+      </a>
+      <a href="employee_profile.php" class="employee-mobile-menu-item">
+        <img src="../pages/icons/user.png" alt="Profile" class="icon" />
+        Profile
+      </a>
+      <a href="../index.html" class="employee-mobile-menu-item employee-mobile-menu-logout">
+        <img src="../pages/icons/sign-out-option.png" alt="Logout" class="icon" />
+        Logout
+      </a>
+    </div>
+
+    <a class="logout-btn" href="../index.html" title="Logout">
+      <img src="../pages/icons/sign-out-option.png" alt="Logout" class="logout-icon" style="height:24px; width:auto;" />
       Logout
     </a>
   </aside>
@@ -73,7 +122,10 @@
   <main class="main-content">
     <header class="dashboard-header">
       <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button id="sidebarToggle" class="sidebar-toggle-btn" type="button" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
           <h2>Request Leave</h2>
         </div>
         <div>
@@ -106,13 +158,13 @@
 
       <!-- Request Leave Button -->
       <div class="mb-6">
-        <button id="request-leave-btn" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-200">
+        <button id="request-leave-btn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200">
           <i class="fas fa-plus mr-2"></i>Request New Leave
         </button>
       </div>
 
       <!-- Filters (Matching Admin Style) -->
-      <div class="flex flex-wrap items-center justify-between gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100 leave-filters">
         <div class="flex items-center gap-4 flex-1">
           <div class="relative flex-1 max-w-md">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -131,7 +183,7 @@
 
       <!-- Leave Requests Table (Matching Admin Style) -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="min-w-full divide-y divide-gray-200 leave-table">
           <thead class="bg-gray-50">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
@@ -164,7 +216,7 @@
         <form id="leave-form" class="mt-2 space-y-4">
           <div>
             <label for="leave-type" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Leave Type</label>
-            <select id="leave-type" name="leave-type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+            <select id="leave-type" name="leave-type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
               <option value="">Select Type</option>
               <option value="Paid">Paid Leave</option>
               <option value="Unpaid">Unpaid Leave</option>
@@ -175,14 +227,14 @@
             Available: <span id="available-balance">0</span> days
           </div>
           <!-- Start and End Date Fields Side-by-Side -->
-          <div class="flex gap-4">
+          <div class="flex gap-4 leave-date-row">
             <div class="flex-1">
               <label for="leave-start" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Start Date</label>
-              <input type="date" id="leave-start" name="leave-start" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+              <input type="date" id="leave-start" name="leave-start" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
             </div>
             <div class="flex-1">
               <label for="leave-end" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">End Date</label>
-              <input type="date" id="leave-end" name="leave-end" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+              <input type="date" id="leave-end" name="leave-end" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
             </div>
           </div>
           <div>
@@ -192,7 +244,7 @@
           </div>
           <div>
             <label for="leave-reason" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Reason</label>
-            <textarea style="resize: vertical; min-height: 100px; max-height: 250px;" id="leave-reason" name="leave-reason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
+            <textarea style="resize: vertical; min-height: 100px; max-height: 250px;" id="leave-reason" name="leave-reason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required></textarea>
           </div>
           <div>
             <label for="leave-proof" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Proof (optional)</label>
@@ -201,7 +253,7 @@
               id="leave-proof"
               name="leave-proof"
               accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             <p class="text-gray-400 text-xs mt-1">Accepted: images (jpg, png, gif), PDF, Word (doc, docx)</p>
           </div>
           <div id="error-message" class="text-red-600 text-sm hidden"></div>
@@ -210,7 +262,7 @@
               <button type="button" id="cancel-leave-btn" class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none" aria-label="Cancel request">
                 Cancel
               </button>
-              <button type="submit" id="submit-leave-btn" class="flex-1 px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300" aria-label="Submit request">
+              <button type="submit" id="submit-leave-btn" class="flex-1 px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300" aria-label="Submit request">
                 Submit
               </button>
             </div>
@@ -248,7 +300,7 @@
   <!-- View Leave Request Modal -->
   <div id="view-leave-modal" class="fixed inset-0 bg-gray-600 bg-opacity-40 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center" role="dialog" aria-labelledby="title" aria-modal="true" aria-hidden="true">
     <div class="relative mx-auto p-5 border shadow-lg rounded-md bg-white">
-      <div style="min-width: 450px; max-width: 650px;" class="mt-3">
+      <div id="view-leave-modal-content" class="mt-3">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg leading-6 font-medium text-gray-900" id="view-modal-title">Leave Request Details</h3>
           <button id="view-close-modal-x" class="text-gray-400 hover:text-gray-500 focus:outline-none" aria-label="Close modal">
@@ -315,8 +367,11 @@
   </div>
 
   <script src="../js/dashboard.js"></script>
+  <script src="../js/employee_sidebar_toggle.js"></script>
+  <script src="../js/employee_sidebar_profile.js"></script>
   <script src="../js/current_time.js"></script>
   <script src="../js/employee_leave.js"></script>
+
 </body>
 
 </html>

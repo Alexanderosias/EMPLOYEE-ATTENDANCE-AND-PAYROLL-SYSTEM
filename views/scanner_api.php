@@ -185,7 +185,7 @@ switch ($action) {
             // Load grace periods from settings
             $graceInMinutes = 0;
             $graceOutMinutes = 0;
-            $gpRes = $mysqli->query("SELECT grace_in_minutes, grace_out_minutes FROM time_date_settings LIMIT 1");
+            $gpRes = $mysqli->query("SELECT * FROM time_date_settings LIMIT 1");
             if ($gpRes) {
                 $gpRow = $gpRes->fetch_assoc();
                 if ($gpRow) {
@@ -196,7 +196,7 @@ switch ($action) {
 
             // Load auto OT limit from attendance_settings (defaults to 30 minutes)
             $autoOtMinutes = 30;
-            $attRes = $mysqli->query("SELECT auto_ot_minutes FROM attendance_settings LIMIT 1");
+            $attRes = $mysqli->query("SELECT * FROM attendance_settings LIMIT 1");
             if ($attRes) {
                 $attRow = $attRes->fetch_assoc();
                 if ($attRow && isset($attRow['auto_ot_minutes'])) {
