@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'conn.php';
 require_once 'auth.php'; // Ensure session is started
 
-define('BASE_PATH', ''); // Change for deployment
+define('BASE_PATH', '/eaaps'); // XAMPP Apache base path
 
 $db = null;
 $mysqli = null;

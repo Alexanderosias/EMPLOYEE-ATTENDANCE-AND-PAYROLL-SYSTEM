@@ -67,10 +67,50 @@ main::-webkit-scrollbar-thumb:hover {
   flex-direction: column;
   padding: 20px 0;
   transform: translateX(0);
-  transition: transform 0.5s ease;
+  transition: width 0.15s ease, transform 0.15s ease;
   box-shadow: 3px 0 6px rgba(0, 0, 0, 0.5);
   user-select: none;
   z-index: 1000;
+}
+
+/* Collapsed sidebar state for employee pages */
+.sidebar-collapsed .sidebar {
+  width: 80px;
+}
+
+.sidebar-collapsed .main-content {
+  left: 80px;
+}
+
+.sidebar-collapsed .dashboard-header {
+  left: 80px;
+}
+
+.sidebar-collapsed .sidebar-header {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar-collapsed .sidebar-header .logo {
+  margin-right: 0;
+}
+
+.sidebar-collapsed .sidebar-header .app-name {
+  display: none;
+}
+
+.sidebar-collapsed .sidebar-nav a,
+.sidebar-collapsed .logout-btn {
+  justify-content: center !important;
+  font-size: 0 !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+.sidebar-collapsed .sidebar-nav .icon,
+.sidebar-collapsed .logout-btn .logout-icon {
+  margin-right: 0;
 }
 
 .sidebar-header {
@@ -79,6 +119,7 @@ main::-webkit-scrollbar-thumb:hover {
   text-decoration: none;
   align-items: center;
   padding: 0 20px 20px 20px;
+  box-sizing: border-box;
   overflow: hidden;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -140,7 +181,7 @@ main::-webkit-scrollbar-thumb:hover {
   text-decoration: none !important;
   font-size: 0.8em !important;
   line-height: 1 !important;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease, font-size 0.15s ease, padding 0.15s ease;
 }
 
 .sidebar-nav a:hover {
@@ -153,9 +194,12 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .sidebar-nav .icon {
-  width: 20px;
-  height: 20px;
+  height: auto !important;
+  width: auto !important;
+  max-height: 26px;
+  max-width: 26px;
   margin-right: 15px;
+  object-fit: contain;
 }
 
 /* Logout button styles */
@@ -180,9 +224,12 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .logout-btn .logout-icon {
-  width: 20px;
-  height: 20px;
+  height: auto !important;
+  width: auto !important;
+  max-height: 26px;
+  max-width: 26px;
   margin-right: 10px;
+  object-fit: contain;
 }
 
 .main-content {
@@ -193,7 +240,7 @@ main::-webkit-scrollbar-thumb:hover {
   left: 250px;
   bottom: 0;
   right: 0;
-  transition: margin-left 0.5s ease, padding 0.5s ease;
+  transition: left 0.15s ease, padding 0.15s ease;
   overflow: auto;
 }
 
@@ -222,6 +269,28 @@ main::-webkit-scrollbar-thumb:hover {
   font-family: "Inter", Arial, Helvetica, sans-serif !important;
   padding-left: 30px !important;
   padding-right: 30px !important;
+  transition: left 0.15s ease, padding 0.15s ease;
+}
+
+.sidebar-toggle-btn {
+  border: none;
+  background: transparent;
+  color: #333;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+.sidebar-toggle-btn i {
+  font-size: 1.2rem;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .bottom-border {
@@ -285,7 +354,8 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .card-green {
-  background: linear-gradient(135deg, #0f5132, #10b981);
+  /* Present Today card: switch from green to blue-cyan gradient */
+  background: linear-gradient(135deg, #1e3a8a, #38bdf8);
 }
 
 .card-orange {
@@ -508,4 +578,331 @@ main::-webkit-scrollbar-thumb:hover {
   margin: 10px 0 0 0;
   padding-left: 18px;
   color: #374151;
+}
+
+/* Header logout button (shown only on mobile via media query) */
+.header-logout-btn {
+  display: none;
+  text-decoration: none;
+}
+
+.header-logout-icon {
+  height: 22px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Employee mobile header menu (burger) */
+.header-menu-btn {
+  display: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.header-menu-btn i {
+  font-size: 18px;
+}
+
+/* Base: keep mobile menu hidden by default */
+.employee-mobile-menu {
+  display: none;
+}
+
+@media (max-width: 390px) {
+  #profile-overview {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 750px) {
+  .dashboard-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    padding: 10px 0 0 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+
+  .sidebar-header {
+    padding: 0 12px 8px 12px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .sidebar-header .logo {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+  }
+
+  /* On mobile, keep avatar/logo spacing even if sidebar was collapsed on desktop */
+  .sidebar-collapsed .sidebar-header .logo {
+    margin-right: 8px;
+  }
+
+  .sidebar-header .app-name {
+    font-size: 1rem;
+    margin-right: auto; 
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis; 
+  }
+
+  .sidebar-nav {
+    padding: 13px 8px 3px 8px; 
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    position: relative;
+    width: auto;
+  }
+
+  .sidebar-nav::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  .sidebar-nav ul {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .sidebar-nav li {
+    margin: 0;
+    flex: 0 0 auto;
+  }
+
+  .sidebar-nav a,
+  .logout-btn {
+    font-size: 0.75rem !important;
+    padding: 8px 12px !important;
+    border-radius: 0 !important;
+  }
+
+  .sidebar-nav .icon,
+  .logout-btn .logout-icon {
+    max-width: 20px;
+    max-height: 20px;
+    margin-right: 6px;
+  }
+
+  /* Hide sidebar logout on mobile; use header/logout/menu instead */
+  .logout-btn {
+    display: none !important;
+  }
+
+  /* Keep collapsed state usable on mobile: do not fully hide labels */
+  .sidebar-collapsed .sidebar {
+    width: 100%;
+  }
+
+  .sidebar-collapsed .main-content {
+    left: 0;
+  }
+
+  .sidebar-collapsed .dashboard-header {
+    left: 0;
+  }
+
+  .sidebar-collapsed .sidebar-header {
+    justify-content: flex-start;
+    padding-left: 12px;
+  }
+
+  .sidebar-collapsed .sidebar-header .app-name {
+    display: inline;
+  }
+
+  .sidebar-collapsed .sidebar-nav a,
+  .sidebar-collapsed .logout-btn {
+    font-size: 0.75rem !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    justify-content: center !important;
+  }
+
+  .sidebar-collapsed .sidebar-nav .icon,
+  .sidebar-collapsed .logout-btn .logout-icon {
+    margin-right: 8px;
+  }
+
+  /* Main content and header below top tabs */
+  .main-content {
+    position: relative !important;
+    top: auto;
+    bottom: auto;
+    left: 0;
+    right: 0;
+    margin-top: 90px; 
+    overflow: visible;
+  }
+
+  .dashboard-header {
+    position: fixed !important;
+    top: 50px !important; 
+    left: 0 !important;
+    right: 0 !important;
+    padding-top: 15px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    display: block !important; 
+  }
+
+  .dashboard-header h2 {
+    font-size: 1rem !important;
+  }
+
+  .dashboard-header p {
+    font-size: 0.80rem !important;
+    white-space: nowrap;
+    padding-bottom: 0 !important;
+  }
+
+  /* Hide header logout on small screens by default */
+  .header-logout-btn {
+    display: none !important;
+  }
+
+  /* Hide dashboard-header burger toggle on mobile for employee pages */
+  .employee-layout .sidebar-toggle-btn {
+    display: none !important;
+  }
+
+  /* Employee layout: use burger menu + dropdown instead of tabs */
+  .employee-layout .sidebar-nav {
+    display: none;
+  }
+
+  .employee-layout .logout-btn {
+    display: none !important;
+  }
+
+  .employee-layout .header-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 9999px;
+    background-color: #2563eb;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+  }
+
+  .employee-layout .header-menu-btn i {
+    font-size: 18px;
+  }
+
+  .employee-layout .employee-mobile-menu {
+    display: block; /* controlled via visibility/opacity */
+    position: fixed;
+    top: 50px;
+    right: 8px;
+    width: 210px;
+    background-color: #0f172a; /* dark slate so white icons are visible */
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.75);
+    padding: 6px 0;
+    z-index: 1080;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    visibility: hidden;
+    border: 1px solid #1d4ed8; /* blue accent, matches existing theme */
+  }
+
+  .employee-layout.employee-mobile-menu-open .employee-mobile-menu {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    visibility: visible;
+  }
+
+  .employee-mobile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    color: #f9fafb; /* light text on dark panel */
+    text-decoration: none;
+  }
+
+  .employee-mobile-menu-item .icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .employee-mobile-menu-item:hover {
+    background-color: rgba(31, 41, 55, 0.9);
+  }
+
+  .employee-mobile-menu-logout {
+    border-top: 1px solid rgba(55, 65, 81, 0.85);
+    margin-top: 4px;
+    padding-top: 8px;
+  }
+
+  .scrollbar-container { /* space for fixed dashboard header */
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-bottom: 16px !important;
+  }
+}
+
+@media (min-width: 751px) and (max-width: 1024px) {
+  .sidebar {
+    width: 220px;
+  }
+
+  .main-content {
+    left: 220px;
+  }
+
+  .dashboard-header {
+    left: 220px !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  .scrollbar-container {
+    padding: 24px !important;
+  }
+
+  #dashboard-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 875px) {
+  .dashboard-header h2 {
+    font-size: 0.90rem !important;
+  }
+
+  .dashboard-header p {
+    font-size: 0.80rem !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .scrollbar-container {
+    padding-left: 40px !important;
+    padding-right: 40px !important;
+  }
 }

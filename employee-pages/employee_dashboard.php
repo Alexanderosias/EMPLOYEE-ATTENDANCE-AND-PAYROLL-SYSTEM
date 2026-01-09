@@ -1,11 +1,10 @@
 <?php
 // require_once '../views/auth.php'; // Ensure employee is logged in
 // if ($_SESSION['role'] !== 'employee') {
-// header('Location: dashboard.php'); // Redirect if not employee
-// exit;
+//   header('Location: dashboard.php'); // Redirect if not employee
+//   exit;
 // }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -18,6 +17,18 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('eaaps_employee_sidebar_collapsed');
+        if (saved === '1') {
+          document.documentElement.classList.add('sidebar-collapsed');
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+  </script>
 </head>
 
 <style>
@@ -36,56 +47,93 @@
   }
 </style>
 
-<body>
+<body class="employee-layout">
+
   <div class="flex min-h-screen">
     <!-- Sidebar (Kept as is for consistency) -->
     <aside class="sidebar">
-      <a class="sidebar-header" href="#">
-        <img src="../pages/img/adfc_logo_by_jintokai_d4pchwp-fullview.png" alt="Logo" class="logo" />
-        <span class="app-name">EAAPS Employee</span>
-      </a>
+      <div class="sidebar-header">
+        <img id="sidebarProfileAvatar" src="../pages/icons/profile-picture.png" alt="Profile" class="logo" />
+        <span class="app-name" id="sidebarProfileName">Employee</span>
+        <button type="button" class="header-menu-btn" aria-label="Open navigation menu">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+
       <nav class="sidebar-nav">
         <ul>
           <li class="active">
-            <a href="#">
-              <img src="../pages/icons/home.png" alt="Dashboard" class="icon" />
+            <a href="#" title="Dashboard">
+              <img src="../pages/icons/home.png" alt="Dashboard" class="icon" style="height:24px; width:auto;" />
               Dashboard
             </a>
           </li>
           <li>
-            <a href="employee_attendance.php">
-              <img src="../pages/icons/clock.png" alt="Attendance" class="icon" />
+            <a href="employee_attendance.php" title="Attendance">
+              <img src="../pages/icons/clock.png" alt="Attendance" class="icon" style="height:24px; width:auto;" />
               Attendance
             </a>
           </li>
           <li>
-            <a href="employee_schedule.php">
-              <img src="../pages/icons/calendar-deadline-date.png" alt="Schedule" class="icon" />
+            <a href="employee_schedule.php" title="Schedule">
+              <img src="../pages/icons/calendar-deadline-date.png" alt="Schedule" class="icon" style="height:24px; width:auto;" />
               Schedule
             </a>
           </li>
           <li>
-            <a href="employee_payroll.php">
-              <img src="../pages/icons/cash.png" alt="Payroll" class="icon" />
+            <a href="employee_payroll.php" title="Payroll">
+              <img src="../pages/icons/cash.png" alt="Payroll" class="icon" style="height:24px; width:auto;" />
               Payroll
             </a>
           </li>
           <li>
-            <a href="employee_leave.php">
-              <img src="../pages/icons/swap.png" alt="Leave" class="icon" />
+            <a href="employee_leave.php" title="Leave">
+              <img src="../pages/icons/swap.png" alt="Leave" class="icon" style="height:24px; width:auto;" />
               Leave
             </a>
           </li>
           <li>
-            <a href="employee_profile.php">
-              <img src="../pages/icons/user.png" alt="Profile" class="icon" />
+            <a href="employee_profile.php" title="Profile">
+              <img src="../pages/icons/user.png" alt="Profile" class="icon" style="height:24px; width:auto;" />
               Profile
             </a>
           </li>
         </ul>
       </nav>
-      <a class="logout-btn" href="../index.html">
-        <img src="../pages/icons/sign-out-option.png" alt="Logout" class="logout-icon" />
+
+      <div class="employee-mobile-menu">
+        <a href="employee_dashboard.php" class="employee-mobile-menu-item">
+          <img src="../pages/icons/home.png" alt="Dashboard" class="icon" />
+          Dashboard
+        </a>
+        <a href="employee_attendance.php" class="employee-mobile-menu-item">
+          <img src="../pages/icons/clock.png" alt="Attendance" class="icon" />
+          Attendance
+        </a>
+        <a href="employee_schedule.php" class="employee-mobile-menu-item">
+          <img src="../pages/icons/calendar-deadline-date.png" alt="Schedule" class="icon" />
+          Schedule
+        </a>
+        <a href="employee_payroll.php" class="employee-mobile-menu-item">
+          <img src="../pages/icons/cash.png" alt="Payroll" class="icon" />
+          Payroll
+        </a>
+        <a href="employee_leave.php" class="employee-mobile-menu-item">
+          <img src="../pages/icons/swap.png" alt="Leave" class="icon" />
+          Leave
+        </a>
+        <a href="employee_profile.php" class="employee-mobile-menu-item">
+          <img src="../pages/icons/user.png" alt="Profile" class="icon" />
+          Profile
+        </a>
+        <a href="../index.html" class="employee-mobile-menu-item employee-mobile-menu-logout">
+          <img src="../pages/icons/sign-out-option.png" alt="Logout" class="icon" />
+          Logout
+        </a>
+      </div>
+
+      <a class="logout-btn" href="../index.html" title="Logout">
+        <img src="../pages/icons/sign-out-option.png" alt="Logout" class="logout-icon" style="height:24px; width:auto;" />
         Logout
       </a>
     </aside>
@@ -94,7 +142,10 @@
     <main class="main-content">
       <header class="dashboard-header">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="sidebarToggle" class="sidebar-toggle-btn" type="button" aria-label="Toggle sidebar">
+              <i class="fas fa-bars"></i>
+            </button>
             <h2>Dashboard</h2>
           </div>
           <div>
@@ -110,7 +161,7 @@
           <!-- Top Row: Key Metrics -->
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Today's Attendance Status -->
-            <div class="dashboard-card bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+            <div class="dashboard-card bg-gradient-to-br from-blue-600 to-sky-500 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
                 <i class="fas fa-clock"></i> Today's Attendance
               </h3>
@@ -170,7 +221,7 @@
             <!-- Payroll Summary -->
             <div class="dashboard-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-money-bill-wave text-green-600"></i> Payroll Summary
+                <i class="fas fa-money-bill-wave text-blue-600"></i> Payroll Summary
               </h3>
               <div id="payroll-summary" class="space-y-2 text-sm mb-4">
                 <div>Total Hours: <span id="payroll-hours" class="font-semibold">0</span></div>
@@ -178,7 +229,7 @@
                 <div>Deductions: ₱<span id="deductions" class="font-semibold">0.00</span></div>
                 <div>Net Pay: ₱<span id="net-pay" class="font-semibold">0.00</span></div>
               </div>
-              <button id="download-payslip" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+              <button id="download-payslip" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
                 <i class="fas fa-download"></i> Download Payslip
               </button>
             </div>
@@ -189,7 +240,7 @@
             <!-- Leave Requests -->
             <div class="dashboard-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-calendar-times text-green-600"></i> Leave Requests
+                <i class="fas fa-calendar-times text-blue-600"></i> Leave Requests
               </h3>
               <button id="request-leave-btn" onclick="window.location.href='employee_leave.php#leave-modal'" class="w-full bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 mb-4">
                 <i class="fas fa-plus"></i> Request Leave
@@ -202,7 +253,7 @@
             <!-- Personal Profile Overview -->
             <div class="dashboard-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-user text-green-600"></i> Personal Profile
+                <i class="fas fa-user text-blue-600"></i> Personal Profile
               </h3>
               <div id="profile-overview" class="flex items-center gap-4 mb-4">
                 <img id="profile-avatar" src="../pages/img/user.jpg" alt="Avatar" class="w-16 h-16 rounded-full object-cover">
@@ -214,7 +265,7 @@
                   <div>Contact: <span id="profile-contact" class="font-semibold">N/A</span></div>
                 </div>
               </div>
-              <button id="edit-profile-btn" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+              <button id="edit-profile-btn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
                 <i class="fas fa-edit"></i> Edit Profile
               </button>
             </div>
@@ -222,12 +273,12 @@
             <!-- QR Code -->
             <div class="dashboard-card bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-qrcode text-green-600"></i> QR Code
+                <i class="fas fa-qrcode text-blue-600"></i> QR Code
               </h3>
               <div id="qr-code" class="flex justify-center mb-4">
                 <img id="qr-image" src="" alt="QR Code" class="w-32 h-32">
               </div>
-              <button id="download-qr" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+              <button id="download-qr" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
                 <i class="fas fa-download"></i> Download QR
               </button>
             </div>
@@ -238,6 +289,8 @@
   </div>
 
   <script src="../js/dashboard.js"></script>
+  <script src="../js/employee_sidebar_toggle.js"></script>
+  <script src="../js/employee_sidebar_profile.js"></script>
   <script src="../js/current_time.js"></script>
   <script src="../js/employee_dashboard.js"></script>
 </body>

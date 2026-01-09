@@ -8,12 +8,16 @@
   }
 
   #confirmation-modal {
-    z-index: 1002;
+    z-index: 1102;
+  }
+
+  #leave-modal {
+    z-index: 1100;
   }
 
   #view-leave-modal {
     background-color: rgba(0, 0, 0, 0.6);
-    z-index: 1001;
+    z-index: 1101;
   }
 
   #name-container {
@@ -29,5 +33,143 @@
 
   #view-leave-modal-content {
     padding: 20px;
-    width: 400px !important;
+    width: 100%;
+    max-width: 650px;
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 750px) {
+    /* View leave modal: full-width on mobile */
+    #view-leave-modal-content {
+      max-width: 100%;
+      padding: 16px;
+    }
+
+    /* Leave modal content spacing on mobile */
+    #leave-modal-content {
+      padding: 16px;
+    }
+
+    /* Stack Start/End date fields vertically in the leave modal on mobile */
+    .leave-date-row {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .leave-date-row .flex-1 {
+      width: 100%;
+    }
+
+    /* Smaller Request Leave button on mobile */
+    #request-leave-btn {
+      font-size: 0.85rem;
+      padding: 0.5rem 1.25rem;
+    }
+
+    /* Slightly smaller headings in modals on mobile */
+    #leave-modal h3,
+    #view-leave-modal h3,
+    #confirmation-modal h3 {
+      font-size: 1rem;
+    }
+
+    /* Slightly smaller labels */
+    #leave-modal label,
+    #view-leave-modal label {
+      font-size: 0.75rem;
+    }
+
+    /* Inputs/textareas/selects: smaller font + padding so it feels less cramped */
+    #leave-modal input,
+    #leave-modal textarea,
+    #leave-modal select,
+    #view-leave-modal input,
+    #view-leave-modal textarea,
+    #view-leave-modal select {
+      font-size: 0.8rem;
+      padding: 6px 10px;
+    }
+
+    /* Buttons: adjust size a bit on mobile */
+    #leave-modal button,
+    #view-leave-modal button,
+    #confirmation-modal button {
+      font-size: 0.8rem;
+      padding: 8px 10px;
+    }
+
+    /* Smaller avatar and proof image inside view modal on mobile */
+    #view-modal-avatar {
+      width: 40px !important;
+      height: 40px !important;
+    }
+
+    #view-modal-proof-img {
+      width: 48px;
+      height: 48px;
+    }
+
+    /* Leave filters layout on mobile */
+    .leave-filters {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .leave-filters .flex-1 {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .leave-filters input[type="text"],
+    .leave-filters select {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Stack leave table rows as vertical cards on mobile */
+    .leave-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .leave-table thead {
+      display: none;
+    }
+
+    .leave-table tbody,
+    .leave-table tr,
+    .leave-table td {
+      display: block;
+      width: 100%;
+    }
+
+    .leave-table tr {
+      margin-bottom: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .leave-table td {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 12px;
+    }
+
+    .leave-table td::before {
+      font-weight: 600;
+      color: #4b5563; /* text-gray-600 */
+    }
+
+    .leave-table td:nth-child(1)::before { content: 'Type'; }
+    .leave-table td:nth-child(2)::before { content: 'Start Date'; }
+    .leave-table td:nth-child(3)::before { content: 'End Date'; }
+    .leave-table td:nth-child(4)::before { content: 'Days'; }
+    .leave-table td:nth-child(5)::before { content: 'Reason'; }
+    .leave-table td:nth-child(6)::before { content: 'Proof'; }
+    .leave-table td:nth-child(7)::before { content: 'Status'; }
+    .leave-table td:nth-child(8)::before { content: 'Actions'; }
   }

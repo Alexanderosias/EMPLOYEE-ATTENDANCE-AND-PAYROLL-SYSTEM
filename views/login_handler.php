@@ -2,8 +2,8 @@
 session_start();
 require_once 'conn.php';
 
-// Define base URL for easy deployment (change this for Hostinger)
-define('BASE_URL', 'http://localhost:8000'); // Change to 'https://yourdomain.com' on Hostinger
+// Define base URL for easy deployment (Apache/XAMPP at http://localhost/eaaps)
+define('BASE_URL', 'http://localhost'); // Change to 'https://yourdomain.com' on Hostinger
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: ' . BASE_URL);

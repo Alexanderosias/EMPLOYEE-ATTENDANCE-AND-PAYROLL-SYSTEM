@@ -1,0 +1,86 @@
+/* Employee Attendance - button & responsive table styles */
+
+/* Apply button styling (desktop + mobile) */
+#att-apply {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  border: none;
+  background-color: #22c55e; /* green-500 */
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+#att-apply:hover {
+  background-color: #16a34a; /* green-600 */
+}
+
+@media (max-width: 750px) {
+  /* Date range filters + Apply button layout on mobile */
+  .attendance-filters {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .attendance-filters > div {
+    width: 100%;
+  }
+
+  .attendance-filters input[type="date"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .attendance-filters #att-apply {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Stack attendance table rows as vertical cards on mobile */
+  .attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .attendance-table thead {
+    display: none;
+  }
+
+  .attendance-table tbody,
+  .attendance-table tr,
+  .attendance-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .attendance-table tr {
+    margin-bottom: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .attendance-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+  }
+
+  .attendance-table td::before {
+    font-weight: 600;
+    color: #4b5563; /* text-gray-600 */
+  }
+
+  .attendance-table td:nth-child(1)::before { content: 'Date'; }
+  .attendance-table td:nth-child(2)::before { content: 'Time In'; }
+  .attendance-table td:nth-child(3)::before { content: 'Time Out'; }
+  .attendance-table td:nth-child(4)::before { content: 'Status'; }
+  .attendance-table td:nth-child(5)::before { content: 'Expected'; }
+  .attendance-table td:nth-child(6)::before { content: 'Snapshot'; }
+}

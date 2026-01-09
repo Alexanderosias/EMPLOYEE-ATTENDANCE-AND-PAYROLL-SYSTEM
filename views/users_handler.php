@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'conn.php';
 
-define('BASE_PATH', ''); // Change to '' for localhost:8000, or '/newpath' for Hostinger
+define('BASE_PATH', '/eaaps'); // XAMPP Apache base path
 
 $db = null;
 $mysqli = null;
